@@ -44,6 +44,8 @@ func registerFunc() {
 	//register init login function
 	wrapperInitLogin := wasm_wrapper.NewWrapperInitLogin(globalFuc)
 	js.Global().Set("initSDK", js.FuncOf(wrapperInitLogin.InitSDK))
+	js.Global().Set("generateCaptcha", js.FuncOf(wrapperInitLogin.GenerateCaptcha))
+	js.Global().Set("verifyCaptcha", js.FuncOf(wrapperInitLogin.VerifyCaptcha))
 	js.Global().Set("login", js.FuncOf(wrapperInitLogin.Login))
 	js.Global().Set("logout", js.FuncOf(wrapperInitLogin.Logout))
 	js.Global().Set("getLoginStatus", js.FuncOf(wrapperInitLogin.GetLoginStatus))

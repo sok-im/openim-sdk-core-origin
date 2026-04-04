@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/openimsdk/protocol/auth"
+	"github.com/openimsdk/protocol/captcha"
 	"github.com/openimsdk/protocol/conversation"
 	"github.com/openimsdk/protocol/group"
 	"github.com/openimsdk/protocol/msg"
@@ -99,6 +100,11 @@ var (
 var (
 	GetAdminToken = newApi[auth.GetAdminTokenReq, auth.GetAdminTokenResp]("/auth/get_admin_token")
 	GetUsersToken = newApi[auth.GetUserTokenReq, auth.GetUserTokenResp]("/auth/get_user_token")
+)
+
+var (
+	GenerateCaptcha = newApi[captcha.GenerateCaptchaReq, captcha.GenerateCaptchaResp]("/captcha/generate")
+	VerifyCaptcha   = newApi[captcha.VerifyCaptchaReq, captcha.VerifyCaptchaResp]("/captcha/verify")
 )
 
 var (

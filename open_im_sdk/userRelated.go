@@ -80,6 +80,9 @@ func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if shortFuncName == "Login-fm" || shortFuncName == "Log-fm" {
 		return nil
 	}
+	if shortFuncName == "GenerateCaptcha-fm" || shortFuncName == "VerifyCaptcha-fm" {
+		return nil
+	}
 
 	if uSDK.getLoginStatus(context.Background()) != Logged {
 		return errs.New("SDK not logged in", "funcName", funcName).Wrap()

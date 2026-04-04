@@ -81,6 +81,8 @@ type MessageModel interface {
 	SetNotificationSeq(ctx context.Context, conversationID string, seq int64) error
 	BatchInsertNotificationSeq(ctx context.Context, notificationSeqs []*model_struct.NotificationSeqs) error
 	GetNotificationAllSeqs(ctx context.Context) ([]*model_struct.NotificationSeqs, error)
+	BatchUpsertConversationSyncedMaxSeqs(ctx context.Context, seqs []*model_struct.LocalConversationSyncedMaxSeq) error
+	GetAllConversationSyncedMaxSeqs(ctx context.Context) ([]*model_struct.LocalConversationSyncedMaxSeq, error)
 }
 
 type ConversationModel interface {

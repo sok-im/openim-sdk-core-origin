@@ -255,6 +255,15 @@ type LocalUpload struct {
 	CreateTime int64  `gorm:"column:create_time" json:"createTime"`
 }
 
+type LocalConversationSyncedMaxSeq struct {
+	ConversationID string `gorm:"column:conversation_id;primary_key;type:char(128)" json:"conversationID"`
+	SyncedMaxSeq   int64  `gorm:"column:synced_max_seq" json:"syncedMaxSeq"`
+}
+
+func (LocalConversationSyncedMaxSeq) TableName() string {
+	return "local_conversation_synced_max_seqs"
+}
+
 func (LocalUpload) TableName() string {
 	return "local_uploads"
 }

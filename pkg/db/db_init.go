@@ -152,7 +152,10 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 	d.conn = db
 
 	// base
-	if err = db.AutoMigrate(&model_struct.LocalAppSDKVersion{}); err != nil {
+	if err = db.AutoMigrate(
+		&model_struct.LocalAppSDKVersion{},
+		&model_struct.LocalConversationSyncedMaxSeq{},
+	); err != nil {
 		return err
 	}
 
@@ -180,6 +183,7 @@ func (d *DataBase) versionDataMigrate(ctx context.Context) error {
 			&model_struct.LocalConversation{},
 			&model_struct.NotificationSeqs{},
 			&model_struct.LocalChatLog{},
+			&model_struct.LocalConversationSyncedMaxSeq{},
 			&model_struct.LocalChatLogReactionExtensions{},
 			&model_struct.LocalUpload{},
 			&model_struct.LocalStranger{},

@@ -35,6 +35,7 @@ type IndexDB struct {
 	*indexdb.Friend
 	*indexdb.NotificationSeqs
 	*indexdb.LocalUpload
+	*indexdb.LocalConversationSyncCursor
 	*indexdb.LocalSendingMessages
 	*indexdb.LocalUserCommand
 	*indexdb.LocalVersionSync
@@ -64,6 +65,7 @@ func NewDataBase(ctx context.Context, loginUserID string, dbDir string, logLevel
 		Black:                           indexdb.NewBlack(loginUserID),
 		Friend:                          indexdb.NewFriend(loginUserID),
 		NotificationSeqs:                indexdb.NewNotificationSeqs(),
+		LocalConversationSyncCursor:     indexdb.NewLocalConversationSyncCursor(),
 		LocalUpload:                     indexdb.NewLocalUpload(),
 		LocalSendingMessages:            indexdb.NewLocalSendingMessages(),
 		LocalUserCommand:                indexdb.NewLocalUserCommand(),

@@ -137,3 +137,13 @@ func (w *WrapperInitLogin) SetAppBackgroundStatus(_ js.Value, args []js.Value) i
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SetAppBackgroundStatus, callback, &args).AsyncCallWithCallback()
 }
+
+func (w *WrapperInitLogin) GenerateCaptcha(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GenerateCaptcha, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperInitLogin) VerifyCaptcha(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.VerifyCaptcha, callback, &args).AsyncCallWithCallback()
+}

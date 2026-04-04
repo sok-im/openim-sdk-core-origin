@@ -158,6 +158,19 @@ func (m *MsgSyncer) loadSeq(ctx context.Context) error {
 	for _, notificationSeq := range notificationSeqs {
 		m.syncedMaxSeqs[notificationSeq.ConversationID] = notificationSeq.Seq
 	}
+
+	persistedCursors, err := m.db.GetAllConversationSyncedMaxSeqs(ctx)
+	if err != nil {
+		log.ZWarn(ctx, "get persisted sync cursors failed", err)
+	} else {
+		log.ZDebug(ctx, "loadSeq", "persistedCursors", persistedCursors)
+		for _, cursor := range persistedCursors {
+			if cur, ok := m.syncedMaxSeqs[cursor.ConversationID]; !ok || cur < cursor.SyncedMaxSeq {
+				m.syncedMaxSeqs[cursor.ConversationID] = cursor.SyncedMaxSeq
+			}
+		}
+	}
+
 	log.ZDebug(ctx, "loadSeq", "syncedMaxSeqs", m.syncedMaxSeqs)
 	return nil
 }
@@ -361,6 +374,28 @@ func (m *MsgSyncer) doConnected(ctx context.Context) {
 	} else {
 		log.ZDebug(m.ctx, "get max seq success", "resp", resp.MaxSeqs)
 	}
+
+	if reinstalled {
+		if hasReadSeqs, hErr := m.getHasReadSeqs(ctx); hErr == nil {
+			m.syncedMaxSeqsLock.Lock()
+			for convID, hasReadSeq := range hasReadSeqs {
+				if cur, ok := m.syncedMaxSeqs[convID]; !ok || cur < hasReadSeq {
+					m.syncedMaxSeqs[convID] = hasReadSeq
+				}
+			}
+			m.syncedMaxSeqsLock.Unlock()
+			log.ZDebug(ctx, "reinstalled", "hasReadSeqs", hasReadSeqs,
+				"count", len(hasReadSeqs))
+
+			// Persist normal-conversation cursors so that subsequent logins (where
+			// m.reinstalled is false) can still skip already-read history even when
+			// no local messages were stored (hasReadSeq == maxSeq at reinstall time).
+			m.persistHasReadSeqs(ctx, hasReadSeqs)
+		} else {
+			log.ZWarn(ctx, "reinstalled: getHasReadSeqs failed", hErr)
+		}
+	}
+
 	m.compareSeqsAndBatchSync(ctx, resp.MaxSeqs, connectPullNums)
 	if reinstalled {
 		common.TriggerCmdSyncFlag(m.ctx, constant.AppDataSyncFinish, m.conversationCh)
@@ -652,4 +687,43 @@ func (m *MsgSyncer) triggerNotification(ctx context.Context, msgs map[string]*sd
 	}
 	return nil
 
+}
+
+// getHasReadSeqs queries the server for the per-conversation hasReadSeq of the
+// current user.  The returned map is keyed by conversationID.
+func (m *MsgSyncer) getHasReadSeqs(ctx context.Context) (map[string]int64, error) {
+	req := msg.GetConversationsHasReadAndMaxSeqReq{UserID: m.loginUserID}
+	var resp msg.GetConversationsHasReadAndMaxSeqResp
+	if err := m.longConnMgr.SendReqWaitResp(ctx, &req, constant.GetConvMaxReadSeq, &resp); err != nil {
+		return nil, err
+	}
+	result := make(map[string]int64, len(resp.Seqs))
+	for convID, seqs := range resp.Seqs {
+		result[convID] = seqs.HasReadSeq
+	}
+	return result, nil
+}
+
+// persistHasReadSeqs writes the server-returned hasReadSeq values for normal
+// (non-notification) conversations into SQLite.  The stored values act as a
+// lower-bound sync cursor across logins, ensuring that conversations whose
+// hasReadSeq equals maxSeq at reinstall time are never re-pulled from seq 0.
+func (m *MsgSyncer) persistHasReadSeqs(ctx context.Context, hasReadSeqs map[string]int64) {
+	var toUpsert []*model_struct.LocalConversationSyncedMaxSeq
+	for convID, seq := range hasReadSeqs {
+		if !IsNotification(convID) && seq > 0 {
+			toUpsert = append(toUpsert, &model_struct.LocalConversationSyncedMaxSeq{
+				ConversationID: convID,
+				SyncedMaxSeq:   seq,
+			})
+		}
+	}
+	if len(toUpsert) == 0 {
+		return
+	}
+	if err := m.db.BatchUpsertConversationSyncedMaxSeqs(ctx, toUpsert); err != nil {
+		log.ZWarn(ctx, "persistHasReadSeqs: BatchUpsertConversationSyncedMaxSeqs failed", err)
+	} else {
+		log.ZDebug(ctx, "persistHasReadSeqs: saved sync cursors", "count", len(toUpsert))
+	}
 }

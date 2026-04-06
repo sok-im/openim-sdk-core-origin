@@ -28,6 +28,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/internal/third/file"
 
 	"github.com/openimsdk/openim-sdk-core/v3/internal/relation"
+	sig "github.com/openimsdk/openim-sdk-core/v3/internal/signaling"
 
 	conv "github.com/openimsdk/openim-sdk-core/v3/internal/conversation_msg"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/group"
@@ -97,6 +98,7 @@ type LoginMgr struct {
 	conversation *conv.Conversation
 	user         *user.User
 	file         *file.File
+	signaling    *sig.Signaling
 
 	db           db_interface.DataBase
 	longConnMgr  *interaction.LongConnMgr
@@ -211,6 +213,10 @@ func (u *LoginMgr) Relation() *relation.Relation {
 	return u.relation
 }
 
+func (u *LoginMgr) Signaling() *sig.Signaling {
+	return u.signaling
+}
+
 func (u *LoginMgr) SetConversationListener(conversationListener open_im_sdk_callback.OnConversationListener) {
 	u.conversationListener = conversationListener
 }
@@ -237,6 +243,10 @@ func (u *LoginMgr) SetGroupListener(groupListener open_im_sdk_callback.OnGroupLi
 
 func (u *LoginMgr) SetUserListener(userListener open_im_sdk_callback.OnUserListener) {
 	u.userListener = userListener
+}
+
+func (u *LoginMgr) SetSignalingListener(listener open_im_sdk_callback.OnSignalingListener) {
+	u.signalingListener = listener
 }
 
 func (u *LoginMgr) SetCustomBusinessListener(listener open_im_sdk_callback.OnCustomBusinessListener) {
@@ -353,11 +363,12 @@ func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
 
 	u.group = group.NewGroup(u.loginUserID, u.db, u.conversationCh)
 	u.third = third.NewThird(u.info.PlatformID, u.loginUserID, u.info.SystemType, u.info.LogFilePath, u.file)
+	u.signaling = sig.NewSignaling(u.longConnMgr, u.loginUserID, u.info.PlatformID)
 	log.ZDebug(ctx, "forcedSynchronization success...", "login cost time: ", time.Since(t1))
 
 	u.msgSyncer, _ = interaction.NewMsgSyncer(ctx, u.conversationCh, u.msgSyncerCh, u.loginUserID, u.longConnMgr, u.db, 0)
 	u.conversation = conv.NewConversation(ctx, u.longConnMgr, u.db, u.conversationCh, u.msgSyncerCh,
-		u.relation, u.group, u.user, u.file)
+		u.relation, u.group, u.user, u.file, u.signaling)
 	u.setListener(ctx)
 
 	u.run(ctx)
@@ -374,6 +385,7 @@ func (u *LoginMgr) setListener(ctx context.Context) {
 	setListener(ctx, &u.advancedMsgListener, u.AdvancedMsgListener, u.conversation.SetMsgListener, newEmptyAdvancedMsgListener)
 	setListener(ctx, &u.batchMsgListener, u.BatchMsgListener, u.conversation.SetBatchMsgListener, nil)
 	setListener(ctx, &u.businessListener, u.BusinessListener, u.conversation.SetBusinessListener, newEmptyCustomBusinessListener)
+	setListener(ctx, &u.signalingListener, u.SignalingListener, u.signaling.SetListener, newEmptySignalingListener)
 }
 
 func setListener[T any](ctx context.Context, listener *T, getter func() T, setFunc func(listener func() T), newFunc func(context.Context) T) {

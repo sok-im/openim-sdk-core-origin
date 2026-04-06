@@ -292,3 +292,51 @@ func (e *emptyCustomBusinessListener) OnRecvCustomBusinessMessage(businessMessag
 		"businessMessage", businessMessage)
 
 }
+
+type emptySignalingListener struct {
+	ctx context.Context
+}
+
+func newEmptySignalingListener(ctx context.Context) open_im_sdk_callback.OnSignalingListener {
+	return &emptySignalingListener{ctx: ctx}
+}
+
+func (e *emptySignalingListener) OnReceiveNewInvitation(receiveNewInvitationCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnReceiveNewInvitation")
+}
+
+func (e *emptySignalingListener) OnInviteeAccepted(inviteeAcceptedCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnInviteeAccepted")
+}
+
+func (e *emptySignalingListener) OnInviteeAcceptedByOtherDevice(inviteeAcceptedCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnInviteeAcceptedByOtherDevice")
+}
+
+func (e *emptySignalingListener) OnInviteeRejected(inviteeRejectedCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnInviteeRejected")
+}
+
+func (e *emptySignalingListener) OnInviteeRejectedByOtherDevice(inviteeRejectedCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnInviteeRejectedByOtherDevice")
+}
+
+func (e *emptySignalingListener) OnInvitationCancelled(invitationCancelledCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnInvitationCancelled")
+}
+
+func (e *emptySignalingListener) OnInvitationTimeout(invitationTimeoutCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnInvitationTimeout")
+}
+
+func (e *emptySignalingListener) OnHangUp(hangUpCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnHangUp")
+}
+
+func (e *emptySignalingListener) OnRoomParticipantConnected(onRoomParticipantConnectedCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnRoomParticipantConnected")
+}
+
+func (e *emptySignalingListener) OnRoomParticipantDisconnected(onRoomParticipantDisconnectedCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnRoomParticipantDisconnected")
+}

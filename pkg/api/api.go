@@ -7,6 +7,7 @@ import (
 	"github.com/openimsdk/protocol/group"
 	"github.com/openimsdk/protocol/msg"
 	"github.com/openimsdk/protocol/relation"
+	"github.com/openimsdk/protocol/rtc"
 	"github.com/openimsdk/protocol/third"
 	"github.com/openimsdk/protocol/user"
 )
@@ -119,4 +120,16 @@ var (
 	ObjectAuthSign                = newApi[third.AuthSignReq, third.AuthSignResp]("/object/auth_sign")
 	ObjectCompleteMultipartUpload = newApi[third.CompleteMultipartUploadReq, third.CompleteMultipartUploadResp]("/object/complete_multipart_upload")
 	ObjectAccessURL               = newApi[third.AccessURLReq, third.AccessURLResp]("/object/access_url")
+)
+
+var (
+	SignalMessageAssemble          = newApi[rtc.SignalMessageAssembleReq, rtc.SignalMessageAssembleResp]("/rtc/signal_message_assemble")
+	SignalGetRoomByGroupID         = newApi[rtc.SignalGetRoomByGroupIDReq, rtc.SignalGetRoomByGroupIDResp]("/rtc/signal_get_room_by_group_id")
+	SignalGetTokenByRoomID         = newApi[rtc.SignalGetTokenByRoomIDReq, rtc.SignalGetTokenByRoomIDResp]("/rtc/signal_get_token_by_room_id")
+	SignalGetRooms                 = newApi[rtc.SignalGetRoomsReq, rtc.SignalGetRoomsResp]("/rtc/signal_get_rooms")
+	GetSignalInvitationInfo        = newApi[rtc.GetSignalInvitationInfoReq, rtc.GetSignalInvitationInfoResp]("/rtc/get_signal_invitation_info")
+	GetSignalInvitationInfoStartApp = newApi[rtc.GetSignalInvitationInfoStartAppReq, rtc.GetSignalInvitationInfoStartAppResp]("/rtc/get_signal_invitation_info_start_app")
+	SignalSendCustomSignal         = newApi[rtc.SignalSendCustomSignalReq, rtc.SignalSendCustomSignalResp]("/rtc/signal_send_custom_signal")
+	GetSignalInvitationRecords     = newApi[rtc.GetSignalInvitationRecordsReq, rtc.GetSignalInvitationRecordsResp]("/rtc/get_signal_invitation_records")
+	DeleteSignalRecords            = newApi[rtc.DeleteSignalRecordsReq, rtc.DeleteSignalRecordsResp]("/rtc/delete_signal_records")
 )

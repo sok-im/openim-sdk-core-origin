@@ -29,6 +29,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
 
+	pConstant "github.com/openimsdk/protocol/constant"
 	"github.com/openimsdk/protocol/sdkws"
 	"github.com/openimsdk/tools/errs"
 	"github.com/openimsdk/tools/log"
@@ -128,6 +129,10 @@ func (c *Conversation) doNotificationManager(c2v common.Cmd2Value) {
 				c.user.DoNotification(ctx, msg)
 			} else if msg.ContentType > constant.GroupNotificationBegin && msg.ContentType < constant.GroupNotificationEnd {
 				c.group.DoNotification(ctx, msg)
+			} else if msg.ContentType > pConstant.SignalingNotificationBegin && msg.ContentType < pConstant.SignalingNotificationEnd {
+				if c.signaling != nil {
+					c.signaling.DoNotification(ctx, msg)
+				}
 			} else {
 				c.DoNotification(ctx, msg)
 			}

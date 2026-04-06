@@ -318,7 +318,7 @@ func (c *LongConnMgr) heartbeat(ctx context.Context) {
 			log.ZInfo(ctx, "heartbeat done sdk logout.....")
 			return
 		case <-ticker.C:
-			log.ZInfo(ctx, "sendPingMessage", "goroutine ID:", getGoroutineID())
+			//log.ZInfo(ctx, "sendPingMessage", "goroutine ID:", getGoroutineID())
 			c.sendPingMessage(ctx)
 		}
 	}
@@ -329,9 +329,9 @@ func (c *LongConnMgr) sendPingMessage(ctx context.Context) {
 	c.connWrite.Lock()
 	defer c.connWrite.Unlock()
 	opid := utils.OperationIDGenerator()
-	log.ZDebug(ctx, "ping Message Started", "goroutine ID:", getGoroutineID(), "opid", opid)
+	//log.ZDebug(ctx, "ping Message Started", "goroutine ID:", getGoroutineID(), "opid", opid)
 	if c.IsConnected() {
-		log.ZDebug(ctx, "ping Message Started isConnected", "goroutine ID:", getGoroutineID(), "opid", opid)
+		//log.ZDebug(ctx, "ping Message Started isConnected", "goroutine ID:", getGoroutineID(), "opid", opid)
 		c.conn.SetWriteDeadline(writeWait)
 		if err := c.conn.WriteMessage(PingMessage, []byte(opid)); err != nil {
 			log.ZWarn(ctx, "ping Message failed", err, "goroutine ID:", getGoroutineID(), "opid", opid)
@@ -741,7 +741,7 @@ func (c *LongConnMgr) pingHandler(_ string) error {
 
 // when client send pong.
 func (c *LongConnMgr) pongHandler(appData string) error {
-	log.ZDebug(c.ctx, "server Pong Message Received", "appData", appData)
+	//log.ZDebug(c.ctx, "server Pong Message Received", "appData", appData)
 	if err := c.conn.SetReadDeadline(pongWait); err != nil {
 		return err
 	}

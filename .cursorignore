@@ -1,1 +1,45 @@
+# 构建产物与输出目录
+_output/
+bin/
+tmp/
+out/
+out-test/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
 
+# 日志与本地数据
+logs/
+*.db
+*.sqlite
+identifier.sqlite
+
+# 依赖与打包产物
+vendor/
+node_modules/
+*.aar
+*.jar
+
+# 部署目录（二进制/镜像产物）
+deploy/
+
+# IDE 与系统文件
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.DS_Store
+
+# 备份与临时文件
+*.bak
+*.tmp
+*.orig
+
+# 容器与杂项
+.devcontainer/
+components/

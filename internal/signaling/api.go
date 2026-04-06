@@ -3,10 +3,11 @@ package signaling
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/api"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
-	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/protocol/rtc"
+	"github.com/openimsdk/tools/log"
 	"github.com/openimsdk/tools/utils/jsonutil"
 )
 
@@ -34,6 +35,7 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 		return nil, err
 	}
 	if inviteResp := resp.GetInvite(); inviteResp != nil {
+		log.ZInfo(ctx, "Invite success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
 		return inviteResp, nil
 	}
 	return &rtc.SignalInviteResp{}, nil
@@ -156,7 +158,7 @@ func (s *Signaling) fillInviteDefaults(invitation *rtc.InvitationInfo) {
 	invitation.InviterUserID = s.loginUserID
 	invitation.PlatformID = s.platformID
 	if invitation.RoomID == "" {
-		invitation.RoomID = utils.OperationIDGenerator()
+		invitation.RoomID = "room-" + uuid.New().String()
 	}
 	if invitation.Timeout == 0 {
 		invitation.Timeout = defaultTimeout

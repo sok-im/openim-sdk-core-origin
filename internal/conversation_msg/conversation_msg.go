@@ -268,7 +268,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			//De-analyze data
 			err := msgHandleByContentType(msg)
 			if err != nil {
-				log.ZError(ctx, "Parsing data error:", err, "type: ", msg.ContentType, "msg", msg)
+				log.ZError(ctx, "Parsing lintao data error:", err, "type: ", msg.ContentType, "msg", msg)
 				continue
 			}
 

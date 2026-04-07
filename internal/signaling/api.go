@@ -32,6 +32,7 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 	}
 	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
+		log.ZError(ctx, "Invite failed", err)
 		return nil, err
 	}
 	if inviteResp := resp.GetInvite(); inviteResp != nil {
@@ -52,9 +53,11 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 	}
 	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
+		log.ZError(ctx, "InviteInGroup failed", err)
 		return nil, err
 	}
 	if inviteResp := resp.GetInviteInGroup(); inviteResp != nil {
+		log.ZInfo(ctx, "InviteInGroup success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
 		return inviteResp, nil
 	}
 	return &rtc.SignalInviteInGroupResp{}, nil

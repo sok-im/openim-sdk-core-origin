@@ -3,9 +3,9 @@ package signaling
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/api"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/protocol/rtc"
 	"github.com/openimsdk/tools/log"
 	"github.com/openimsdk/tools/utils/jsonutil"
@@ -161,7 +161,7 @@ func (s *Signaling) fillInviteDefaults(invitation *rtc.InvitationInfo) {
 	invitation.InviterUserID = s.loginUserID
 	invitation.PlatformID = s.platformID
 	if invitation.RoomID == "" {
-		invitation.RoomID = "room-" + uuid.New().String()
+		invitation.RoomID = "room-" + utils.OperationIDGenerator()
 	}
 	if invitation.Timeout == 0 {
 		invitation.Timeout = defaultTimeout

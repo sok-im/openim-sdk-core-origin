@@ -204,6 +204,9 @@ android:
 	go get golang.org/x/mobile/bind
 	@echo "openim-sdk-core AAR: git=$(OPENIM_CORE_GIT_COMMIT) stamp=$(OPENIM_CORE_BUILD_STAMP) dirty=$(shell git diff --quiet 2>/dev/null && echo no || echo YES)"
 	gomobile bind -v -trimpath -ldflags="-s -w $(OPENIM_LDFLAGS_VERSION)" -o ./open_im_sdk.aar -target=android -androidapi 21 ./open_im_sdk/ ./open_im_sdk_callback/
+	@test -f ./open_im_sdk.aar || (echo "error: ./open_im_sdk.aar 未生成" >&2 && exit 1)
+	@test -f ./open_im_sdk-sources.jar || (echo "error: ./open_im_sdk-sources.jar 未生成（请升级 golang.org/x/mobile/cmd/gomobile，bind 应与 AAR 同目录产出 -sources.jar）" >&2 && exit 1)
+	@echo "Android 产物已就绪: open_im_sdk.aar + open_im_sdk-sources.jar"
 
 # Targets
 .PHONY: release

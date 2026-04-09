@@ -137,7 +137,22 @@ func LocalChatLogToMsgStruct(localMessage *model_struct.LocalChatLog) *sdk_struc
 	return message
 }
 
+// isRTCSignalingContentType 与 protocol/constant/rtc.go 中 SignalingNotificationBegin(1600)、SignalingNotificationEnd(1699) 对齐，
+// 即 1600 <= ct < 1699。此类消息 Content 为 Protobuf，不得走 NotificationElem 的 JSON 解析。
+func isRTCSignalingContentType(contentType int32) bool {
+	return contentType >= 1600 && contentType < 1699
+}
+
 func msgHandleByContentType(msg *sdk_struct.MsgStruct) (err error) {
+	log.ZInfo(context.Background(), "msgHandleByContentType", "contentType", msg.ContentType, "msg", msg)
+	if isRTCSignalingContentType(msg.ContentType) {
+		log.ZInfo(context.Background(), "isRTCSignalingContentType", "contentType", msg.ContentType, "msg", msg)
+		msg.NotificationElem = &sdk_struct.NotificationElem{}
+		msg.Content = ""
+		return nil
+	} else {
+		log.ZInfo(context.Background(), "not isRTCSignalingContentType", "contentType", msg.ContentType, "msg", msg)
+	}
 	switch msg.ContentType {
 	case constant.Text:
 		t := sdk_struct.TextElem{}

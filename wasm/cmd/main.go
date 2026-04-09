@@ -182,4 +182,14 @@ func registerFunc() {
 	js.Global().Set("updateFcmToken", js.FuncOf(wrapperThird.UpdateFcmToken))
 	js.Global().Set("uploadFile", js.FuncOf(wrapperThird.UploadFile))
 
+	wrapperSignaling := wasm_wrapper.NewWrapperSignaling(globalFuc)
+	js.Global().Set("signalingInvite", js.FuncOf(wrapperSignaling.SignalingInvite))
+	js.Global().Set("signalingInviteInGroup", js.FuncOf(wrapperSignaling.SignalingInviteInGroup))
+	js.Global().Set("signalingAccept", js.FuncOf(wrapperSignaling.SignalingAccept))
+	js.Global().Set("signalingReject", js.FuncOf(wrapperSignaling.SignalingReject))
+	js.Global().Set("signalingCancel", js.FuncOf(wrapperSignaling.SignalingCancel))
+	js.Global().Set("signalingHungUp", js.FuncOf(wrapperSignaling.SignalingHungUp))
+	js.Global().Set("signalingGetRoomByGroupID", js.FuncOf(wrapperSignaling.SignalingGetRoomByGroupID))
+	js.Global().Set("signalingGetTokenByRoomID", js.FuncOf(wrapperSignaling.SignalingGetTokenByRoomID))
+
 }

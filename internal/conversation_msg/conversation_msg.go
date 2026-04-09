@@ -15,6 +15,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/internal/group"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/interaction"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/relation"
+	"github.com/openimsdk/openim-sdk-core/v3/internal/signaling"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/third/file"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/user"
 	"github.com/openimsdk/openim-sdk-core/v3/open_im_sdk_callback"
@@ -65,6 +66,7 @@ type Conversation struct {
 	group                       *group.Group
 	user                        *user.User
 	file                        *file.File
+	signaling                   *signaling.Signaling
 	cache                       *cache.Cache[string, *model_struct.LocalConversation]
 	maxSeqRecorder              MaxSeqRecorder
 	messagePullForwardEndSeqMap *cache.ConversationSeqContextCache
@@ -97,7 +99,7 @@ func (c *Conversation) SetBusinessListener(businessListener func() open_im_sdk_c
 
 func NewConversation(ctx context.Context, longConnMgr *interaction.LongConnMgr, db db_interface.DataBase,
 	recvCh, msgSyncerCh chan common.Cmd2Value, relation *relation.Relation, group *group.Group, user *user.User,
-	file *file.File) *Conversation {
+	file *file.File, sig *signaling.Signaling) *Conversation {
 	info := ccontext.Info(ctx)
 	n := &Conversation{db: db,
 		LongConnMgr:                 longConnMgr,
@@ -110,6 +112,7 @@ func NewConversation(ctx context.Context, longConnMgr *interaction.LongConnMgr, 
 		group:                       group,
 		user:                        user,
 		file:                        file,
+		signaling:                   sig,
 		IsExternalExtensions:        info.IsExternalExtensions(),
 		maxSeqRecorder:              NewMaxSeqRecorder(),
 		messagePullForwardEndSeqMap: cache.NewConversationSeqContextCache(),
@@ -265,7 +268,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			//De-analyze data
 			err := msgHandleByContentType(msg)
 			if err != nil {
-				log.ZError(ctx, "Parsing data error:", err, "type: ", msg.ContentType, "msg", msg)
+				log.ZError(ctx, "Parsing lintao data error:", err, "type: ", msg.ContentType, "msg", msg)
 				continue
 			}
 
@@ -513,7 +516,7 @@ func (c *Conversation) doMsgSyncByReinstalled(c2v common.Cmd2Value) {
 
 			err := msgHandleByContentType(msg)
 			if err != nil {
-				log.ZError(ctx, "Parsing data error:", err, "type: ", msg.ContentType, "msg", msg)
+				log.ZError(ctx, "Parsing lintao data error:", err, "type: ", msg.ContentType, "msg", msg)
 				continue
 			}
 

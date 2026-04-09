@@ -194,10 +194,19 @@ ios:
 # Note: to build an AAR on Windows, gomobile, Android Studio, and the NDK must be installed.
 # The NDK version tested by the OpenIM team was r20b.
 # To build an AAR on Mac, gomobile, Android Studio, and the NDK version 20.0.5594570 must be installed.
+# 注入到 libgojni.so，用于 logcat 核对是否为本机刚编的 core（避免「改了 Go 仍跑旧 .so」）
+OPENIM_CORE_GIT_COMMIT ?= $(shell git -C "$(ROOT_DIR)" rev-parse --short HEAD 2>/dev/null || echo unknown)
+OPENIM_CORE_BUILD_STAMP ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+OPENIM_LDFLAGS_VERSION := -X 'github.com/openimsdk/openim-sdk-core/v3/version.GitCommit=$(OPENIM_CORE_GIT_COMMIT)' -X 'github.com/openimsdk/openim-sdk-core/v3/version.BuildStamp=$(OPENIM_CORE_BUILD_STAMP)'
+
 .PHONY: android
 android:
 	go get golang.org/x/mobile/bind
-	GOARCH=amd64 gomobile bind -v -trimpath -ldflags="-s -w" -o ./open_im_sdk.aar -target=android -androidapi 21 ./open_im_sdk/ ./open_im_sdk_callback/
+	@echo "openim-sdk-core AAR: git=$(OPENIM_CORE_GIT_COMMIT) stamp=$(OPENIM_CORE_BUILD_STAMP) dirty=$(shell git diff --quiet 2>/dev/null && echo no || echo YES)"
+	gomobile bind -v -trimpath -ldflags="-s -w $(OPENIM_LDFLAGS_VERSION)" -o ./open_im_sdk.aar -target=android -androidapi 21 ./open_im_sdk/ ./open_im_sdk_callback/
+	@test -f ./open_im_sdk.aar || (echo "error: ./open_im_sdk.aar 未生成" >&2 && exit 1)
+	@test -f ./open_im_sdk-sources.jar || (echo "error: ./open_im_sdk-sources.jar 未生成（请升级 golang.org/x/mobile/cmd/gomobile，bind 应与 AAR 同目录产出 -sources.jar）" >&2 && exit 1)
+	@echo "Android 产物已就绪: open_im_sdk.aar + open_im_sdk-sources.jar"
 
 # Targets
 .PHONY: release

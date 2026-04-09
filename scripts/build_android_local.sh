@@ -54,6 +54,10 @@ cd "${ROOT_DIR}"
 
 go install golang.org/x/mobile/cmd/gomobile@latest
 go install golang.org/x/mobile/cmd/gobind@latest
+
+gomobile clean
+go clean -cache
 gomobile init -v
 
+make clean
 make android

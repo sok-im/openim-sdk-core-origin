@@ -47,3 +47,9 @@ func (u *User) kickDevice(ctx context.Context, platformID int32) error {
 	}
 	return api.KickDevice.Execute(ctx, req)
 }
+
+// setPhoneVisibility 调服务端设置手机号及可见性（0=所有人 1=仅好友 2=隐藏）
+func (u *User) setPhoneVisibility(ctx context.Context, req *user.SetPhoneVisibilityReq) error {
+	req.UserID = u.loginUserID
+	return api.SetPhoneVisibility.Execute(ctx, req)
+}

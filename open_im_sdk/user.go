@@ -61,3 +61,9 @@ func GetActiveDevices(callback open_im_sdk_callback.Base, operationID string) {
 func KickDevice(callback open_im_sdk_callback.Base, operationID string, platformID int32) {
 	call(callback, operationID, UserForSDK.User().KickDevice, platformID)
 }
+
+// SetPhoneVisibility 设置手机号及其可见性（phone 可为空表示只改策略）：
+//   phoneVisibility 0=所有人可见 1=仅好友可见 2=隐藏
+func SetPhoneVisibility(callback open_im_sdk_callback.Base, operationID string, phone string, phoneVisibility int32) {
+	call(callback, operationID, UserForSDK.User().SetPhoneVisibility, phone, phoneVisibility)
+}

@@ -101,6 +101,16 @@ func (u *User) KickDevice(ctx context.Context, platformID int32) error {
 	return u.kickDevice(ctx, platformID)
 }
 
+// SetPhoneVisibility 设置手机号及其可见性策略：
+//   0 = 所有人可见，1 = 仅好友可见，2 = 隐藏
+// phone 可为空（只修改可见性但不更新手机号）。
+func (u *User) SetPhoneVisibility(ctx context.Context, phone string, phoneVisibility int32) error {
+	return u.setPhoneVisibility(ctx, &userPb.SetPhoneVisibilityReq{
+		Phone:           phone,
+		PhoneVisibility: phoneVisibility,
+	})
+}
+
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {
 	usersInfo, err := u.GetUsersInfoWithCache(ctx, userIDs)
 	if err != nil {

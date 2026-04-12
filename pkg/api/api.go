@@ -29,6 +29,7 @@ var (
 	ProcessUserCommandGetAll = newApi[user.ProcessUserCommandGetAllReq, user.ProcessUserCommandGetAllResp]("/user/process_user_command_get_all")
 	UserRegister             = newApi[user.UserRegisterReq, user.UserRegisterResp]("/user/user_register")
 	SetPhoneVisibility       = newApi[user.SetPhoneVisibilityReq, user.SetPhoneVisibilityResp]("/user/set_phone_visibility")
+	SetCallAcceptSetting     = newApi[user.SetCallAcceptSettingReq, user.SetCallAcceptSettingResp]("/user/set_call_accept_setting")
 )
 
 var (

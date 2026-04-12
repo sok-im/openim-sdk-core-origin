@@ -85,3 +85,8 @@ func (w *WrapperUser) SetPhoneVisibility(_ js.Value, args []js.Value) interface{
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SetPhoneVisibility, callback, &args).AsyncCallWithCallback()
 }
+
+func (w *WrapperUser) SetCallAcceptSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetCallAcceptSetting, callback, &args).AsyncCallWithCallback()
+}

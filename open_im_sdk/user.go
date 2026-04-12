@@ -67,3 +67,9 @@ func KickDevice(callback open_im_sdk_callback.Base, operationID string, platform
 func SetPhoneVisibility(callback open_im_sdk_callback.Base, operationID string, phone string, phoneVisibility int32) {
 	call(callback, operationID, UserForSDK.User().SetPhoneVisibility, phone, phoneVisibility)
 }
+
+// SetCallAcceptSetting 设置音视频通话接受权限：
+//   callAcceptSetting 0=所有人可发起 1=仅好友可发起 2=不接受任何通话
+func SetCallAcceptSetting(callback open_im_sdk_callback.Base, operationID string, callAcceptSetting int32) {
+	call(callback, operationID, UserForSDK.User().SetCallAcceptSetting, callAcceptSetting)
+}

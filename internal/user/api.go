@@ -111,6 +111,14 @@ func (u *User) SetPhoneVisibility(ctx context.Context, phone string, phoneVisibi
 	})
 }
 
+// SetCallAcceptSetting 设置音视频通话接受权限：
+//   0 = 所有人可发起，1 = 仅好友可发起，2 = 不接受任何通话
+func (u *User) SetCallAcceptSetting(ctx context.Context, callAcceptSetting int32) error {
+	return u.setCallAcceptSetting(ctx, &userPb.SetCallAcceptSettingReq{
+		CallAcceptSetting: callAcceptSetting,
+	})
+}
+
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {
 	usersInfo, err := u.GetUsersInfoWithCache(ctx, userIDs)
 	if err != nil {

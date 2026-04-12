@@ -53,3 +53,9 @@ func (u *User) setPhoneVisibility(ctx context.Context, req *user.SetPhoneVisibil
 	req.UserID = u.loginUserID
 	return api.SetPhoneVisibility.Execute(ctx, req)
 }
+
+// setCallAcceptSetting 调服务端设置音视频通话接受权限（0=所有人 1=仅好友 2=不接受任何通话）
+func (u *User) setCallAcceptSetting(ctx context.Context, req *user.SetCallAcceptSettingReq) error {
+	req.UserID = u.loginUserID
+	return api.SetCallAcceptSetting.Execute(ctx, req)
+}

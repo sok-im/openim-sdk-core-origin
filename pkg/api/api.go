@@ -13,7 +13,9 @@ import (
 )
 
 var (
-	ParseToken = newApi[auth.ParseTokenReq, auth.ParseTokenResp]("/auth/parse_token")
+	ParseToken       = newApi[auth.ParseTokenReq, auth.ParseTokenResp]("/auth/parse_token")
+	GetActiveDevices = newApi[auth.GetActiveDevicesReq, auth.GetActiveDevicesResp]("/auth/get_active_devices")
+	KickDevice       = newApi[auth.KickDeviceReq, auth.KickDeviceResp]("/auth/kick_device")
 )
 
 var (
@@ -59,6 +61,7 @@ var (
 	SetConversationHasReadSeq        = newApi[msg.SetConversationHasReadSeqReq, msg.SetConversationHasReadSeqResp]("/msg/set_conversation_has_read_seq")
 	SendMsg                          = newApi[msg.SendMsgReq, msg.SendMsgResp]("/msg/send_msg")
 	GetServerTime                    = newApi[msg.GetServerTimeReq, msg.GetServerTimeResp]("/msg/get_server_time")
+	ReportSpam                       = newApi[msg.ReportSpamReq, msg.ReportSpamResp]("/msg/report_spam")
 )
 
 var (

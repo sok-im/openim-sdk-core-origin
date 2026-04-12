@@ -153,6 +153,11 @@ func RevokeMessage(callback open_im_sdk_callback.Base, operationID string, conve
 	call(callback, operationID, UserForSDK.Conversation().RevokeMessage, conversationID, clientMsgID)
 }
 
+// ReportSpam 提交举报；req 为 JSON，字段与 openim.msg.ReportSpamReq 一致（reportedUserID、reasonType 必填）。
+func ReportSpam(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().ReportSpam, req)
+}
+
 func TypingStatusUpdate(callback open_im_sdk_callback.Base, operationID string, recvID string, msgTip string) {
 	call(callback, operationID, UserForSDK.Conversation().TypingStatusUpdate, recvID, msgTip)
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/openimsdk/tools/log"
 
 	pbConversation "github.com/openimsdk/protocol/conversation"
+	pbMsg "github.com/openimsdk/protocol/msg"
 	"github.com/openimsdk/protocol/sdkws"
 
 	"github.com/jinzhu/copier"
@@ -747,6 +748,17 @@ func (c *Conversation) GetAdvancedHistoryMessageListReverse(ctx context.Context,
 
 func (c *Conversation) RevokeMessage(ctx context.Context, conversationID, clientMsgID string) error {
 	return c.revokeOneMessage(ctx, conversationID, clientMsgID)
+}
+
+// ReportSpam 向服务端提交垃圾消息/用户举报；reporter 由网关从 token 解析，无需在 req 中填写。
+func (c *Conversation) ReportSpam(ctx context.Context, req *pbMsg.ReportSpamReq) (*pbMsg.ReportSpamResp, error) {
+	if req == nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg("req is nil")
+	}
+	if err := req.Check(); err != nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg(err.Error())
+	}
+	return c.reportSpamToServer(ctx, req)
 }
 
 func (c *Conversation) TypingStatusUpdate(ctx context.Context, recvID, msgTip string) error {

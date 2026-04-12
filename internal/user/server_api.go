@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/api"
+	"github.com/openimsdk/protocol/auth"
 	"github.com/openimsdk/protocol/sdkws"
 	"github.com/openimsdk/protocol/user"
 )
@@ -32,4 +33,17 @@ func (u *User) processUserCommandUpdate(ctx context.Context, req *user.ProcessUs
 
 func (u *User) processUserCommandGetAll(ctx context.Context, req *user.ProcessUserCommandGetAllReq) (*user.ProcessUserCommandGetAllResp, error) {
 	return api.ProcessUserCommandGetAll.Invoke(ctx, req)
+}
+
+func (u *User) getActiveDevices(ctx context.Context) ([]*auth.DeviceInfo, error) {
+	req := &auth.GetActiveDevicesReq{UserID: u.loginUserID}
+	return api.ExtractField(ctx, api.GetActiveDevices.Invoke, req, (*auth.GetActiveDevicesResp).GetDevices)
+}
+
+func (u *User) kickDevice(ctx context.Context, platformID int32) error {
+	req := &auth.KickDeviceReq{
+		UserID:     u.loginUserID,
+		PlatformID: platformID,
+	}
+	return api.KickDevice.Execute(ctx, req)
 }

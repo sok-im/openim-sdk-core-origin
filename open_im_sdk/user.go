@@ -51,3 +51,13 @@ func DeleteUserCommand(callback open_im_sdk_callback.Base, operationID string, T
 func GetAllUserCommands(callback open_im_sdk_callback.Base, operationID string, Type int32) {
 	call(callback, operationID, UserForSDK.User().ProcessUserCommandGetAll, Type)
 }
+
+// GetActiveDevices 获取当前登录用户的所有活跃设备列表
+func GetActiveDevices(callback open_im_sdk_callback.Base, operationID string) {
+	call(callback, operationID, UserForSDK.User().GetActiveDevices)
+}
+
+// KickDevice 将当前登录用户的指定平台设备踢下线，platformID 参考平台常量定义
+func KickDevice(callback open_im_sdk_callback.Base, operationID string, platformID int32) {
+	call(callback, operationID, UserForSDK.User().KickDevice, platformID)
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
+	authPb "github.com/openimsdk/protocol/auth"
 	"github.com/openimsdk/protocol/sdkws"
 	userPb "github.com/openimsdk/protocol/user"
 	"github.com/openimsdk/tools/log"
@@ -88,6 +89,16 @@ func (u *User) ProcessUserCommandUpdate(ctx context.Context, userCommand *userPb
 		return err
 	}
 	return u.SyncAllCommand(ctx)
+}
+
+// GetActiveDevices 获取当前用户所有在线设备信息
+func (u *User) GetActiveDevices(ctx context.Context) ([]*authPb.DeviceInfo, error) {
+	return u.getActiveDevices(ctx)
+}
+
+// KickDevice 将当前用户的指定平台设备踢下线
+func (u *User) KickDevice(ctx context.Context, platformID int32) error {
+	return u.kickDevice(ctx, platformID)
 }
 
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {

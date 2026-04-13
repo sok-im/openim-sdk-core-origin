@@ -62,6 +62,8 @@ func (c *Conversation) Work(c2v common.Cmd2Value) {
 		c.syncFlag(c2v)
 	case constant.CmdMsgSyncInReinstall:
 		c.doMsgSyncByReinstalled(c2v)
+	default:
+		log.ZError(c2v.Ctx, "unknown cmd", nil, "cmd", c2v.Cmd)
 	}
 }
 
@@ -130,7 +132,10 @@ func (c *Conversation) doNotificationManager(c2v common.Cmd2Value) {
 			} else if msg.ContentType > constant.GroupNotificationBegin && msg.ContentType < constant.GroupNotificationEnd {
 				c.group.DoNotification(ctx, msg)
 			} else if msg.ContentType > pConstant.SignalingNotificationBegin && msg.ContentType < pConstant.SignalingNotificationEnd {
-				if c.signaling != nil {
+				if c.signaling == nil {
+					log.ZError(ctx, "signaling is nil", nil, "msg", msg)
+					continue
+				} else {
 					c.signaling.DoNotification(ctx, msg)
 				}
 			} else {

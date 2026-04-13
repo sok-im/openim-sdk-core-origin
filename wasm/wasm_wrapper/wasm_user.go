@@ -90,3 +90,13 @@ func (w *WrapperUser) SetCallAcceptSetting(_ js.Value, args []js.Value) interfac
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SetCallAcceptSetting, callback, &args).AsyncCallWithCallback()
 }
+
+func (w *WrapperUser) GetUserByPhone(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetUserByPhone, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) GetUsersByNickname(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetUsersByNickname, callback, &args).AsyncCallWithCallback()
+}

@@ -59,3 +59,29 @@ func (u *User) setCallAcceptSetting(ctx context.Context, req *user.SetCallAccept
 	req.UserID = u.loginUserID
 	return api.SetCallAcceptSetting.Execute(ctx, req)
 }
+
+// getUserByPhone 调服务端按手机号精确查询用户；userInfo 为空表示未找到或无权限
+func (u *User) getUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {
+	req := &user.GetUserByPhoneReq{Phone: phone}
+	resp, err := api.GetUserByPhone.Invoke(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || resp.UserInfo == nil {
+		return nil, nil
+	}
+	return resp.UserInfo, nil
+}
+
+// getUsersByNickname 按昵称精确查询普通用户列表
+func (u *User) getUsersByNickname(ctx context.Context, nickname string) ([]*sdkws.UserInfo, error) {
+	req := &user.GetUsersByNicknameReq{Nickname: nickname}
+	resp, err := api.GetUsersByNickname.Invoke(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || resp.UsersInfo == nil {
+		return []*sdkws.UserInfo{}, nil
+	}
+	return resp.UsersInfo, nil
+}

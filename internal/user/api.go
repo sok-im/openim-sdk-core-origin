@@ -119,6 +119,17 @@ func (u *User) SetCallAcceptSetting(ctx context.Context, callAcceptSetting int32
 	})
 }
 
+// GetUserByPhone 根据手机号精确查询用户（HTTP /user/get_user_by_phone）。
+// 返回 nil 表示未找到、无权限或对方隐藏；具体语义以服务端为准。
+func (u *User) GetUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {
+	return u.getUserByPhone(ctx, phone)
+}
+
+// GetUsersByNickname 根据用户昵称精确查询（HTTP /user/get_users_by_nickname），可多结果；无匹配时返回空切片。
+func (u *User) GetUsersByNickname(ctx context.Context, nickname string) ([]*sdkws.UserInfo, error) {
+	return u.getUsersByNickname(ctx, nickname)
+}
+
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {
 	usersInfo, err := u.GetUsersInfoWithCache(ctx, userIDs)
 	if err != nil {

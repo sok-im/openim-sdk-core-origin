@@ -30,6 +30,8 @@ var (
 	UserRegister             = newApi[user.UserRegisterReq, user.UserRegisterResp]("/user/user_register")
 	SetPhoneVisibility       = newApi[user.SetPhoneVisibilityReq, user.SetPhoneVisibilityResp]("/user/set_phone_visibility")
 	SetCallAcceptSetting     = newApi[user.SetCallAcceptSettingReq, user.SetCallAcceptSettingResp]("/user/set_call_accept_setting")
+	GetUserByPhone           = newApi[user.GetUserByPhoneReq, user.GetUserByPhoneResp]("/user/get_user_by_phone")
+	GetUsersByNickname       = newApi[user.GetUsersByNicknameReq, user.GetUsersByNicknameResp]("/user/get_users_by_nickname")
 )
 
 var (

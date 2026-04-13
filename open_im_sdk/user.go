@@ -73,3 +73,13 @@ func SetPhoneVisibility(callback open_im_sdk_callback.Base, operationID string, 
 func SetCallAcceptSetting(callback open_im_sdk_callback.Base, operationID string, callAcceptSetting int32) {
 	call(callback, operationID, UserForSDK.User().SetCallAcceptSetting, callAcceptSetting)
 }
+
+// GetUserByPhone 根据手机号精确查询用户，成功回调 JSON 为 sdkws.UserInfo 或 null（未找到）
+func GetUserByPhone(callback open_im_sdk_callback.Base, operationID string, phone string) {
+	call(callback, operationID, UserForSDK.User().GetUserByPhone, phone)
+}
+
+// GetUsersByNickname 根据昵称精确查询用户，成功回调 JSON 为 []*sdkws.UserInfo（可能为空数组）
+func GetUsersByNickname(callback open_im_sdk_callback.Base, operationID string, nickname string) {
+	call(callback, operationID, UserForSDK.User().GetUsersByNickname, nickname)
+}

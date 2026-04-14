@@ -2,9 +2,11 @@ package signaling
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/openimsdk/openim-sdk-core/v3/internal/interaction"
 	"github.com/openimsdk/openim-sdk-core/v3/open_im_sdk_callback"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/sdkerrs"
 	pConstant "github.com/openimsdk/protocol/constant"
 	"github.com/openimsdk/protocol/rtc"
 	"github.com/openimsdk/protocol/sdkws"
@@ -35,7 +37,7 @@ func (s *Signaling) SetListener(listener func() open_im_sdk_callback.OnSignaling
 
 func (s *Signaling) DoNotification(ctx context.Context, msg *sdkws.MsgData) {
 	if err := s.doNotification(ctx, msg); err != nil {
-		log.ZWarn(ctx, "DoSignalingNotification failed", err, "contentType", msg.ContentType)
+		log.ZError(ctx, "DoSignalingNotification failed", err, "contentType", msg.ContentType)
 	}
 }
 
@@ -48,9 +50,9 @@ func (s *Signaling) doNotification(ctx context.Context, msg *sdkws.MsgData) erro
 	case pConstant.RoomParticipantsDisconnectedNotification:
 		return s.handleRoomParticipantDisconnected(ctx, msg)
 	default:
-		log.ZDebug(ctx, "unhandled signaling notification", "contentType", msg.ContentType)
 	}
-	return nil
+	log.ZError(ctx, "unhandled signaling notification", nil, "contentType", msg.ContentType)
+	return sdkerrs.New(pConstant.SignalingNotificationEnd, "unhandled signaling notification", fmt.Sprintf("contentType: %v", msg.ContentType)).Wrap()
 }
 
 func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.MsgData) error {
@@ -78,9 +80,9 @@ func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.
 	case *rtc.SignalReq_HungUp:
 		return s.handleHungUp(ctx, listener, payload.HungUp)
 	default:
-		log.ZDebug(ctx, "unhandled signaling payload type", "type", signalReq.Payload)
+		log.ZError(ctx, "unhandled signaling payload type", nil, "type", signalReq.Payload)
 	}
-	return nil
+	return sdkerrs.New(pConstant.SignalingNotificationEnd, "unhandled signaling payload type", fmt.Sprintf("type: %T", signalReq.Payload)).Wrap()
 }
 
 func (s *Signaling) handleInvite(ctx context.Context, listener open_im_sdk_callback.OnSignalingListener, req *rtc.SignalInviteReq) error {

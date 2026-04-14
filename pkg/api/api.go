@@ -13,7 +13,9 @@ import (
 )
 
 var (
-	ParseToken = newApi[auth.ParseTokenReq, auth.ParseTokenResp]("/auth/parse_token")
+	ParseToken       = newApi[auth.ParseTokenReq, auth.ParseTokenResp]("/auth/parse_token")
+	GetActiveDevices = newApi[auth.GetActiveDevicesReq, auth.GetActiveDevicesResp]("/auth/get_active_devices")
+	KickDevice       = newApi[auth.KickDeviceReq, auth.KickDeviceResp]("/auth/kick_device")
 )
 
 var (
@@ -26,6 +28,10 @@ var (
 	ProcessUserCommandGet    = newApi[user.ProcessUserCommandGetReq, user.ProcessUserCommandGetResp]("/user/process_user_command_get")
 	ProcessUserCommandGetAll = newApi[user.ProcessUserCommandGetAllReq, user.ProcessUserCommandGetAllResp]("/user/process_user_command_get_all")
 	UserRegister             = newApi[user.UserRegisterReq, user.UserRegisterResp]("/user/user_register")
+	SetPhoneVisibility       = newApi[user.SetPhoneVisibilityReq, user.SetPhoneVisibilityResp]("/user/set_phone_visibility")
+	SetCallAcceptSetting     = newApi[user.SetCallAcceptSettingReq, user.SetCallAcceptSettingResp]("/user/set_call_accept_setting")
+	GetUserByPhone           = newApi[user.GetUserByPhoneReq, user.GetUserByPhoneResp]("/user/get_user_by_phone")
+	GetUsersByNickname       = newApi[user.GetUsersByNicknameReq, user.GetUsersByNicknameResp]("/user/get_users_by_nickname")
 )
 
 var (
@@ -59,6 +65,7 @@ var (
 	SetConversationHasReadSeq        = newApi[msg.SetConversationHasReadSeqReq, msg.SetConversationHasReadSeqResp]("/msg/set_conversation_has_read_seq")
 	SendMsg                          = newApi[msg.SendMsgReq, msg.SendMsgResp]("/msg/send_msg")
 	GetServerTime                    = newApi[msg.GetServerTimeReq, msg.GetServerTimeResp]("/msg/get_server_time")
+	ReportSpam                       = newApi[msg.ReportSpamReq, msg.ReportSpamResp]("/msg/report_spam")
 )
 
 var (

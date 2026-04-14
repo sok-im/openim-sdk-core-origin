@@ -47,6 +47,10 @@ func (c *Conversation) revokeMessageFromServer(ctx context.Context, conversation
 	return api.RevokeMsg.Execute(ctx, req)
 }
 
+func (c *Conversation) reportSpamToServer(ctx context.Context, req *pbMsg.ReportSpamReq) (*pbMsg.ReportSpamResp, error) {
+	return api.ReportSpam.Invoke(ctx, req)
+}
+
 func (c *Conversation) getHasReadAndMaxSeqsFromServer(ctx context.Context, conversationIDs ...string) (*pbMsg.GetConversationsHasReadAndMaxSeqResp, error) {
 	req := pbMsg.GetConversationsHasReadAndMaxSeqReq{UserID: c.loginUserID, ConversationIDs: conversationIDs}
 	return api.GetConversationsHasReadAndMaxSeq.Invoke(ctx, &req)

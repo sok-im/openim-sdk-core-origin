@@ -7,6 +7,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
+	authPb "github.com/openimsdk/protocol/auth"
 	"github.com/openimsdk/protocol/sdkws"
 	userPb "github.com/openimsdk/protocol/user"
 	"github.com/openimsdk/tools/log"
@@ -88,6 +89,45 @@ func (u *User) ProcessUserCommandUpdate(ctx context.Context, userCommand *userPb
 		return err
 	}
 	return u.SyncAllCommand(ctx)
+}
+
+// GetActiveDevices 获取当前用户所有在线设备信息
+func (u *User) GetActiveDevices(ctx context.Context) ([]*authPb.DeviceInfo, error) {
+	return u.getActiveDevices(ctx)
+}
+
+// KickDevice 将当前用户的指定平台设备踢下线
+func (u *User) KickDevice(ctx context.Context, platformID int32) error {
+	return u.kickDevice(ctx, platformID)
+}
+
+// SetPhoneVisibility 设置手机号及其可见性策略：
+//   0 = 所有人可见，1 = 仅好友可见，2 = 隐藏
+// phone 可为空（只修改可见性但不更新手机号）。
+func (u *User) SetPhoneVisibility(ctx context.Context, phone string, phoneVisibility int32) error {
+	return u.setPhoneVisibility(ctx, &userPb.SetPhoneVisibilityReq{
+		Phone:           phone,
+		PhoneVisibility: phoneVisibility,
+	})
+}
+
+// SetCallAcceptSetting 设置音视频通话接受权限：
+//   0 = 所有人可发起，1 = 仅好友可发起，2 = 不接受任何通话
+func (u *User) SetCallAcceptSetting(ctx context.Context, callAcceptSetting int32) error {
+	return u.setCallAcceptSetting(ctx, &userPb.SetCallAcceptSettingReq{
+		CallAcceptSetting: callAcceptSetting,
+	})
+}
+
+// GetUserByPhone 根据手机号精确查询用户（HTTP /user/get_user_by_phone）。
+// 返回 nil 表示未找到、无权限或对方隐藏；具体语义以服务端为准。
+func (u *User) GetUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {
+	return u.getUserByPhone(ctx, phone)
+}
+
+// GetUsersByNickname 根据用户昵称精确查询（HTTP /user/get_users_by_nickname），可多结果；无匹配时返回空切片。
+func (u *User) GetUsersByNickname(ctx context.Context, nickname string) ([]*sdkws.UserInfo, error) {
+	return u.getUsersByNickname(ctx, nickname)
 }
 
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {

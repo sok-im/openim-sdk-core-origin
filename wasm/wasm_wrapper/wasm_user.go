@@ -89,4 +89,23 @@ func (w *WrapperUser) PhoneGetSNInfo(_ js.Value, args []js.Value) interface{} {
 func (w *WrapperUser) PhoneSetSNInfo(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.PhoneSetSNInfo, callback, &args).AsyncCallWithCallback()
+  
+func (w *WrapperUser) SetPhoneVisibility(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetPhoneVisibility, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetCallAcceptSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetCallAcceptSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) GetUserByPhone(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetUserByPhone, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) GetUsersByNickname(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetUsersByNickname, callback, &args).AsyncCallWithCallback()
 }

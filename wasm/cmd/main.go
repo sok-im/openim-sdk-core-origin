@@ -103,6 +103,7 @@ func registerFunc() {
 	js.Global().Set("findMessageList", js.FuncOf(wrapperConMsg.FindMessageList))
 
 	js.Global().Set("revokeMessage", js.FuncOf(wrapperConMsg.RevokeMessage))
+	js.Global().Set("reportSpam", js.FuncOf(wrapperConMsg.ReportSpam))
 	js.Global().Set("typingStatusUpdate", js.FuncOf(wrapperConMsg.TypingStatusUpdate))
 	js.Global().Set("deleteMessageFromLocalStorage", js.FuncOf(wrapperConMsg.DeleteMessageFromLocalStorage))
 	js.Global().Set("deleteMessage", js.FuncOf(wrapperConMsg.DeleteMessage))
@@ -159,6 +160,10 @@ func registerFunc() {
 	js.Global().Set("getUserStatus", js.FuncOf(wrapperUser.GetUserStatus))
 	js.Global().Set("phoneGetSNInfo", js.FuncOf(wrapperUser.PhoneGetSNInfo))
 	js.Global().Set("phoneSetSNInfo", js.FuncOf(wrapperUser.PhoneSetSNInfo))
+	js.Global().Set("setPhoneVisibility", js.FuncOf(wrapperUser.SetPhoneVisibility))
+	js.Global().Set("setCallAcceptSetting", js.FuncOf(wrapperUser.SetCallAcceptSetting))
+	js.Global().Set("getUserByPhone", js.FuncOf(wrapperUser.GetUserByPhone))
+	js.Global().Set("getUsersByNickname", js.FuncOf(wrapperUser.GetUsersByNickname))
 
 	wrapperFriend := wasm_wrapper.NewWrapperFriend(globalFuc)
 	js.Global().Set("getSpecifiedFriendsInfo", js.FuncOf(wrapperFriend.GetSpecifiedFriendsInfo))

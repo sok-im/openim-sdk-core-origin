@@ -95,6 +95,7 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 		return nil, sdkerrs.ErrArgs.WrapMsg("call function operationID is empty")
 	}
 	if err := CheckResourceLoad(UserForSDK, funcName); err != nil {
+		log.ZError(context.Background(), "CheckResourceLoad", err, "funcName", funcName, "uSDK", UserForSDK)
 		return nil, sdkerrs.ErrResourceLoad.WrapMsg("not load resource")
 	}
 	ctx := ccontext.WithOperationID(UserForSDK.Context(), operationID)

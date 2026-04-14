@@ -69,6 +69,7 @@ var (
 // CheckResourceLoad checks the SDK is resource load status.
 func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if uSDK == nil {
+		log.ZError(context.Background(), "CheckResourceLoad", errs.New("SDK not initialized,userForSDK is nil", "funcName", funcName).Wrap(), "funcName", funcName, "uSDK", uSDK)
 		return errs.New("SDK not initialized,userForSDK is nil", "funcName", funcName).Wrap()
 	}
 
@@ -84,8 +85,12 @@ func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if shortFuncName == "GenerateCaptcha-fm" || shortFuncName == "VerifyCaptcha-fm" {
 		return nil
 	}
+	if shortFuncName == "PhoneGetSNInfo-fm" {
+		return nil
+	}
 
 	if uSDK.getLoginStatus(context.Background()) != Logged {
+		log.ZError(context.Background(), "CheckResourceLoad", errs.New("SDK not logged in", "funcName", funcName).Wrap(), "funcName", funcName, "uSDK", uSDK)
 		return errs.New("SDK not logged in", "funcName", funcName).Wrap()
 	}
 

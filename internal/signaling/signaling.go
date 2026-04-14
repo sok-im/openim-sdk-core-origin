@@ -66,6 +66,8 @@ func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.
 		return nil
 	}
 
+	log.ZDebug(ctx, "handleSignalingNotification", "signalReq", &signalReq)
+
 	switch payload := signalReq.Payload.(type) {
 	case *rtc.SignalReq_Invite:
 		return s.handleInvite(ctx, listener, payload.Invite)

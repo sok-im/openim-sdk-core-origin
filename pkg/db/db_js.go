@@ -41,6 +41,7 @@ type IndexDB struct {
 	*indexdb.LocalVersionSync
 	*indexdb.LocalAppSDKVersion
 	*indexdb.LocalTableMaster
+	*indexdb.SignalCallRecords
 	loginUserID string
 }
 
@@ -72,6 +73,7 @@ func NewDataBase(ctx context.Context, loginUserID string, dbDir string, logLevel
 		LocalVersionSync:                indexdb.NewLocalVersionSync(),
 		LocalAppSDKVersion:              indexdb.NewLocalAppSDKVersion(),
 		LocalTableMaster:                indexdb.NewLocalTableMaster(),
+		SignalCallRecords:               indexdb.NewSignalCallRecords(loginUserID),
 		loginUserID:                     loginUserID,
 	}
 	err := i.InitDB(ctx, loginUserID, dbDir)

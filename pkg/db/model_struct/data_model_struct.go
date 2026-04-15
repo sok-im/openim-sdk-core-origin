@@ -341,3 +341,29 @@ type LocalAppSDKVersion struct {
 func (LocalAppSDKVersion) TableName() string {
 	return "local_app_sdk_version"
 }
+
+// LocalSignalCallRecord 音视频通话记录（与服务端 rtc.SignalRecord 对齐，存于本地 SQLite / IndexDB）。
+type LocalSignalCallRecord struct {
+	SID                 string `gorm:"column:s_id;primaryKey;type:varchar(128)" json:"sID"`
+	RoomID              string `gorm:"column:room_id;type:varchar(128);index:idx_signal_room" json:"roomID"`
+	FileName            string `gorm:"column:file_name;type:varchar(255)" json:"fileName"`
+	MediaType           string `gorm:"column:media_type;type:varchar(32)" json:"mediaType"`
+	SessionType         int32  `gorm:"column:session_type;index:idx_signal_session" json:"sessionType"`
+	InviterUserID       string `gorm:"column:inviter_user_id;type:varchar(64)" json:"inviterUserID"`
+	InviterUserNickname string `gorm:"column:inviter_user_nickname;type:varchar(255)" json:"inviterUserNickname"`
+	GroupID             string `gorm:"column:group_id;type:varchar(64)" json:"groupID"`
+	GroupName           string `gorm:"column:group_name;type:varchar(255)" json:"groupName"`
+	InviterUsersJSON    string `gorm:"column:inviter_users;type:text" json:"-"`
+	// CalleeMatchText 被叫侧模糊查询用：由邀请时 inviteeUserIDList 等拼接（仅用于检索，非协议字段）
+	CalleeMatchText string `gorm:"column:callee_match_text;type:text;index:idx_signal_callee_txt" json:"-"`
+	CreateTime          int64  `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
+	EndTime             int64  `gorm:"column:end_time" json:"endTime"`
+	Size                string `gorm:"column:size;type:varchar(32)" json:"size"`
+	FileURL             string `gorm:"column:file_url;type:varchar(512)" json:"fileURL"`
+	// DialStatus 见 constant.SignalCallDialStatus*：1=未拨通 2=已拨通
+	DialStatus int32 `gorm:"column:dial_status;index:idx_signal_dial" json:"dialStatus"`
+}
+
+func (LocalSignalCallRecord) TableName() string {
+	return "local_signal_call_records"
+}

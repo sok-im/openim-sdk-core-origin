@@ -72,3 +72,45 @@ func (w *WrapperSignaling) SignalingGetTokenByRoomID(_ js.Value, args []js.Value
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SignalingGetTokenByRoomID, callback, &args).AsyncCallWithCallback()
 }
+
+// SignalingGetInvitationRecords 分页查询音视频通话记录（对接 RTC GetSignalInvitationRecords）。
+func (w *WrapperSignaling) SignalingGetInvitationRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetInvitationRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingSearchLocalCallRecords 查询 SDK 本地缓存的通话记录表。
+func (w *WrapperSignaling) SignalingSearchLocalCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingSearchLocalCallRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingGetLocalCallRecordDetail 按 sID 查询单条本地通话详情。
+func (w *WrapperSignaling) SignalingGetLocalCallRecordDetail(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecordDetail, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingDeleteLocalCallRecords 删除本地音视频通话记录（支持批量 sID）。
+func (w *WrapperSignaling) SignalingDeleteLocalCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingDeleteLocalCallRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingDeleteSignalRecords 删除服务端 + 本地通话记录。
+func (w *WrapperSignaling) SignalingDeleteSignalRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingDeleteSignalRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingClearAllLocalCallRecords 清空本地所有音视频通话记录。
+func (w *WrapperSignaling) SignalingClearAllLocalCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingClearAllLocalCallRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingClearAllCallRecords 清空服务端 + 本地所有记录（当前主要清本地）。
+func (w *WrapperSignaling) SignalingClearAllCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingClearAllCallRecords, callback, &args).AsyncCallWithCallback()
+}

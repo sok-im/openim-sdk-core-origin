@@ -42,6 +42,30 @@ func SignalingGetInvitationRecords(callback open_im_sdk_callback.Base, operation
 	call(callback, operationID, UserForSDK.Signaling().GetSignalInvitationRecords, req)
 }
 
+func SignalingSearchLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().SearchLocalSignalCallRecords, req)
+}
+
+func SignalingGetLocalCallRecordDetail(callback open_im_sdk_callback.Base, operationID string, sID string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalSignalCallRecordDetail, sID)
+}
+
+func SignalingDeleteLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, sIDs string) {
+	call(callback, operationID, UserForSDK.Signaling().DeleteLocalSignalCallRecords, sIDs)
+}
+
+func SignalingDeleteSignalRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().DeleteSignalRecords, req)
+}
+
+func SignalingClearAllLocalCallRecords(callback open_im_sdk_callback.Base, operationID string) {
+	call(callback, operationID, UserForSDK.Signaling().ClearAllLocalSignalCallRecords)
+}
+
+func SignalingClearAllCallRecords(callback open_im_sdk_callback.Base, operationID string) {
+	call(callback, operationID, UserForSDK.Signaling().ClearAllSignalCallRecords)
+}
+
 func SignalingSendCustomSignal(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().SendCustomSignal, req)
 }

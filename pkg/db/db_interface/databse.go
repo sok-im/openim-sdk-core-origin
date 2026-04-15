@@ -182,6 +182,16 @@ type AppSDKVersion interface {
 type TableMaster interface {
 	GetExistTables(ctx context.Context) ([]string, error)
 }
+
+type SignalCallRecordModel interface {
+	BatchUpsertSignalCallRecords(ctx context.Context, records []*model_struct.LocalSignalCallRecord) error
+	SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, dialStatus int32, startTime, endTime int64, keyword, userName string) ([]*model_struct.LocalSignalCallRecord, error)
+	CountSignalCallRecords(ctx context.Context, sessionType int32, dialStatus int32, startTime, endTime int64, keyword, userName string) (int64, error)
+	GetSignalCallRecordBySID(ctx context.Context, sID string) (*model_struct.LocalSignalCallRecord, error)
+	DeleteSignalCallRecords(ctx context.Context, sIDs []string) error
+	ClearAllSignalCallRecords(ctx context.Context) error
+}
+
 type DataBase interface {
 	Close(ctx context.Context) error
 	InitDB(ctx context.Context, userID string, dataDir string) error
@@ -195,4 +205,5 @@ type DataBase interface {
 	VersionSyncModel
 	AppSDKVersion
 	TableMaster
+	SignalCallRecordModel
 }

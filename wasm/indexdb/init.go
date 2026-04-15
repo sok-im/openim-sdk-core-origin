@@ -38,6 +38,14 @@ import (
 // you do not need to use the structures in temp_struct.
 // 7. Whenever there's a name conflict with an interface, the DB interface should append the "DB" suffix.
 // 8. For any map types, use JSON string conversion, and document this clearly.
+// 9. 音视频通话本地表：**必须**在 JS 侧（宿主环境）实现以下函数（参数顺序必须严格匹配 Go 的 exec.Exec 调用）：
+//   - batchUpsertSignalCallRecords(recordsJson)
+//   - searchSignalCallRecords(offset, count, sessionType, dialStatus, startTime, endTime, keyword, userName, loginUserID)
+//   - countSignalCallRecords(sessionType, dialStatus, startTime, endTime, keyword, userName, loginUserID)
+//   - getSignalCallRecordBySID(sID, loginUserID) → 返回 JSON 或空字符串（未找到时）
+//   - deleteSignalCallRecords(sIDsJson)          → 批量删除
+//   - clearAllSignalCallRecords()                → 清空全部（无参数）
+// 表名：local_signal_call_records。未更新 JS 侧会导致 Web 端崩溃。
 
 type IndexDB struct {
 	LocalUsers
@@ -48,6 +56,7 @@ type IndexDB struct {
 	LocalGroupMember
 	*Black
 	*Friend
+	*SignalCallRecords
 	loginUserID string
 }
 

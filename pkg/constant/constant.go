@@ -239,6 +239,13 @@ const (
 
 const BigVersion = "v3"
 
+// SignalCallDialStatus 本地音视频通话记录：拨通状态（用于按未拨通/已拨通筛选）。
+const (
+	SignalCallDialStatusUnknown        int32 = 0 // 查询：不筛选；历史兼容占位
+	SignalCallDialStatusNotConnected int32 = 1 // 未拨通（拒接、取消、超时等，未形成有效通话即结束）
+	SignalCallDialStatusConnected    int32 = 2 // 已拨通（会话已建立，如正常挂断）
+)
+
 const (
 	MsgSyncBegin      = 1001 //
 	MsgSyncProcessing = 1002 //

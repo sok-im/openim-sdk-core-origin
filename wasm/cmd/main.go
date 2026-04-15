@@ -196,5 +196,12 @@ func registerFunc() {
 	js.Global().Set("signalingHungUp", js.FuncOf(wrapperSignaling.SignalingHungUp))
 	js.Global().Set("signalingGetRoomByGroupID", js.FuncOf(wrapperSignaling.SignalingGetRoomByGroupID))
 	js.Global().Set("signalingGetTokenByRoomID", js.FuncOf(wrapperSignaling.SignalingGetTokenByRoomID))
+	js.Global().Set("signalingGetInvitationRecords", js.FuncOf(wrapperSignaling.SignalingGetInvitationRecords))
+	js.Global().Set("signalingSearchLocalCallRecords", js.FuncOf(wrapperSignaling.SignalingSearchLocalCallRecords))
+	js.Global().Set("signalingGetLocalCallRecordDetail", js.FuncOf(wrapperSignaling.SignalingGetLocalCallRecordDetail))
+	js.Global().Set("signalingDeleteLocalCallRecords", js.FuncOf(wrapperSignaling.SignalingDeleteLocalCallRecords))
+	js.Global().Set("signalingDeleteSignalRecords", js.FuncOf(wrapperSignaling.SignalingDeleteSignalRecords))
+	js.Global().Set("signalingClearAllLocalCallRecords", js.FuncOf(wrapperSignaling.SignalingClearAllLocalCallRecords))
+	js.Global().Set("signalingClearAllCallRecords", js.FuncOf(wrapperSignaling.SignalingClearAllCallRecords))
 
 }

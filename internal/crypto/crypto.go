@@ -54,13 +54,6 @@ func (c *Crypto) GetGroupKeyVersion(ctx context.Context, req *crypto.GetGroupKey
 	return api.CryptoGetGroupKeyVersion.Invoke(ctx, req)
 }
 
-// BumpGroupKeyVersion triggers a group key rotation on the server side,
-// incrementing the version counter atomically and recording the rotation event.
-func (c *Crypto) BumpGroupKeyVersion(ctx context.Context, req *crypto.BumpGroupKeyVersionReq) (*crypto.BumpGroupKeyVersionResp, error) {
-	req.OperatorUserID = c.loginUserID
-	return api.CryptoBumpGroupKeyVersion.Invoke(ctx, req)
-}
-
 // GetGroupKeyEvents fetches group key rotation events since a given version.
 // Clients use this to replay missed key rotations after reconnection.
 func (c *Crypto) GetGroupKeyEvents(ctx context.Context, req *crypto.GetGroupKeyEventsReq) (*crypto.GetGroupKeyEventsResp, error) {

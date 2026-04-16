@@ -8,7 +8,6 @@ var (
 	CryptoRevokeDevice       = newApi[crypto.RevokeDeviceReq, crypto.RevokeDeviceResp]("/crypto/revoke_device")
 	CryptoGetVirgilJWT       = newApi[crypto.GetVirgilJWTReq, crypto.GetVirgilJWTResp]("/crypto/get_virgil_jwt")
 	CryptoGetGroupKeyVersion = newApi[crypto.GetGroupKeyVersionReq, crypto.GetGroupKeyVersionResp]("/crypto/get_group_key_version")
-	CryptoBumpGroupKeyVersion = newApi[crypto.BumpGroupKeyVersionReq, crypto.BumpGroupKeyVersionResp]("/crypto/bump_group_key_version")
 	CryptoGetGroupKeyEvents  = newApi[crypto.GetGroupKeyEventsReq, crypto.GetGroupKeyEventsResp]("/crypto/get_group_key_events")
 	CryptoSecurityPrecheck   = newApi[crypto.SecurityPrecheckReq, crypto.SecurityPrecheckResp]("/crypto/security_precheck")
 	CryptoIntegrityReport    = newApi[crypto.IntegrityReportReq, crypto.IntegrityReportResp]("/crypto/integrity_report")

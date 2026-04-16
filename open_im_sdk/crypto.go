@@ -34,13 +34,6 @@ func CryptoGetGroupKeyVersion(callback open_im_sdk_callback.Base, operationID st
 	call(callback, operationID, UserForSDK.Crypto().GetGroupKeyVersion, req)
 }
 
-// CryptoBumpGroupKeyVersion triggers a group key rotation, atomically incrementing
-// the version counter. Call this when a group member is added or removed.
-// req: JSON of crypto.BumpGroupKeyVersionReq (groupID, eventType)
-func CryptoBumpGroupKeyVersion(callback open_im_sdk_callback.Base, operationID string, req string) {
-	call(callback, operationID, UserForSDK.Crypto().BumpGroupKeyVersion, req)
-}
-
 // CryptoGetGroupKeyEvents fetches group key rotation events since a given version.
 // Use this to replay missed key rotations after reconnection.
 // req: JSON of crypto.GetGroupKeyEventsReq (groupID, sinceVersion)

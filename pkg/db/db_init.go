@@ -163,6 +163,26 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
+	if err = d.conn.WithContext(ctx).AutoMigrate(&model_struct.LocalSignalCallRecord{}); err != nil {
+		return err
+	}
+
+	// 旧数据无 dial_status 列时补为「已拨通」（历史记录均为挂断产生）
+	if err = d.conn.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET dial_status = ? WHERE dial_status = 0 OR dial_status IS NULL`,
+		constant.SignalCallDialStatusConnected,
+	).Error; err != nil {
+		return err
+	}
+
+	// 为 callee_match_text 增加索引（加速被叫用户名模糊查询）
+	// 注意：SQLite LIKE '%xx%' 仍可能全表扫描，生产环境建议升级为 FTS5 虚拟表
+	if err = d.conn.WithContext(ctx).Exec(
+		`CREATE INDEX IF NOT EXISTS idx_callee_match_text ON local_signal_call_records(callee_match_text)`,
+	).Error; err != nil {
+		return err
+	}
+
 	//if err := db.Table(constant.SuperGroupTableName).AutoMigrate(superGroup); err != nil {
 	//	return err
 	//}

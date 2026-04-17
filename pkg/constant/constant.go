@@ -241,9 +241,17 @@ const BigVersion = "v3"
 
 // SignalCallDialStatus 本地音视频通话记录：拨通状态（用于按未拨通/已拨通筛选）。
 const (
-	SignalCallDialStatusUnknown        int32 = 0 // 查询：不筛选；历史兼容占位
+	SignalCallDialStatusUnknown      int32 = 0 // 查询：不筛选；历史兼容占位
 	SignalCallDialStatusNotConnected int32 = 1 // 未拨通（拒接、取消、超时等，未形成有效通话即结束）
 	SignalCallDialStatusConnected    int32 = 2 // 已拨通（会话已建立，如正常挂断）
+)
+
+// SignalCallDirection 本地通话记录：通话方向（主叫 / 被叫 / 未接来电）。
+const (
+	SignalCallDirectionUnknown  int32 = 0 // 查询：不筛选
+	SignalCallDirectionOutgoing int32 = 1 // 主叫（本端发起邀请）
+	SignalCallDirectionIncoming int32 = 2 // 被叫（已接听，通话已建立）
+	SignalCallDirectionMissed   int32 = 3 // 被叫未接（对方取消、超时或本端被拒）
 )
 
 const (

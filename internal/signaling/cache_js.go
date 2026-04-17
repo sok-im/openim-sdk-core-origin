@@ -5,7 +5,6 @@ package signaling
 
 import "github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
 
-// WASM 下不使用缓存（IndexedDB 本身有缓存机制）
 type detailCache struct{}
 
 func newDetailCache() *detailCache {
@@ -17,5 +16,7 @@ func (c *detailCache) Get(sID string) (*sdk_struct.SignalCallRecordWithDialStatu
 }
 
 func (c *detailCache) Set(sID string, value *sdk_struct.SignalCallRecordWithDialStatus) {}
+
+func (c *detailCache) Delete(sID string) {}
 
 func (c *detailCache) Clear() {}

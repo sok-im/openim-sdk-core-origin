@@ -176,16 +176,35 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 	}
 
 	// 为 callee_match_text 增加索引（加速被叫用户名模糊查询）
-	// 注意：SQLite LIKE '%xx%' 仍可能全表扫描，生产环境建议升级为 FTS5 虚拟表
 	if err = d.conn.WithContext(ctx).Exec(
 		`CREATE INDEX IF NOT EXISTS idx_callee_match_text ON local_signal_call_records(callee_match_text)`,
 	).Error; err != nil {
 		return err
 	}
 
-	//if err := db.Table(constant.SuperGroupTableName).AutoMigrate(superGroup); err != nil {
-	//	return err
-	//}
+	// 旧数据无 direction 列时根据 inviter_user_id 推断：inviterUserID == loginUserID → outgoing(1)，否则 → incoming(2)
+	if err = d.conn.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET direction = CASE WHEN inviter_user_id = ? THEN ? ELSE ? END WHERE direction = 0 OR direction IS NULL`,
+		d.loginUserID, constant.SignalCallDirectionOutgoing, constant.SignalCallDirectionIncoming,
+	).Error; err != nil {
+		return err
+	}
+
+	// 旧数据无 connect_time 列时：已拨通(dial_status=2)的记录将 connect_time 设为 create_time（近似值）
+	if err = d.conn.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET connect_time = create_time WHERE (connect_time = 0 OR connect_time IS NULL) AND dial_status = ?`,
+		constant.SignalCallDialStatusConnected,
+	).Error; err != nil {
+		return err
+	}
+
+	// 旧数据无 call_duration 列时：已拨通的记录用 end_time - connect_time 近似通话时长
+	if err = d.conn.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET call_duration = CASE WHEN end_time > connect_time THEN end_time - connect_time ELSE 0 END WHERE (call_duration = 0 OR call_duration IS NULL) AND dial_status = ? AND connect_time > 0`,
+		constant.SignalCallDialStatusConnected,
+	).Error; err != nil {
+		return err
+	}
 
 	return nil
 }

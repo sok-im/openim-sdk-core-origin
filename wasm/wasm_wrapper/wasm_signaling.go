@@ -114,3 +114,9 @@ func (w *WrapperSignaling) SignalingClearAllCallRecords(_ js.Value, args []js.Va
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SignalingClearAllCallRecords, callback, &args).AsyncCallWithCallback()
 }
+
+// SignalingSendCustomSignal 发送自定义信令。
+func (w *WrapperSignaling) SignalingSendCustomSignal(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingSendCustomSignal, callback, &args).AsyncCallWithCallback()
+}

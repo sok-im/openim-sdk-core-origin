@@ -12,6 +12,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/db_interface"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/sdkerrs"
 	pConstant "github.com/openimsdk/protocol/constant"
 	"github.com/openimsdk/protocol/rtc"
 	"github.com/openimsdk/protocol/sdkws"
@@ -289,7 +290,7 @@ func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.
 	listener := s.listener()
 	if listener == nil {
 		log.ZWarn(ctx, "signaling listener is nil, skipping notification", nil)
-		return nil
+		return sdkerrs.ErrSdkInternal.WrapMsg("signaling listener is nil")
 	}
 
 	log.ZDebug(ctx, "handleSignalingNotification", "signalReq", &signalReq)

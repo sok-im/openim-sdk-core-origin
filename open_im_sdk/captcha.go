@@ -22,12 +22,12 @@ import (
 	pbcaptcha "github.com/openimsdk/protocol/captcha"
 )
 
-// GenerateCaptcha 请求服务端生成滑动验证码（对应 HTTP POST /captcha/generate）。
+// GenerateCaptcha 请求服务端生成点选验证码（对应 HTTP POST /captcha/generate）。
 func (u *LoginMgr) GenerateCaptcha(ctx context.Context) (*pbcaptcha.GenerateCaptchaResp, error) {
 	return api.GenerateCaptcha.Invoke(ctx, &pbcaptcha.GenerateCaptchaReq{})
 }
 
-// VerifyCaptcha 提交用户滑动结果（对应 HTTP POST /captcha/verify）。
+// VerifyCaptcha 提交用户点选结果（对应 HTTP POST /captcha/verify）。
 func (u *LoginMgr) VerifyCaptcha(ctx context.Context, req *pbcaptcha.VerifyCaptchaReq) (*pbcaptcha.VerifyCaptchaResp, error) {
 	return api.VerifyCaptcha.Invoke(ctx, req)
 }
@@ -37,7 +37,9 @@ func GenerateCaptcha(callback open_im_sdk_callback.Base, operationID string) {
 	call(callback, operationID, UserForSDK.GenerateCaptcha)
 }
 
-// VerifyCaptcha 参数 req 为 VerifyCaptchaReq 的 JSON，字段 captchaID、x、y。
+// VerifyCaptcha 参数 req 为 VerifyCaptchaReq 的 JSON，字段 captchaID、clickPoints。
+// clickPoints 为数组，每项包含 x、y，例如：
+// {"captchaID":"xxx","clickPoints":[{"x":120,"y":45},{"x":200,"y":88}]}
 func VerifyCaptcha(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.VerifyCaptcha, req)
 }

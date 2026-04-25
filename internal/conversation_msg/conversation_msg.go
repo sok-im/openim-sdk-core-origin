@@ -207,35 +207,51 @@ type onlineMsgKey struct {
 }
 
 func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
+	// 从命令节点中取出“按会话分组”的新消息集合。
 	allMsg := c2v.Value.(sdk_struct.CmdNewMsgComeToConversation).Msgs
 	ctx := c2v.Ctx
+	// 是否需要触发“总未读数变化”事件。
 	var isTriggerUnReadCount bool
+	// 批量入库：每个会话需要新增的消息。
 	insertMsg := make(map[string][]*model_struct.LocalChatLog, 10)
+	// 批量更新：每个会话需要更新状态/序列号的消息。
 	updateMsg := make(map[string][]*model_struct.LocalChatLog, 10)
+	// 异常消息（重复、冲突、云端删除等）单独记录便于排查。
 	var exceptionMsg []*model_struct.LocalChatLog
+	// 需要向上层监听器回调的“新到达消息”集合（通常为非历史消息）。
 	var newMessages sdk_struct.NewMsgList
 
+	// 从消息 options 中读取的开关，随每条消息刷新。
 	var isUnreadCount, isConversationUpdate, isHistory, isNotPrivate, isSenderConversationUpdate bool
 
+	// 会话差异集合：用于最终做“新增会话/会话更新”的 DB 持久化和事件分发。
 	conversationChangedSet := make(map[string]*model_struct.LocalConversation)
 	newConversationSet := make(map[string]*model_struct.LocalConversation)
+	// 本轮消息计算出来的“目标会话状态”集合。
 	conversationSet := make(map[string]*model_struct.LocalConversation)
+	// 针对“隐藏会话”做二次修正时使用的临时集合。
 	phConversationChangedSet := make(map[string]*model_struct.LocalConversation)
 	phNewConversationSet := make(map[string]*model_struct.LocalConversation)
 
 	log.ZDebug(ctx, "message come here conversation ch", "conversation length", len(allMsg))
 	b := time.Now()
 
+	// 记录在线消息键，用于后续监听器判断“在线实时消息”场景。
 	onlineMap := make(map[onlineMsgKey]struct{})
 
+	// 第一阶段：按会话遍历消息，完成消息解析、分流、会话状态聚合（先不落库会话）。
 	for conversationID, msgs := range allMsg {
 		log.ZDebug(ctx, "parse message in one conversation", "conversationID",
 			conversationID, "message length", len(msgs.Msgs))
+		// insertMessage: 直接可入库的消息
+		// selfInsertMessage/othersInsertMessage: 历史消息按“自己发送/他人发送”分桶，后续补齐昵称头像。
 		var insertMessage, selfInsertMessage, othersInsertMessage []*model_struct.LocalChatLog
+		// updateMessage: 已存在本地但需要补齐 seq / 状态的消息。
 		var updateMessage []*model_struct.LocalChatLog
 
 		for _, v := range msgs.Msgs {
 			log.ZDebug(ctx, "parse message ", "conversationID", conversationID, "msg", v)
+			// 读取服务端透传的 options 开关，控制未读计数、会话更新、历史消息行为等。
 			isHistory = utils.GetSwitchFromOptions(v.Options, constant.IsHistory)
 
 			isUnreadCount = utils.GetSwitchFromOptions(v.Options, constant.IsUnreadCount)
@@ -247,14 +263,16 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			isSenderConversationUpdate = utils.GetSwitchFromOptions(v.Options, constant.IsSenderConversationUpdate)
 
 			msg := &sdk_struct.MsgStruct{}
+			// 将 cmd 消息体复制到 SDK 统一结构，并处理二进制内容字段。
 			copier.Copy(msg, v)
 			msg.Content = string(v.Content)
 
+			// 反序列化附加字段（如私聊/焚毁等扩展信息）。
 			var attachedInfo sdk_struct.AttachedInfoElem
 			_ = utils.JsonStringToStruct(v.AttachedInfo, &attachedInfo)
 			msg.AttachedInfoElem = &attachedInfo
 
-			//When the message has been marked and deleted by the cloud, it is directly inserted locally without any conversation and message update.
+			// 云端已标记删除的消息：仅落本地消息表用于痕迹保留，不参与会话更新与通知。
 			if msg.Status == constant.MsgStatusHasDeleted {
 				dbMessage := MsgStructToLocalChatLog(msg)
 				c.handleExceptionMessages(ctx, nil, dbMessage)
@@ -265,20 +283,23 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 
 			msg.Status = constant.MsgStatusSendSuccess
 
-			//De-analyze data
+			// 按消息类型反解析 Content（文本、图片、文件等），失败则跳过当前条。
 			err := msgHandleByContentType(msg)
 			if err != nil {
 				log.ZError(ctx, "Parsing lintao data error:", err, "type: ", msg.ContentType, "msg", msg)
 				continue
 			}
 
+			// 未标记“非私聊”时，兜底视为私聊消息。
 			if !isNotPrivate {
 				msg.AttachedInfoElem.IsPrivateChat = true
 			}
+			// conversationID 为空无法归档，直接丢弃避免污染数据。
 			if conversationID == "" {
 				log.ZError(ctx, "conversationID is empty", errors.New("conversationID is empty"), "msg", msg)
 				continue
 			}
+			// 非历史消息记入在线集合，并纳入“新消息回调”队列。
 			if !isHistory {
 				onlineMap[onlineMsgKey{ClientMsgID: v.ClientMsgID, ServerMsgID: v.ServerMsgID}] = struct{}{}
 				newMessages = append(newMessages, msg)
@@ -286,16 +307,19 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			}
 			log.ZDebug(ctx, "decode message", "msg", msg)
 			if v.SendID == c.loginUserID { //seq
-				// Messages sent by myself  //if  sent through  this terminal
+				// 分支 A：自己发送的消息（可能是本端已发，也可能是多端同步回来）。
 				existingMsg, err := c.db.GetMessage(ctx, conversationID, msg.ClientMsgID)
 				if err == nil {
 					log.ZInfo(ctx, "have message", "msg", msg)
+					// seq==0 通常代表本地占位消息，服务端回包后需更新状态/seq。
 					if existingMsg.Seq == 0 {
+						// 若不允许更新会话，则标记为过滤态，仅修正消息本身。
 						if !isConversationUpdate {
 							msg.Status = constant.MsgStatusFiltered
 						}
 						updateMessage = append(updateMessage, MsgStructToLocalChatLog(msg))
 					} else {
+						// 本地已有完整消息仍再次收到，按异常消息处理并记录。
 						dbMessage := MsgStructToLocalChatLog(msg)
 						c.handleExceptionMessages(ctx, existingMsg, dbMessage)
 						insertMessage = append(insertMessage, dbMessage)
@@ -303,6 +327,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 					}
 				} else {
 					log.ZInfo(ctx, "sync message", "msg", msg)
+					// 本地不存在该消息：构造会话快照，按开关决定是否更新会话/回调。
 					lc := model_struct.LocalConversation{
 						ConversationType:  v.SessionType,
 						LatestMsg:         utils.StructToJsonString(msg),
@@ -311,23 +336,28 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 					}
 					switch v.SessionType {
 					case constant.SingleChatType:
+						// 自己发的单聊，会话对端是 RecvID。
 						lc.UserID = v.RecvID
 					case constant.WriteGroupChatType, constant.ReadGroupChatType:
 						lc.GroupID = v.GroupID
 					}
 					if isConversationUpdate {
+						// 某些场景只允许接收端更新会话，这里受 isSenderConversationUpdate 约束。
 						if isSenderConversationUpdate {
 							log.ZDebug(ctx, "updateConversation msg", "message", v, "conversation", lc)
 							c.updateConversation(&lc, conversationSet)
 						}
 						newMessages = append(newMessages, msg)
 					}
+					// 历史同步消息单独入库（不算实时新消息）。
 					if isHistory {
 						selfInsertMessage = append(selfInsertMessage, MsgStructToLocalChatLog(msg))
 					}
 				}
 			} else { //Sent by others
+				// 分支 B：他人发送的消息。
 				if existingMsg, err := c.db.GetMessage(ctx, conversationID, msg.ClientMsgID); err != nil {
+					// 本地不存在该消息：构建会话更新基础信息。
 					lc := model_struct.LocalConversation{
 						ConversationType:  v.SessionType,
 						LatestMsg:         utils.StructToJsonString(msg),
@@ -336,6 +366,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 					}
 					switch v.SessionType {
 					case constant.SingleChatType:
+						// 他人发来的单聊，用发送者信息补充会话展示字段。
 						lc.UserID = v.SendID
 						lc.ShowName = msg.SenderNickname
 						lc.FaceURL = msg.SenderFaceURL
@@ -345,7 +376,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 						lc.UserID = v.SendID
 					}
 					if isUnreadCount {
-						//cacheConversation := c.cache.GetConversation(lc.ConversationID)
+						// 仅在 seq 判定为“真正新消息”时累加未读，避免重复计数。
 						if c.maxSeqRecorder.IsNewMsg(conversationID, msg.Seq) {
 							isTriggerUnReadCount = true
 							lc.UnreadCount = 1
@@ -353,14 +384,17 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 						}
 					}
 					if isConversationUpdate {
+						// 更新会话聚合结果，并将消息放入上层监听通知集合。
 						c.updateConversation(&lc, conversationSet)
 						newMessages = append(newMessages, msg)
 					}
+					// 历史消息进入“他人消息”分桶，后续补齐展示字段后统一入库。
 					if isHistory {
 						othersInsertMessage = append(othersInsertMessage, MsgStructToLocalChatLog(msg))
 					}
 
 				} else {
+					// 本地已存在同 ClientMsgID：归类为异常消息。
 					dbMessage := MsgStructToLocalChatLog(msg)
 					c.handleExceptionMessages(ctx, existingMsg, dbMessage)
 					insertMessage = append(insertMessage, dbMessage)
@@ -368,6 +402,9 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 				}
 			}
 		}
+		// 当前会话的消息入库集合：
+		// 1) 直接插入消息
+		// 2) 历史消息补齐头像昵称后的结果
 		insertMsg[conversationID] = append(insertMessage, c.faceURLAndNicknameHandle(ctx, selfInsertMessage, othersInsertMessage, conversationID)...)
 		if len(updateMessage) > 0 {
 			updateMsg[conversationID] = updateMessage
@@ -375,10 +412,12 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 		}
 	}
 
-	//todo The lock granularity needs to be optimized to the conversation level.
+	// 第二阶段：统一加锁处理会话差异并落库，避免并发修改会话状态造成竞态。
+	// todo: 锁粒度可进一步下沉到单会话级别以提升并行度。
 	c.conversationSyncMutex.Lock()
 	defer c.conversationSyncMutex.Unlock()
 
+	// 读取当前本地会话快照，与本轮聚合结果做 diff。
 	list, err := c.db.GetAllConversationListDB(ctx)
 	if err != nil {
 		log.ZError(ctx, "GetAllConversationListDB", err)
@@ -389,18 +428,20 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 	log.ZDebug(ctx, "listToMap: ", "local conversation", list, "generated c map",
 		string(stringutil.StructToJsonBytes(conversationSet)))
 
+	// 计算新增会话与变更会话集合。
 	c.diff(ctx, m, conversationSet, conversationChangedSet, newConversationSet)
 	log.ZInfo(ctx, "trigger map is :", "newConversations", string(stringutil.StructToJsonBytes(newConversationSet)),
 		"changedConversations", string(stringutil.StructToJsonBytes(conversationChangedSet)))
 
-	//seq sync message update
+	// 先更新“已存在消息”（例如补 seq/状态），再插入新消息。
 	if err := c.batchUpdateMessageList(ctx, updateMsg); err != nil {
 		log.ZError(ctx, "sync seq normal message err  :", err)
 	}
 
-	//Normal message storage
+	// 普通消息批量入库。
 	_ = c.batchInsertMessageList(ctx, insertMsg)
 
+	// 针对隐藏会话：若本轮识别为新会话，需要继承隐藏会话原有属性（置顶/免打扰/未读等）。
 	hList, _ := c.db.GetHiddenConversationList(ctx)
 	for _, v := range hList {
 		if nc, ok := newConversationSet[v.ConversationID]; ok {
@@ -424,37 +465,44 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 	}
 
 	for k, v := range newConversationSet {
+		// 真正需要插入的新会话 = 新会话集合 - 被“隐藏会话继承逻辑”改造成更新集合的项。
 		if _, ok := phConversationChangedSet[v.ConversationID]; !ok {
 			phNewConversationSet[k] = v
 		}
 	}
 
+	// 先批量更新会话，再批量插入会话。
 	if err := c.db.BatchUpdateConversationList(ctx, append(mapConversationToList(conversationChangedSet), mapConversationToList(phConversationChangedSet)...)); err != nil {
 		log.ZError(ctx, "insert changed conversation err :", err)
 	}
-	//New conversation storage
+	// 新会话批量入库。
 
 	if err := c.db.BatchInsertConversationList(ctx, mapConversationToList(phNewConversationSet)); err != nil {
 		log.ZError(ctx, "insert new conversation err:", err)
 	}
 	log.ZDebug(ctx, "before trigger msg", "cost time", time.Since(b).Seconds(), "len", len(allMsg))
 
+	// 第三阶段：通知层回调（批量监听器优先），并分发会话列表变更事件。
 	if c.batchMsgListener() != nil {
 		c.batchNewMessages(ctx, newMessages, conversationChangedSet, newConversationSet, onlineMap)
 	} else {
 		c.newMessage(ctx, newMessages, conversationChangedSet, newConversationSet, onlineMap)
 	}
 	if len(newConversationSet) > 0 {
+		// 通知新增会话。
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.NewConDirect, Args: utils.StructToJsonString(mapConversationToList(newConversationSet))}})
 	}
 	if len(conversationChangedSet) > 0 {
+		// 通知会话更新。
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.ConChangeDirect, Args: utils.StructToJsonString(mapConversationToList(conversationChangedSet))}})
 	}
 
 	if isTriggerUnReadCount {
+		// 通知“总未读数”变化。
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.TotalUnreadMessageChanged, Args: ""}})
 	}
 
+	// typing 消息走实时状态通道，不依赖会话变更逻辑。
 	for _, msgs := range allMsg {
 		for _, msg := range msgs.Msgs {
 			if msg.ContentType == constant.Typing {
@@ -462,7 +510,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			}
 		}
 	}
-	//Exception message storage
+	// 打印异常消息日志，便于线上定位重复/冲突数据。
 	for _, v := range exceptionMsg {
 		log.ZWarn(ctx, "exceptionMsg show: ", nil, "msg", *v)
 	}

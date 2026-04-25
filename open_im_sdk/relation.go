@@ -40,6 +40,13 @@ func AddFriend(callback open_im_sdk_callback.Base, operationID string, userIDReq
 	call(callback, operationID, UserForSDK.Relation().AddFriend, userIDReqMsg)
 }
 
+// AddOnewayFriend adds the specified user to the caller's friend list immediately,
+// without sending a friend request or requiring the target user's approval.
+// The target user's friend list is NOT updated.
+func AddOnewayFriend(callback open_im_sdk_callback.Base, operationID string, userIDReqMsg string) {
+	call(callback, operationID, UserForSDK.Relation().AddOnewayFriend, userIDReqMsg)
+}
+
 func UpdateFriends(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Relation().UpdateFriends, req)
 }

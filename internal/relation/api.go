@@ -73,6 +73,17 @@ func (r *Relation) AddFriend(ctx context.Context, req *relation.ApplyToAddFriend
 	return r.addFriend(ctx, req)
 }
 
+// AddOnewayFriend adds toUserID to the caller's friend list without requiring consent.
+// Only the caller's friend list is updated; the target user's list remains unchanged.
+func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAddFriendReq) error {
+	if err := r.addOnewayFriend(ctx, req); err != nil {
+		return err
+	}
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+	return r.IncrSyncFriends(ctx)
+}
+
 func (r *Relation) GetFriendApplicationListAsRecipient(ctx context.Context, req *sdk.GetFriendApplicationListAsRecipientReq) ([]*model_struct.LocalFriendRequest, error) {
 	friendRequests, err := r.getRecvFriendApplicationList(ctx, req.HandleResults, utils.GetPageNumber(req.Offset, req.Count), req.Count)
 	if err != nil {

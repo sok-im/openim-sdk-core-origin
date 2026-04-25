@@ -36,6 +36,7 @@ var (
 
 var (
 	AddFriend                    = newApi[relation.ApplyToAddFriendReq, relation.ApplyToAddFriendResp]("/friend/add_friend")
+	AddOnewayFriend              = newApi[relation.ApplyToAddFriendReq, relation.ApplyToAddFriendResp]("/friend/add_oneway_friend")
 	DeleteFriend                 = newApi[relation.DeleteFriendReq, relation.DeleteFriendResp]("/friend/delete_friend")
 	GetRecvFriendApplicationList = newApi[relation.GetPaginationFriendsApplyToReq, relation.GetPaginationFriendsApplyToResp]("/friend/get_friend_apply_list")
 	GetSelfFriendApplicationList = newApi[relation.GetPaginationFriendsApplyFromReq, relation.GetPaginationFriendsApplyFromResp]("/friend/get_self_friend_apply_list")

@@ -72,6 +72,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = name
 			newConversation.FaceURL = faceUrl
+			log.ZDebug(ctx, "GetOneConversation", "newConversation", newConversation)
 		case constant.WriteGroupChatType, constant.ReadGroupChatType:
 			newConversation.GroupID = sourceID
 			g, err := c.group.FetchGroupOrError(ctx, sourceID)
@@ -80,6 +81,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = g.GroupName
 			newConversation.FaceURL = g.FaceURL
+			log.ZDebug(ctx, "GetOneConversation", "newConversation", newConversation)
 		}
 		//double check if the conversation exists
 		lc, err := c.db.GetConversation(ctx, conversationID)
@@ -190,6 +192,7 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 		}
 		lc.ShowName = g.GroupName
 		lc.FaceURL = g.FaceURL
+		log.ZDebug(ctx, "checkID", "lc", lc)
 		switch g.GroupType {
 		case constant.NormalGroup:
 			s.SessionType = constant.WriteGroupChatType
@@ -241,6 +244,7 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 			}
 			lc.FaceURL = faceUrl
 			lc.ShowName = name
+			log.ZDebug(ctx, "checkID", "lc", lc)
 		}
 
 	}
@@ -827,7 +831,7 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 		conversation.ShowName = name
 		conversation.UserID = sendID
 		conversation.ConversationID = c.getConversationIDBySessionType(sendID, constant.SingleChatType)
-
+		log.ZDebug(ctx, "InsertSingleMessageToLocalStorage showname", "conversation", conversation)
 	} else {
 		conversation.UserID = recvID
 		conversation.ConversationID = c.getConversationIDBySessionType(recvID, constant.SingleChatType)
@@ -839,6 +843,8 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 			}
 			conversation.FaceURL = faceUrl
 			conversation.ShowName = name
+			log.ZDebug(ctx, "InsertSingleMessageToLocalStorage showname", "conversation", conversation)
+
 		}
 	}
 
@@ -893,6 +899,7 @@ func (c *Conversation) InsertGroupMessageToLocalStorage(ctx context.Context, s *
 	conversation.LatestMsgSendTime = s.SendTime
 	conversation.FaceURL = s.SenderFaceURL
 	conversation.ShowName = s.SenderNickname
+	log.ZDebug(ctx, "InsertGroupMessageToLocalStorage showname", "conversation", conversation)
 	err = c.insertMessageToLocalStorage(ctx, conversation.ConversationID, localMessage)
 	if err != nil {
 		return nil, err

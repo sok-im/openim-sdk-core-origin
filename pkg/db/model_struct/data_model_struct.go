@@ -355,25 +355,25 @@ type LocalSignalCallRecord struct {
 	GroupName           string `gorm:"column:group_name;type:varchar(255)" json:"groupName"`
 	InviterUsersJSON    string `gorm:"column:inviter_users;type:text" json:"-"`
 	// CalleeMatchText 被叫侧模糊查询用：由邀请时 inviteeUserIDList 等拼接（仅用于检索，非协议字段）
-	CalleeMatchText     string `gorm:"column:callee_match_text;type:text;index:idx_signal_callee_txt" json:"-"`
+	CalleeMatchText string `gorm:"column:callee_match_text;type:text;index:idx_signal_callee_txt" json:"-"`
 	// InviteeUserNickname 被叫昵称（单聊时首位被叫，用于 UI 展示）
 	InviteeUserNickname string `gorm:"column:invitee_user_nickname;type:varchar(255)" json:"inviteeUserNickname"`
 	// InviteeUserIDsJSON 被叫 userID 列表的 JSON 序列化（["uid1","uid2"]）
-	InviteeUserIDsJSON  string `gorm:"column:invitee_user_ids;type:text" json:"-"`
-	CreateTime          int64  `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
-	EndTime             int64  `gorm:"column:end_time" json:"endTime"`
+	InviteeUserIDsJSON string `gorm:"column:invitee_user_ids;type:text" json:"-"`
+	CreateTime         int64  `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
+	EndTime            int64  `gorm:"column:end_time" json:"endTime"`
 	// ConnectTime 接通时间（毫秒时间戳），未接通时为 0
-	ConnectTime         int64  `gorm:"column:connect_time" json:"connectTime"`
+	ConnectTime int64 `gorm:"column:connect_time" json:"connectTime"`
 	// DialDuration 拨打/振铃时长（毫秒）：从本端发起/收到邀请到接通/拒接/取消所经历的时间
-	DialDuration        int64  `gorm:"column:dial_duration" json:"dialDuration"`
+	DialDuration int64 `gorm:"column:dial_duration" json:"dialDuration"`
 	// CallDuration 通话时长（毫秒），未接通时为 0
-	CallDuration        int64  `gorm:"column:call_duration" json:"callDuration"`
-	Size                string `gorm:"column:size;type:varchar(32)" json:"size"`
-	FileURL             string `gorm:"column:file_url;type:varchar(512)" json:"fileURL"`
+	CallDuration int64  `gorm:"column:call_duration" json:"callDuration"`
+	Size         string `gorm:"column:size;type:varchar(32)" json:"size"`
+	FileURL      string `gorm:"column:file_url;type:varchar(512)" json:"fileURL"`
 	// DialStatus 见 constant.SignalCallDialStatus*：1=未拨通 2=已拨通
 	DialStatus int32 `gorm:"column:dial_status;index:idx_signal_dial" json:"dialStatus"`
 	// Direction 见 constant.SignalCallDirection*：1=主叫 2=被叫(已接) 3=被叫(未接/错过)
-	Direction  int32 `gorm:"column:direction;index:idx_signal_dir" json:"direction"`
+	Direction int32 `gorm:"column:direction;index:idx_signal_dir" json:"direction"`
 }
 
 func (LocalSignalCallRecord) TableName() string {

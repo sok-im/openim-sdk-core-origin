@@ -276,6 +276,7 @@ func (c *Conversation) doUpdateConversation(c2v common.Cmd2Value) {
 		}
 		lc.ShowName = st.Nickname
 		lc.FaceURL = st.FaceURL
+		log.ZDebug(ctx, "UpdateConFaceUrlAndNickName showname", "lc", lc)
 		err := c.db.UpdateConversation(ctx, &lc)
 		if err != nil {
 			// log.Error("internal", "setConversationFaceUrlAndNickName database err:", err.Error())

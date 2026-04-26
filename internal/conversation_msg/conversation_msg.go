@@ -370,6 +370,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 						lc.UserID = v.SendID
 						lc.ShowName = msg.SenderNickname
 						lc.FaceURL = msg.SenderFaceURL
+						log.ZDebug(ctx, "doMsgSyncByReinstalled showname", "lc", lc)
 					case constant.WriteGroupChatType, constant.ReadGroupChatType:
 						lc.GroupID = v.GroupID
 					case constant.NotificationChatType:

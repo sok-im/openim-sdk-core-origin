@@ -72,7 +72,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = name
 			newConversation.FaceURL = faceUrl
-			log.ZDebug(ctx, "GetOneConversation", "newConversation", newConversation)
+			log.ZDebug(ctx, "GetOneConversation showname", "newConversation", newConversation)
 		case constant.WriteGroupChatType, constant.ReadGroupChatType:
 			newConversation.GroupID = sourceID
 			g, err := c.group.FetchGroupOrError(ctx, sourceID)
@@ -81,7 +81,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = g.GroupName
 			newConversation.FaceURL = g.FaceURL
-			log.ZDebug(ctx, "GetOneConversation", "newConversation", newConversation)
+			log.ZDebug(ctx, "GetOneConversation showname", "newConversation", newConversation)
 		}
 		//double check if the conversation exists
 		lc, err := c.db.GetConversation(ctx, conversationID)
@@ -192,7 +192,7 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 		}
 		lc.ShowName = g.GroupName
 		lc.FaceURL = g.FaceURL
-		log.ZDebug(ctx, "checkID", "lc", lc)
+		log.ZDebug(ctx, "checkID showname", "lc", lc)
 		switch g.GroupType {
 		case constant.NormalGroup:
 			s.SessionType = constant.WriteGroupChatType
@@ -244,7 +244,7 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 			}
 			lc.FaceURL = faceUrl
 			lc.ShowName = name
-			log.ZDebug(ctx, "checkID", "lc", lc)
+			log.ZDebug(ctx, "checkID showname", "lc", lc)
 		}
 
 	}

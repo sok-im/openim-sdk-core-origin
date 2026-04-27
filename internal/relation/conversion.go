@@ -32,6 +32,8 @@ func ServerFriendToLocalFriend(info *sdkws.FriendInfo) *model_struct.LocalFriend
 		AddSource:      info.AddSource,
 		OperatorUserID: info.OperatorUserID,
 		Nickname:       info.FriendUser.Nickname,
+		FirstName:      info.FriendUser.FirstName,
+		LastName:       info.FriendUser.LastName,
 		FaceURL:        info.FriendUser.FaceURL,
 		Ex:             info.Ex,
 		IsPinned:       info.IsPinned,

@@ -12,6 +12,8 @@ func ServerUserToLocalUser(user *sdkws.UserInfo) *model_struct.LocalUser {
 	return &model_struct.LocalUser{
 		UserID:     user.UserID,
 		Nickname:   user.Nickname,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
 		FaceURL:    user.FaceURL,
 		CreateTime: user.CreateTime,
 		Ex:         user.Ex,
@@ -32,6 +34,8 @@ func LocalUserToPublicUser(user *model_struct.LocalUser) *sdk_struct.PublicUser 
 	return &sdk_struct.PublicUser{
 		UserID:     user.UserID,
 		Nickname:   user.Nickname,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
 		FaceURL:    user.FaceURL,
 		Ex:         user.Ex,
 		CreateTime: user.CreateTime,

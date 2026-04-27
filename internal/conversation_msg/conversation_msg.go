@@ -892,7 +892,11 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 			conversation.ConversationType == constant.NotificationChatType {
 			if v, ok := users[conversation.UserID]; ok {
 				conversation.FaceURL = v.FaceURL
-				conversation.ShowName = v.Nickname
+				if v.FirstName != "" || v.LastName != "" {
+					conversation.ShowName = v.FirstName + " " + v.LastName
+				} else {
+					conversation.ShowName = v.Nickname
+				}
 			} else {
 				log.ZWarn(ctx, "user info not found", errors.New("user not found"), "userID", conversation.UserID)
 
@@ -959,6 +963,8 @@ func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string)
 		faceURL = friendInfo.FaceURL
 		if friendInfo.Remark != "" {
 			name = friendInfo.Remark
+		} else if friendInfo.FirstName != "" || friendInfo.LastName != "" {
+			name = friendInfo.FirstName + " " + friendInfo.LastName
 		} else {
 			name = friendInfo.Nickname
 		}
@@ -968,5 +974,10 @@ func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string)
 	if err != nil {
 		return "", "", nil
 	}
-	return userInfo.FaceURL, userInfo.Nickname, nil
+	if userInfo.FirstName != "" || userInfo.LastName != "" {
+		name = userInfo.FirstName + " " + userInfo.LastName
+	} else {
+		name = userInfo.Nickname
+	}
+	return userInfo.FaceURL, name, nil
 }

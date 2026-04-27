@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/common"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
@@ -102,7 +103,9 @@ func (u *User) KickDevice(ctx context.Context, platformID int32) error {
 }
 
 // SetPhoneVisibility 设置手机号及其可见性策略：
-//   0 = 所有人可见，1 = 仅好友可见，2 = 隐藏
+//
+//	0 = 所有人可见，1 = 仅好友可见，2 = 隐藏
+//
 // phone 可为空（只修改可见性但不更新手机号）。
 func (u *User) SetPhoneVisibility(ctx context.Context, phone string, phoneVisibility int32) error {
 	return u.setPhoneVisibility(ctx, &userPb.SetPhoneVisibilityReq{
@@ -112,7 +115,8 @@ func (u *User) SetPhoneVisibility(ctx context.Context, phone string, phoneVisibi
 }
 
 // SetCallAcceptSetting 设置音视频通话接受权限：
-//   0 = 所有人可发起，1 = 仅好友可发起，2 = 不接受任何通话
+//
+//	0 = 所有人可发起，1 = 仅好友可发起，2 = 不接受任何通话
 func (u *User) SetCallAcceptSetting(ctx context.Context, callAcceptSetting int32) error {
 	return u.setCallAcceptSetting(ctx, &userPb.SetCallAcceptSettingReq{
 		CallAcceptSetting: callAcceptSetting,
@@ -158,7 +162,13 @@ func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struc
 				continue
 			}
 			log.ZDebug(ctx, "GetConversationByUserID", "conversation", conversation)
-			if conversation.ShowName != userInfo.Nickname || conversation.FaceURL != userInfo.FaceURL {
+
+			showname := userInfo.Nickname
+			if userInfo.FirstName != "" || userInfo.LastName != "" {
+				showname = userInfo.FirstName + " " + userInfo.LastName
+			}
+
+			if conversation.ShowName != showname || conversation.FaceURL != userInfo.FaceURL {
 				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,
 					Args: common.SourceIDAndSessionType{SourceID: userInfo.UserID, SessionType: conversation.ConversationType, FaceURL: userInfo.FaceURL, Nickname: userInfo.Nickname}}, u.conversationCh)
 				_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{Action: constant.UpdateMsgFaceUrlAndNickName,

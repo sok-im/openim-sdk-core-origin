@@ -168,3 +168,18 @@ func (w *WrapperGroup) GetGroupApplicationUnhandledCount(_ js.Value, args []js.V
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetGroupApplicationUnhandledCount, callback, &args).AsyncCallWithCallback()
 }
+
+func (w *WrapperGroup) PinGroupMessage(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.PinGroupMessage, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) UnpinGroupMessage(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.UnpinGroupMessage, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetGroupPinnedMessages(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetGroupPinnedMessages, callback, &args).AsyncCallWithCallback()
+}

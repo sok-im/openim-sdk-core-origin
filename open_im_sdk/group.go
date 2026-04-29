@@ -123,3 +123,15 @@ func RefuseGroupApplication(callback open_im_sdk_callback.Base, operationID stri
 func GetGroupApplicationUnhandledCount(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Group().GetGroupApplicationUnhandledCount, req)
 }
+
+func PinGroupMessage(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Group().PinGroupMessage, req)
+}
+
+func UnpinGroupMessage(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Group().UnpinGroupMessage, req)
+}
+
+func GetGroupPinnedMessages(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupPinnedMessages, req)
+}

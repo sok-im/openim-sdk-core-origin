@@ -47,3 +47,18 @@ type GetGroupApplicationListAsApplicantReq struct {
 type GetGroupApplicationUnhandledCountReq struct {
 	Time int64 `json:"time"`
 }
+
+type PinGroupMessageReq struct {
+	GroupID string `json:"groupID"`
+	Seq     int64  `json:"seq"`
+}
+
+type UnpinGroupMessageReq struct {
+	GroupID string `json:"groupID"`
+	Seq     int64  `json:"seq"`
+	PinID   string `json:"pinID"`
+}
+
+type GetGroupPinnedMessagesReq struct {
+	GroupID string `json:"groupID"`
+}

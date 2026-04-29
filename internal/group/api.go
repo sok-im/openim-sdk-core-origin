@@ -529,3 +529,15 @@ func (g *Group) GetGroupMemberNameAndFaceURL(ctx context.Context, groupID string
 func (g *Group) GetGroupApplicationUnhandledCount(ctx context.Context, req *sdk_params_callback.GetGroupApplicationUnhandledCountReq) (int32, error) {
 	return g.getGroupApplicationUnhandledCount(ctx, req.Time)
 }
+
+func (g *Group) PinGroupMessage(ctx context.Context, req *sdk_params_callback.PinGroupMessageReq) (*group.PinGroupMessageResp, error) {
+	return g.pinGroupMessage(ctx, &group.PinGroupMessageReq{GroupID: req.GroupID, Seq: req.Seq})
+}
+
+func (g *Group) UnpinGroupMessage(ctx context.Context, req *sdk_params_callback.UnpinGroupMessageReq) (*group.UnpinGroupMessageResp, error) {
+	return g.unpinGroupMessage(ctx, &group.UnpinGroupMessageReq{GroupID: req.GroupID, Seq: req.Seq, PinID: req.PinID})
+}
+
+func (g *Group) GetGroupPinnedMessages(ctx context.Context, req *sdk_params_callback.GetGroupPinnedMessagesReq) (*group.GetGroupPinnedMessagesResp, error) {
+	return g.getGroupPinnedMessages(ctx, req.GroupID)
+}

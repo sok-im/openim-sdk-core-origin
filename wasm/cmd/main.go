@@ -149,6 +149,9 @@ func registerFunc() {
 	js.Global().Set("isJoinGroup", js.FuncOf(wrapperGroup.IsJoinGroup))
 	js.Global().Set("getUsersInGroup", js.FuncOf(wrapperGroup.GetUsersInGroup))
 	js.Global().Set("getGroupApplicationUnhandledCount", js.FuncOf(wrapperGroup.GetGroupApplicationUnhandledCount))
+	js.Global().Set("pinGroupMessage", js.FuncOf(wrapperGroup.PinGroupMessage))
+	js.Global().Set("unpinGroupMessage", js.FuncOf(wrapperGroup.UnpinGroupMessage))
+	js.Global().Set("getGroupPinnedMessages", js.FuncOf(wrapperGroup.GetGroupPinnedMessages))
 
 	wrapperUser := wasm_wrapper.NewWrapperUser(globalFuc)
 	js.Global().Set("getSelfUserInfo", js.FuncOf(wrapperUser.GetSelfUserInfo))

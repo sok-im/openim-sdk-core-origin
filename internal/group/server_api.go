@@ -132,3 +132,15 @@ func (g *Group) getGroupApplicationUnhandledCount(ctx context.Context, time int6
 	}
 	return int32(resp.GetCount()), nil
 }
+
+func (g *Group) pinGroupMessage(ctx context.Context, req *group.PinGroupMessageReq) (*group.PinGroupMessageResp, error) {
+	return api.PinGroupMessage.Invoke(ctx, req)
+}
+
+func (g *Group) unpinGroupMessage(ctx context.Context, req *group.UnpinGroupMessageReq) (*group.UnpinGroupMessageResp, error) {
+	return api.UnpinGroupMessage.Invoke(ctx, req)
+}
+
+func (g *Group) getGroupPinnedMessages(ctx context.Context, groupID string) (*group.GetGroupPinnedMessagesResp, error) {
+	return api.GetGroupPinnedMessages.Invoke(ctx, &group.GetGroupPinnedMessagesReq{GroupID: groupID})
+}

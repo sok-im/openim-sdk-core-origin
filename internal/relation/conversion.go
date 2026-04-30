@@ -24,20 +24,23 @@ func ServerFriendRequestToLocalFriendRequest(info *sdkws.FriendRequest) *model_s
 }
 
 func ServerFriendToLocalFriend(info *sdkws.FriendInfo) *model_struct.LocalFriend {
-	return &model_struct.LocalFriend{
+	local := &model_struct.LocalFriend{
 		OwnerUserID:    info.OwnerUserID,
-		FriendUserID:   info.FriendUser.UserID,
 		Remark:         info.Remark,
 		CreateTime:     info.CreateTime,
 		AddSource:      info.AddSource,
 		OperatorUserID: info.OperatorUserID,
-		Nickname:       info.FriendUser.Nickname,
-		FirstName:      info.FriendUser.FirstName,
-		LastName:       info.FriendUser.LastName,
-		FaceURL:        info.FriendUser.FaceURL,
 		Ex:             info.Ex,
 		IsPinned:       info.IsPinned,
 	}
+	if info.FriendUser != nil {
+		local.FriendUserID = info.FriendUser.UserID
+		local.Nickname = info.FriendUser.Nickname
+		local.FirstName = info.FriendUser.FirstName
+		local.LastName = info.FriendUser.LastName
+		local.FaceURL = info.FriendUser.FaceURL
+	}
+	return local
 }
 
 func ServerBlackToLocalBlack(info *sdkws.BlackInfo) *model_struct.LocalBlack {

@@ -64,6 +64,8 @@ func (i *Friend) UpdateFriend(ctx context.Context, friend *model_struct.LocalFri
 		AddSource:      friend.AddSource,
 		OperatorUserID: friend.OperatorUserID,
 		Nickname:       friend.Nickname,
+		FirstName:      friend.FirstName,
+		LastName:       friend.LastName,
 		FaceURL:        friend.FaceURL,
 		Ex:             friend.Ex,
 		AttachedInfo:   friend.AttachedInfo,

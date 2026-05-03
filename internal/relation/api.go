@@ -2,6 +2,8 @@ package relation
 
 import (
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/protocol/relation"
@@ -75,13 +77,51 @@ func (r *Relation) AddFriend(ctx context.Context, req *relation.ApplyToAddFriend
 
 // AddOnewayFriend adds toUserID to the caller's friend list without requiring consent.
 // Only the caller's friend list is updated; the target user's list remains unchanged.
+// After the incremental friend sync it synchronously updates the conversation show_name
+// so that GetConversationListSplit reflects the remark immediately.
 func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAddFriendReq) error {
 	if err := r.addOnewayFriend(ctx, req); err != nil {
 		return err
 	}
 	r.relationSyncMutex.Lock()
 	defer r.relationSyncMutex.Unlock()
-	return r.IncrSyncFriends(ctx)
+	if err := r.IncrSyncFriends(ctx); err != nil {
+		return err
+	}
+	r.syncConversationShowNameForFriend(ctx, req.ToUserID, req.Remark)
+	return nil
+}
+
+// syncConversationShowNameForFriend directly writes show_name into the local
+// conversation DB for the single chat between the caller and friendUserID.
+// It is called synchronously after IncrSyncFriends so the update is visible
+// to GetConversationListSplit without waiting for the async channel pipeline
+// (TriggerCmdUpdateConversation → UpdateConFaceUrlAndNickName).
+// Errors are logged and swallowed: if no conversation row exists yet the
+// update is a no-op, and the async pipeline will apply the name later.
+func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friendUserID, remark string) {
+	showName := remark
+	if showName == "" {
+		friend, err := r.db.GetFriendInfoByFriendUserID(ctx, friendUserID)
+		if err != nil || friend == nil {
+			return
+		}
+		showName = friend.Nickname
+	}
+	if showName == "" {
+		return
+	}
+	ids := []string{r.loginUserID, friendUserID}
+	sort.Strings(ids)
+	conversationID := "si_" + strings.Join(ids, "_")
+	if err := r.db.UpdateConversation(ctx, &model_struct.LocalConversation{
+		ConversationID:   conversationID,
+		ConversationType: constant.SingleChatType,
+		ShowName:         showName,
+	}); err != nil {
+		log.ZWarn(ctx, "syncConversationShowNameForFriend update skipped", err,
+			"conversationID", conversationID, "friendUserID", friendUserID)
+	}
 }
 
 func (r *Relation) GetFriendApplicationListAsRecipient(ctx context.Context, req *sdk.GetFriendApplicationListAsRecipientReq) ([]*model_struct.LocalFriendRequest, error) {

@@ -73,7 +73,7 @@ func (r *Relation) GetSpecifiedFriendsInfo(ctx context.Context, friendUserIDList
 }
 
 func (r *Relation) AddFriend(ctx context.Context, req *relation.ApplyToAddFriendReq) error {
-	return r.addFriend(ctx, req)
+	return r.AddOnewayFriend(ctx, req)
 }
 
 // AddOnewayFriend adds toUserID to the caller's friend list without requiring consent.
@@ -84,12 +84,47 @@ func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAdd
 	if err := r.addOnewayFriend(ctx, req); err != nil {
 		return err
 	}
+
 	r.relationSyncMutex.Lock()
-	defer r.relationSyncMutex.Unlock()
 	if err := r.IncrSyncFriends(ctx); err != nil {
+		r.relationSyncMutex.Unlock()
 		return err
 	}
+	r.relationSyncMutex.Unlock()
+
+	// Fallback: if IncrSyncFriends returned early (server incremental version not yet
+	// updated atomically), the new friend may not be in local DB. Fetch it directly
+	// from the server and insert it so that GetSpecifiedFriendsInfo is never empty.
+	if err := r.ensureFriendInLocalDB(ctx, req.ToUserID); err != nil {
+		log.ZWarn(ctx, "ensureFriendInLocalDB failed", err, "toUserID", req.ToUserID)
+	}
+
 	r.syncConversationShowNameForFriend(ctx, req.ToUserID, req.Remark)
+	return nil
+}
+
+// ensureFriendInLocalDB checks whether toUserID is already present in the local
+// friend DB (written by IncrSyncFriends). If not, it fetches the friend record
+// directly from the server and inserts it, preventing GetSpecifiedFriendsInfo
+// from returning empty when the server's incremental version lags behind.
+func (r *Relation) ensureFriendInLocalDB(ctx context.Context, toUserID string) error {
+	existing, err := r.db.GetFriendInfoList(ctx, []string{toUserID})
+	if err != nil {
+		return err
+	}
+	if len(existing) > 0 {
+		return nil
+	}
+	serverFriends, err := r.getDesignatedFriends(ctx, []string{toUserID})
+	if err != nil {
+		return err
+	}
+	for _, sf := range serverFriends {
+		local := ServerFriendToLocalFriend(sf)
+		if err := r.db.InsertFriend(ctx, local); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

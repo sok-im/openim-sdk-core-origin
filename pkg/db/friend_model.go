@@ -129,7 +129,7 @@ func (d *DataBase) GetFriendInfoList(ctx context.Context, friendUserIDList []str
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	var friendList []*model_struct.LocalFriend
-	err := errs.WrapMsg(d.conn.WithContext(ctx).Where("friend_user_id IN ?", friendUserIDList).Find(&friendList).Error, "GetFriendInfoListByFriendUserID failed")
+	err := errs.WrapMsg(d.conn.WithContext(ctx).Where("owner_user_id = ? AND friend_user_id IN ?", d.loginUserID, friendUserIDList).Find(&friendList).Error, "GetFriendInfoListByFriendUserID failed")
 	return friendList, err
 }
 func (d *DataBase) UpdateColumnsFriend(ctx context.Context, friendIDs []string, args map[string]interface{}) error {

@@ -286,7 +286,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			// 按消息类型反解析 Content（文本、图片、文件等），失败则跳过当前条。
 			err := msgHandleByContentType(msg)
 			if err != nil {
-				log.ZError(ctx, "Parsing lintao data error:", err, "type: ", msg.ContentType, "msg", msg)
+				log.ZError(ctx, "Parsing data error:", err, "type: ", msg.ContentType, "msg", msg)
 				continue
 			}
 

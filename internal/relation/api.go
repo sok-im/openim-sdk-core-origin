@@ -9,6 +9,7 @@ import (
 	"github.com/openimsdk/protocol/relation"
 	"github.com/openimsdk/tools/utils/datautil"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/common"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/datafetcher"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
@@ -93,12 +94,16 @@ func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAdd
 }
 
 // syncConversationShowNameForFriend directly writes show_name into the local
-// conversation DB for the single chat between the caller and friendUserID.
-// It is called synchronously after IncrSyncFriends so the update is visible
+// conversation DB for the single chat between the caller and friendUserID,
+// then fires ConChange so the conversation list listener is notified immediately.
+//
+// This is called synchronously after IncrSyncFriends so the update is visible
 // to GetConversationListSplit without waiting for the async channel pipeline
 // (TriggerCmdUpdateConversation → UpdateConFaceUrlAndNickName).
-// Errors are logged and swallowed: if no conversation row exists yet the
-// update is a no-op, and the async pipeline will apply the name later.
+//
+// If no conversation row exists yet the DB update is a no-op (RowsAffected==0)
+// and ConChange is not fired; the async pipeline will handle it when the first
+// message is sent.
 func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friendUserID, remark string) {
 	showName := remark
 	if showName == "" {
@@ -119,9 +124,17 @@ func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friend
 		ConversationType: constant.SingleChatType,
 		ShowName:         showName,
 	}); err != nil {
+		// RowsAffected==0 means no conversation row exists yet; skip silently.
 		log.ZWarn(ctx, "syncConversationShowNameForFriend update skipped", err,
 			"conversationID", conversationID, "friendUserID", friendUserID)
+		return
 	}
+	// Notify the conversation list listener so the UI refreshes immediately.
+	_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
+		ConID:  conversationID,
+		Action: constant.ConChange,
+		Args:   []string{conversationID},
+	}, r.conversationCh)
 }
 
 func (r *Relation) GetFriendApplicationListAsRecipient(ctx context.Context, req *sdk.GetFriendApplicationListAsRecipientReq) ([]*model_struct.LocalFriendRequest, error) {

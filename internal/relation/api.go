@@ -162,7 +162,7 @@ func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friend
 		showName = friend.Nickname
 	}
 	if showName == "" {
-		log.ZWarn(ctx, "lintao syncConversationShowNameForFriend failed", "friendUserID", friendUserID)
+		log.ZInfo(ctx, "lintao syncConversationShowNameForFriend failed", "friendUserID", friendUserID)
 		return
 	}
 	ids := []string{r.loginUserID, friendUserID}
@@ -174,7 +174,7 @@ func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friend
 		ShowName:         showName,
 	}); err != nil {
 		// RowsAffected==0 means no conversation row exists yet; skip silently.
-		log.ZWarn(ctx, "syncConversationShowNameForFriend update skipped", err,
+		log.ZWarn(ctx, "lintao syncConversationShowNameForFriend update skipped", err,
 			"conversationID", conversationID, "friendUserID", friendUserID)
 		return
 	}

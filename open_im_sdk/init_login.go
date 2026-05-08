@@ -69,7 +69,8 @@ func InitSDK(listener open_im_sdk_callback.OnConnListener, operationID string, c
 		return false
 	}
 
-	log.ZInfo(ctx, "InitSDK info", "config", configArgs)
+	log.ZInfo(ctx, "lintao InitSDK info", "config", configArgs)
+
 	log.ZInfo(ctx, "OpenIM native build stamp", "sdkVersion", version.Version, "gitCommit", version.GitCommit, "buildStamp", version.BuildStamp)
 	if listener == nil || config == "" {
 		log.ZError(ctx, "listener or config is nil", nil)

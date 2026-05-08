@@ -43,11 +43,17 @@ func (r *Relation) GetSpecifiedFriendsInfo(ctx context.Context, friendUserIDList
 			return datautil.Batch(ServerFriendToLocalFriend, serverFriend), nil
 		},
 	)
+
 	localFriendList, err := dataFetcher.FetchMissingAndFillLocal(ctx, friendUserIDList)
 	if err != nil {
+		log.ZWarn(ctx, "lintao GetDesignatedFriendsInfo", err)
 		return nil, err
 	}
+
+	log.ZDebug(ctx, "lintao GetDesignatedFriendsInfo", "localFriendList", localFriendList)
+
 	if !filterBlack {
+		log.ZDebug(ctx, "lintao GetDesignatedFriendsInfo", "localFriendList", localFriendList)
 		return localFriendList, nil
 	}
 	log.ZDebug(ctx, "lintao GetDesignatedFriendsInfo", "localFriendList", localFriendList)

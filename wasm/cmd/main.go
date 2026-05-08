@@ -211,4 +211,16 @@ func registerFunc() {
 	js.Global().Set("signalingClearAllCallRecords", js.FuncOf(wrapperSignaling.SignalingClearAllCallRecords))
 	js.Global().Set("signalingSendCustomSignal", js.FuncOf(wrapperSignaling.SignalingSendCustomSignal))
 
+	wrapperRedPacket := wasm_wrapper.NewWrapperRedPacket(globalFuc)
+	js.Global().Set("redPacketCreateOrder", js.FuncOf(wrapperRedPacket.RedPacketCreateOrder))
+	js.Global().Set("redPacketCreatedCallback", js.FuncOf(wrapperRedPacket.RedPacketCreatedCallback))
+	js.Global().Set("redPacketGetDetail", js.FuncOf(wrapperRedPacket.RedPacketGetDetail))
+	js.Global().Set("redPacketIssueClaimSign", js.FuncOf(wrapperRedPacket.RedPacketIssueClaimSign))
+	js.Global().Set("redPacketClaimResult", js.FuncOf(wrapperRedPacket.RedPacketClaimResult))
+	js.Global().Set("redPacketRequestRefund", js.FuncOf(wrapperRedPacket.RedPacketRequestRefund))
+	js.Global().Set("redPacketGetRefund", js.FuncOf(wrapperRedPacket.RedPacketGetRefund))
+	js.Global().Set("redPacketIssueWalletBindChallenge", js.FuncOf(wrapperRedPacket.RedPacketIssueWalletBindChallenge))
+	js.Global().Set("redPacketConfirmWalletBind", js.FuncOf(wrapperRedPacket.RedPacketConfirmWalletBind))
+	js.Global().Set("redPacketGetWalletBinding", js.FuncOf(wrapperRedPacket.RedPacketGetWalletBinding))
+
 }

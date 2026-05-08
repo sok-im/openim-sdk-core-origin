@@ -74,6 +74,23 @@ func SetCallAcceptSetting(callback open_im_sdk_callback.Base, operationID string
 	call(callback, operationID, UserForSDK.User().SetCallAcceptSetting, callAcceptSetting)
 }
 
+// SetMsgReceiveSetting 设置会话消息接收权限：
+//   msgReceiveSetting 0=所有人可发 1=仅好友可发 2=所有人不可发
+func SetMsgReceiveSetting(callback open_im_sdk_callback.Base, operationID string, msgReceiveSetting int32) {
+	call(callback, operationID, UserForSDK.User().SetMsgReceiveSetting, msgReceiveSetting)
+}
+
+// SetGroupInviteSetting 设置群邀请权限：
+//   groupInviteSetting 0=所有人可邀请 1=仅好友可邀请 2=所有人不可邀请
+func SetGroupInviteSetting(callback open_im_sdk_callback.Base, operationID string, groupInviteSetting int32) {
+	call(callback, operationID, UserForSDK.User().SetGroupInviteSetting, groupInviteSetting)
+}
+
+// SetUserMsgBurnDuration 设置用户全局阅后即焚时长（秒），0 表示关闭。
+func SetUserMsgBurnDuration(callback open_im_sdk_callback.Base, operationID string, msgBurnDuration int32) {
+	call(callback, operationID, UserForSDK.User().SetUserMsgBurnDuration, msgBurnDuration)
+}
+
 // GetUserByPhone 根据手机号精确查询用户，成功回调 JSON 为 sdkws.UserInfo 或 null（未找到）
 func GetUserByPhone(callback open_im_sdk_callback.Base, operationID string, phone string) {
 	call(callback, operationID, UserForSDK.User().GetUserByPhone, phone)

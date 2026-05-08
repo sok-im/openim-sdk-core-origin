@@ -123,6 +123,31 @@ func (u *User) SetCallAcceptSetting(ctx context.Context, callAcceptSetting int32
 	})
 }
 
+// SetMsgReceiveSetting 设置会话消息接收权限：
+//
+//	0 = 所有人可发，1 = 仅好友可发，2 = 所有人不可发
+func (u *User) SetMsgReceiveSetting(ctx context.Context, msgReceiveSetting int32) error {
+	return u.setMsgReceiveSetting(ctx, &userPb.SetMsgReceiveSettingReq{
+		MsgReceiveSetting: msgReceiveSetting,
+	})
+}
+
+// SetGroupInviteSetting 设置群邀请权限：
+//
+//	0 = 所有人可邀请，1 = 仅好友可邀请，2 = 所有人不可邀请
+func (u *User) SetGroupInviteSetting(ctx context.Context, groupInviteSetting int32) error {
+	return u.setGroupInviteSetting(ctx, &userPb.SetGroupInviteSettingReq{
+		GroupInviteSetting: groupInviteSetting,
+	})
+}
+
+// SetUserMsgBurnDuration 设置用户全局阅后即焚时长（秒），0 表示关闭。
+func (u *User) SetUserMsgBurnDuration(ctx context.Context, msgBurnDuration int32) error {
+	return u.setUserMsgBurnDuration(ctx, &userPb.SetUserMsgBurnDurationReq{
+		MsgBurnDuration: msgBurnDuration,
+	})
+}
+
 // GetUserByPhone 根据手机号精确查询用户（HTTP /user/get_user_by_phone）。
 // 返回 nil 表示未找到、无权限或对方隐藏；具体语义以服务端为准。
 func (u *User) GetUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {

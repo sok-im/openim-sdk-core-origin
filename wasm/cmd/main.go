@@ -165,6 +165,9 @@ func registerFunc() {
 	js.Global().Set("phoneSetSNInfo", js.FuncOf(wrapperUser.PhoneSetSNInfo))
 	js.Global().Set("setPhoneVisibility", js.FuncOf(wrapperUser.SetPhoneVisibility))
 	js.Global().Set("setCallAcceptSetting", js.FuncOf(wrapperUser.SetCallAcceptSetting))
+	js.Global().Set("setMsgReceiveSetting", js.FuncOf(wrapperUser.SetMsgReceiveSetting))
+	js.Global().Set("setGroupInviteSetting", js.FuncOf(wrapperUser.SetGroupInviteSetting))
+	js.Global().Set("setUserMsgBurnDuration", js.FuncOf(wrapperUser.SetUserMsgBurnDuration))
 	js.Global().Set("getUserByPhone", js.FuncOf(wrapperUser.GetUserByPhone))
 	js.Global().Set("getUsersByNickname", js.FuncOf(wrapperUser.GetUsersByNickname))
 

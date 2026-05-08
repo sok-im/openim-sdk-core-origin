@@ -60,6 +60,24 @@ func (u *User) setCallAcceptSetting(ctx context.Context, req *user.SetCallAccept
 	return api.SetCallAcceptSetting.Execute(ctx, req)
 }
 
+// setMsgReceiveSetting 调服务端设置会话消息接收权限（0=所有人 1=仅好友 2=所有人不可发送）
+func (u *User) setMsgReceiveSetting(ctx context.Context, req *user.SetMsgReceiveSettingReq) error {
+	req.UserID = u.loginUserID
+	return api.SetMsgReceiveSetting.Execute(ctx, req)
+}
+
+// setGroupInviteSetting 调服务端设置群邀请权限（0=所有人 1=仅好友 2=所有人不可邀请）
+func (u *User) setGroupInviteSetting(ctx context.Context, req *user.SetGroupInviteSettingReq) error {
+	req.UserID = u.loginUserID
+	return api.SetGroupInviteSetting.Execute(ctx, req)
+}
+
+// setUserMsgBurnDuration 调服务端设置全局阅后即焚时长（秒），0 表示关闭
+func (u *User) setUserMsgBurnDuration(ctx context.Context, req *user.SetUserMsgBurnDurationReq) error {
+	req.UserID = u.loginUserID
+	return api.SetUserMsgBurnDuration.Execute(ctx, req)
+}
+
 // getUserByPhone 调服务端按手机号精确查询用户；userInfo 为空表示未找到或无权限
 func (u *User) getUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {
 	req := &user.GetUserByPhoneReq{Phone: phone}

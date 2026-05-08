@@ -101,6 +101,21 @@ func (w *WrapperUser) SetCallAcceptSetting(_ js.Value, args []js.Value) interfac
 	return event_listener.NewCaller(open_im_sdk.SetCallAcceptSetting, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperUser) SetMsgReceiveSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetMsgReceiveSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetGroupInviteSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetGroupInviteSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetUserMsgBurnDuration(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetUserMsgBurnDuration, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperUser) GetUserByPhone(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetUserByPhone, callback, &args).AsyncCallWithCallback()

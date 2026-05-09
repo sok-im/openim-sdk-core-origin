@@ -78,6 +78,11 @@ func (u *User) setUserMsgBurnDuration(ctx context.Context, req *user.SetUserMsgB
 	return api.SetUserMsgBurnDuration.Execute(ctx, req)
 }
 
+// getUserPrivacySettings 调服务端获取当前登录用户隐私与接收相关设置（HTTP /user/get_user_privacy_settings）
+func (u *User) getUserPrivacySettings(ctx context.Context) (*user.GetUserPrivacySettingsResp, error) {
+	return api.GetUserPrivacySettings.Invoke(ctx, &user.GetUserPrivacySettingsReq{})
+}
+
 // getUserByPhone 调服务端按手机号精确查询用户；userInfo 为空表示未找到或无权限
 func (u *User) getUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {
 	req := &user.GetUserByPhoneReq{Phone: phone}

@@ -148,6 +148,11 @@ func (u *User) SetUserMsgBurnDuration(ctx context.Context, msgBurnDuration int32
 	})
 }
 
+// GetUserPrivacySettings 获取当前登录用户的隐私与接收相关设置（HTTP /user/get_user_privacy_settings；userID 由服务端从 token 解析）。
+func (u *User) GetUserPrivacySettings(ctx context.Context) (*userPb.GetUserPrivacySettingsResp, error) {
+	return u.getUserPrivacySettings(ctx)
+}
+
 // GetUserByPhone 根据手机号精确查询用户（HTTP /user/get_user_by_phone）。
 // 返回 nil 表示未找到、无权限或对方隐藏；具体语义以服务端为准。
 func (u *User) GetUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {

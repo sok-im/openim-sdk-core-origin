@@ -91,6 +91,12 @@ func SetUserMsgBurnDuration(callback open_im_sdk_callback.Base, operationID stri
 	call(callback, operationID, UserForSDK.User().SetUserMsgBurnDuration, msgBurnDuration)
 }
 
+// GetUserPrivacySettings 获取当前登录用户的隐私与接收相关设置（对应 HTTP POST /user/get_user_privacy_settings）。
+// 成功回调 JSON 为 openim.user.GetUserPrivacySettingsResp（msgBurnDuration、phoneVisibility、callAcceptSetting、globalRecvMsgOpt、msgReceiveSetting、groupInviteSetting）。
+func GetUserPrivacySettings(callback open_im_sdk_callback.Base, operationID string) {
+	call(callback, operationID, UserForSDK.User().GetUserPrivacySettings)
+}
+
 // GetUserByPhone 根据手机号精确查询用户，成功回调 JSON 为 sdkws.UserInfo 或 null（未找到）
 func GetUserByPhone(callback open_im_sdk_callback.Base, operationID string, phone string) {
 	call(callback, operationID, UserForSDK.User().GetUserByPhone, phone)

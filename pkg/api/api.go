@@ -33,6 +33,7 @@ var (
 	SetMsgReceiveSetting     = newApi[user.SetMsgReceiveSettingReq, user.SetMsgReceiveSettingResp]("/user/set_msg_receive_setting")
 	SetGroupInviteSetting    = newApi[user.SetGroupInviteSettingReq, user.SetGroupInviteSettingResp]("/user/set_group_invite_setting")
 	SetUserMsgBurnDuration   = newApi[user.SetUserMsgBurnDurationReq, user.SetUserMsgBurnDurationResp]("/user/set_user_msg_burn_duration")
+	GetUserPrivacySettings   = newApi[user.GetUserPrivacySettingsReq, user.GetUserPrivacySettingsResp]("/user/get_user_privacy_settings")
 	GetUserByPhone           = newApi[user.GetUserByPhoneReq, user.GetUserByPhoneResp]("/user/get_user_by_phone")
 	GetUsersByNickname       = newApi[user.GetUsersByNicknameReq, user.GetUsersByNicknameResp]("/user/get_users_by_nickname")
 )

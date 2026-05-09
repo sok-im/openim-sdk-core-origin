@@ -91,6 +91,11 @@ func SetUserMsgBurnDuration(callback open_im_sdk_callback.Base, operationID stri
 	call(callback, operationID, UserForSDK.User().SetUserMsgBurnDuration, msgBurnDuration)
 }
 
+// SetDeleteAccountInterval 设置删除账号等待间隔（秒）；0 表示使用系统默认（18 个月）。对应 HTTP POST /user/set_delete_account_interval。
+func SetDeleteAccountInterval(callback open_im_sdk_callback.Base, operationID string, deleteAccountIntervalSec int32) {
+	call(callback, operationID, UserForSDK.User().SetDeleteAccountInterval, deleteAccountIntervalSec)
+}
+
 // GetUserPrivacySettings 获取当前登录用户的隐私与接收相关设置（对应 HTTP POST /user/get_user_privacy_settings）。
 // 成功回调 JSON 为 openim.user.GetUserPrivacySettingsResp（msgBurnDuration、phoneVisibility、callAcceptSetting、globalRecvMsgOpt、msgReceiveSetting、groupInviteSetting）。
 func GetUserPrivacySettings(callback open_im_sdk_callback.Base, operationID string) {

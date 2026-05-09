@@ -148,6 +148,13 @@ func (u *User) SetUserMsgBurnDuration(ctx context.Context, msgBurnDuration int32
 	})
 }
 
+// SetDeleteAccountInterval 设置删除账号等待间隔（秒）；0 表示使用系统默认（18 个月）。对应 HTTP POST /user/set_delete_account_interval。
+func (u *User) SetDeleteAccountInterval(ctx context.Context, deleteAccountIntervalSec int32) error {
+	return u.setDeleteAccountInterval(ctx, &userPb.SetDeleteAccountIntervalReq{
+		DeleteAccountInterval: deleteAccountIntervalSec,
+	})
+}
+
 // GetUserPrivacySettings 获取当前登录用户的隐私与接收相关设置（HTTP /user/get_user_privacy_settings；userID 由服务端从 token 解析）。
 func (u *User) GetUserPrivacySettings(ctx context.Context) (*userPb.GetUserPrivacySettingsResp, error) {
 	return u.getUserPrivacySettings(ctx)

@@ -168,6 +168,7 @@ func registerFunc() {
 	js.Global().Set("setMsgReceiveSetting", js.FuncOf(wrapperUser.SetMsgReceiveSetting))
 	js.Global().Set("setGroupInviteSetting", js.FuncOf(wrapperUser.SetGroupInviteSetting))
 	js.Global().Set("setUserMsgBurnDuration", js.FuncOf(wrapperUser.SetUserMsgBurnDuration))
+	js.Global().Set("setDeleteAccountInterval", js.FuncOf(wrapperUser.SetDeleteAccountInterval))
 	js.Global().Set("getUserByPhone", js.FuncOf(wrapperUser.GetUserByPhone))
 	js.Global().Set("getUsersByNickname", js.FuncOf(wrapperUser.GetUsersByNickname))
 

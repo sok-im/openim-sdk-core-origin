@@ -121,6 +121,11 @@ func (w *WrapperUser) SetDeleteAccountInterval(_ js.Value, args []js.Value) inte
 	return event_listener.NewCaller(open_im_sdk.SetDeleteAccountInterval, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperUser) GetUserPrivacySettings(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetUserPrivacySettings, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperUser) GetUserByPhone(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetUserByPhone, callback, &args).AsyncCallWithCallback()

@@ -59,3 +59,21 @@ type GetFriendApplicationListAsApplicantReq struct {
 type GetSelfUnhandledApplyCountReq struct {
 	Time int64 `json:"time"`
 }
+
+// SetFriendMuteReq 对应 relation.setMuteReq：duration 为秒，-1 永久，0 取消静音。
+type SetFriendMuteReq struct {
+	TargetUserID string `json:"targetUserID"`
+	Duration     int64  `json:"duration"`
+}
+
+type GetFriendMuteReq struct {
+	TargetUserID string `json:"targetUserID"`
+}
+
+type PinFriendReq struct {
+	FriendUserID string `json:"friendUserID"`
+}
+
+type UnpinFriendReq struct {
+	FriendUserID string `json:"friendUserID"`
+}

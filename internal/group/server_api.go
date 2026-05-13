@@ -144,3 +144,19 @@ func (g *Group) unpinGroupMessage(ctx context.Context, req *group.UnpinGroupMess
 func (g *Group) getGroupPinnedMessages(ctx context.Context, groupID string) (*group.GetGroupPinnedMessagesResp, error) {
 	return api.GetGroupPinnedMessages.Invoke(ctx, &group.GetGroupPinnedMessagesReq{GroupID: groupID})
 }
+
+func (g *Group) setGroupMute(ctx context.Context, req *group.SetGroupMuteReq) error {
+	return api.SetGroupMute.Execute(ctx, req)
+}
+
+func (g *Group) getGroupMute(ctx context.Context, req *group.GetGroupMuteReq) (*group.GetGroupMuteResp, error) {
+	return api.GetGroupMute.Invoke(ctx, req)
+}
+
+func (g *Group) pinGroup(ctx context.Context, req *group.PinGroupReq) error {
+	return api.PinGroup.Execute(ctx, req)
+}
+
+func (g *Group) unpinGroup(ctx context.Context, req *group.UnpinGroupReq) error {
+	return api.UnpinGroup.Execute(ctx, req)
+}

@@ -541,3 +541,34 @@ func (g *Group) UnpinGroupMessage(ctx context.Context, req *sdk_params_callback.
 func (g *Group) GetGroupPinnedMessages(ctx context.Context, req *sdk_params_callback.GetGroupPinnedMessagesReq) (*group.GetGroupPinnedMessagesResp, error) {
 	return g.getGroupPinnedMessages(ctx, req.GroupID)
 }
+
+func (g *Group) SetGroupMute(ctx context.Context, req *sdk_params_callback.SetGroupMuteReq) error {
+	if err := g.setGroupMute(ctx, &group.SetGroupMuteReq{GroupID: req.GroupID, Duration: req.Duration}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+func (g *Group) GetGroupMute(ctx context.Context, req *sdk_params_callback.GetGroupMuteReq) (*group.GetGroupMuteResp, error) {
+	return g.getGroupMute(ctx, &group.GetGroupMuteReq{GroupID: req.GroupID})
+}
+
+func (g *Group) PinGroup(ctx context.Context, req *sdk_params_callback.PinGroupReq) error {
+	if err := g.pinGroup(ctx, &group.PinGroupReq{GroupID: req.GroupID}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+func (g *Group) UnpinGroup(ctx context.Context, req *sdk_params_callback.UnpinGroupReq) error {
+	if err := g.unpinGroup(ctx, &group.UnpinGroupReq{GroupID: req.GroupID}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}

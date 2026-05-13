@@ -113,3 +113,23 @@ func (w *WrapperFriend) GetFriendApplicationUnhandledCount(_ js.Value, args []js
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetFriendApplicationUnhandledCount, callback, &args).AsyncCallWithCallback()
 }
+
+func (w *WrapperFriend) SetFriendMute(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetFriendMute, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperFriend) GetFriendMute(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetFriendMute, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperFriend) PinFriend(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.PinFriend, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperFriend) UnpinFriend(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.UnpinFriend, callback, &args).AsyncCallWithCallback()
+}

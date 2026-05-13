@@ -86,3 +86,23 @@ func RemoveBlack(callback open_im_sdk_callback.Base, operationID string, removeU
 func GetFriendApplicationUnhandledCount(callback open_im_sdk_callback.Base, operationID, req string) {
 	call(callback, operationID, UserForSDK.Relation().GetFriendApplicationUnhandledCount, req)
 }
+
+// SetFriendMute 设置对好友（或单聊对象）的消息免打扰；req 为 JSON，字段见 sdk_params_callback.SetFriendMuteReq。
+func SetFriendMute(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Relation().SetFriendMute, req)
+}
+
+// GetFriendMute 查询免打扰状态；req 为 JSON，字段见 sdk_params_callback.GetFriendMuteReq。
+func GetFriendMute(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Relation().GetFriendMute, req)
+}
+
+// PinFriend 置顶好友会话；req 为 JSON，字段见 sdk_params_callback.PinFriendReq。
+func PinFriend(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Relation().PinFriend, req)
+}
+
+// UnpinFriend 取消置顶好友会话；req 为 JSON，字段见 sdk_params_callback.UnpinFriendReq。
+func UnpinFriend(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Relation().UnpinFriend, req)
+}

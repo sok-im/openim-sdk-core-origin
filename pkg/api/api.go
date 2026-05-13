@@ -58,6 +58,10 @@ var (
 	AddBlack                     = newApi[relation.AddBlackReq, relation.AddBlackResp]("/friend/add_black")
 	RemoveBlack                  = newApi[relation.RemoveBlackReq, relation.RemoveBlackResp]("/friend/remove_black")
 	GetBlackList                 = newApi[relation.GetPaginationBlacksReq, relation.GetPaginationBlacksResp]("/friend/get_black_list")
+	SetFriendMute                = newApi[relation.SetMuteReq, relation.SetMuteResp]("/friend/set_mute")
+	GetFriendMute                = newApi[relation.GetMuteReq, relation.GetMuteResp]("/friend/get_mute")
+	PinFriend                    = newApi[relation.PinFriendReq, relation.PinFriendResp]("/friend/pin")
+	UnpinFriend                  = newApi[relation.UnpinFriendReq, relation.UnpinFriendResp]("/friend/unpin")
 )
 
 var (
@@ -72,6 +76,7 @@ var (
 	SendMsg                          = newApi[msg.SendMsgReq, msg.SendMsgResp]("/msg/send_msg")
 	GetServerTime                    = newApi[msg.GetServerTimeReq, msg.GetServerTimeResp]("/msg/get_server_time")
 	ReportSpam                       = newApi[msg.ReportSpamReq, msg.ReportSpamResp]("/msg/report_spam")
+	GetSpamReports                   = newApi[msg.GetSpamReportsReq, msg.GetSpamReportsResp]("/msg/get_spam_reports")
 )
 
 var (
@@ -103,6 +108,10 @@ var (
 	PinGroupMessage                   = newApi[group.PinGroupMessageReq, group.PinGroupMessageResp]("/group/pin_group_message")
 	UnpinGroupMessage                 = newApi[group.UnpinGroupMessageReq, group.UnpinGroupMessageResp]("/group/unpin_group_message")
 	GetGroupPinnedMessages            = newApi[group.GetGroupPinnedMessagesReq, group.GetGroupPinnedMessagesResp]("/group/get_group_pinned_messages")
+	SetGroupMute                      = newApi[group.SetGroupMuteReq, group.SetGroupMuteResp]("/group/set_mute")
+	GetGroupMute                      = newApi[group.GetGroupMuteReq, group.GetGroupMuteResp]("/group/get_mute")
+	PinGroup                          = newApi[group.PinGroupReq, group.PinGroupResp]("/group/pin")
+	UnpinGroup                        = newApi[group.UnpinGroupReq, group.UnpinGroupResp]("/group/unpin")
 )
 
 var (

@@ -424,3 +424,47 @@ func (r *Relation) UpdateFriends(ctx context.Context, req *relation.UpdateFriend
 func (r *Relation) GetFriendApplicationUnhandledCount(ctx context.Context, req *sdk.GetSelfUnhandledApplyCountReq) (int32, error) {
 	return r.getSelfUnhandledApplyCount(ctx, req.Time)
 }
+
+func (r *Relation) SetFriendMute(ctx context.Context, req *sdk.SetFriendMuteReq) error {
+	if err := r.setFriendMute(ctx, &relation.SetMuteReq{
+		OwnerUserID:  r.loginUserID,
+		TargetUserID: req.TargetUserID,
+		Duration:     req.Duration,
+	}); err != nil {
+		return err
+	}
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+	return r.IncrSyncFriends(ctx)
+}
+
+func (r *Relation) GetFriendMute(ctx context.Context, req *sdk.GetFriendMuteReq) (*relation.GetMuteResp, error) {
+	return r.getFriendMute(ctx, &relation.GetMuteReq{
+		OwnerUserID:  r.loginUserID,
+		TargetUserID: req.TargetUserID,
+	})
+}
+
+func (r *Relation) PinFriend(ctx context.Context, req *sdk.PinFriendReq) error {
+	if err := r.pinFriend(ctx, &relation.PinFriendReq{
+		OwnerUserID:  r.loginUserID,
+		FriendUserID: req.FriendUserID,
+	}); err != nil {
+		return err
+	}
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+	return r.IncrSyncFriends(ctx)
+}
+
+func (r *Relation) UnpinFriend(ctx context.Context, req *sdk.UnpinFriendReq) error {
+	if err := r.unpinFriend(ctx, &relation.UnpinFriendReq{
+		OwnerUserID:  r.loginUserID,
+		FriendUserID: req.FriendUserID,
+	}); err != nil {
+		return err
+	}
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+	return r.IncrSyncFriends(ctx)
+}

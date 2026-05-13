@@ -99,3 +99,19 @@ func (r *Relation) getSelfUnhandledApplyCount(ctx context.Context, time int64) (
 	}
 	return int32(resp.GetCount()), nil
 }
+
+func (r *Relation) setFriendMute(ctx context.Context, req *relation.SetMuteReq) error {
+	return api.SetFriendMute.Execute(ctx, req)
+}
+
+func (r *Relation) getFriendMute(ctx context.Context, req *relation.GetMuteReq) (*relation.GetMuteResp, error) {
+	return api.GetFriendMute.Invoke(ctx, req)
+}
+
+func (r *Relation) pinFriend(ctx context.Context, req *relation.PinFriendReq) error {
+	return api.PinFriend.Execute(ctx, req)
+}
+
+func (r *Relation) unpinFriend(ctx context.Context, req *relation.UnpinFriendReq) error {
+	return api.UnpinFriend.Execute(ctx, req)
+}

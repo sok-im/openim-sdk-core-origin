@@ -62,3 +62,21 @@ type UnpinGroupMessageReq struct {
 type GetGroupPinnedMessagesReq struct {
 	GroupID string `json:"groupID"`
 }
+
+// SetGroupMuteReq 对应 group.SetGroupMuteReq：用户侧群会话静音时长（秒）。
+type SetGroupMuteReq struct {
+	GroupID  string `json:"groupID"`
+	Duration int64  `json:"duration"`
+}
+
+type GetGroupMuteReq struct {
+	GroupID string `json:"groupID"`
+}
+
+type PinGroupReq struct {
+	GroupID string `json:"groupID"`
+}
+
+type UnpinGroupReq struct {
+	GroupID string `json:"groupID"`
+}

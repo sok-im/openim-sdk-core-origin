@@ -183,3 +183,23 @@ func (w *WrapperGroup) GetGroupPinnedMessages(_ js.Value, args []js.Value) inter
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetGroupPinnedMessages, callback, &args).AsyncCallWithCallback()
 }
+
+func (w *WrapperGroup) SetGroupMute(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetGroupMute, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetGroupMute(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetGroupMute, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) PinGroup(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.PinGroup, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) UnpinGroup(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.UnpinGroup, callback, &args).AsyncCallWithCallback()
+}

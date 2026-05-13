@@ -152,6 +152,10 @@ func registerFunc() {
 	js.Global().Set("pinGroupMessage", js.FuncOf(wrapperGroup.PinGroupMessage))
 	js.Global().Set("unpinGroupMessage", js.FuncOf(wrapperGroup.UnpinGroupMessage))
 	js.Global().Set("getGroupPinnedMessages", js.FuncOf(wrapperGroup.GetGroupPinnedMessages))
+	js.Global().Set("setGroupMute", js.FuncOf(wrapperGroup.SetGroupMute))
+	js.Global().Set("getGroupMute", js.FuncOf(wrapperGroup.GetGroupMute))
+	js.Global().Set("pinGroup", js.FuncOf(wrapperGroup.PinGroup))
+	js.Global().Set("unpinGroup", js.FuncOf(wrapperGroup.UnpinGroup))
 
 	wrapperUser := wasm_wrapper.NewWrapperUser(globalFuc)
 	js.Global().Set("getSelfUserInfo", js.FuncOf(wrapperUser.GetSelfUserInfo))
@@ -189,6 +193,10 @@ func registerFunc() {
 	js.Global().Set("removeBlack", js.FuncOf(wrapperFriend.RemoveBlack))
 	js.Global().Set("addBlack", js.FuncOf(wrapperFriend.AddBlack))
 	js.Global().Set("getFriendApplicationUnhandledCount", js.FuncOf(wrapperFriend.GetFriendApplicationUnhandledCount))
+	js.Global().Set("setFriendMute", js.FuncOf(wrapperFriend.SetFriendMute))
+	js.Global().Set("getFriendMute", js.FuncOf(wrapperFriend.GetFriendMute))
+	js.Global().Set("pinFriend", js.FuncOf(wrapperFriend.PinFriend))
+	js.Global().Set("unpinFriend", js.FuncOf(wrapperFriend.UnpinFriend))
 
 	wrapperThird := wasm_wrapper.NewWrapperThird(globalFuc)
 	js.Global().Set("updateFcmToken", js.FuncOf(wrapperThird.UpdateFcmToken))

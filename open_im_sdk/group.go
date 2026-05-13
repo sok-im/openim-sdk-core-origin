@@ -135,3 +135,23 @@ func UnpinGroupMessage(callback open_im_sdk_callback.Base, operationID string, r
 func GetGroupPinnedMessages(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Group().GetGroupPinnedMessages, req)
 }
+
+// SetGroupMute 设置当前用户对群的会话静音时长；req 为 JSON，字段见 sdk_params_callback.SetGroupMuteReq。
+func SetGroupMute(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Group().SetGroupMute, req)
+}
+
+// GetGroupMute 查询当前用户对群的会话静音状态；req 为 JSON，字段见 sdk_params_callback.GetGroupMuteReq。
+func GetGroupMute(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupMute, req)
+}
+
+// PinGroup 将群会话置顶；req 为 JSON，字段见 sdk_params_callback.PinGroupReq。
+func PinGroup(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Group().PinGroup, req)
+}
+
+// UnpinGroup 取消群会话置顶；req 为 JSON，字段见 sdk_params_callback.UnpinGroupReq。
+func UnpinGroup(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Group().UnpinGroup, req)
+}

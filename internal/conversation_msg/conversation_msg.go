@@ -873,7 +873,7 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 	}
 
 	// if userIDs = nil, return nil, nil
-	users, err := c.batchGetUserNameAndFaceURL(ctx, userIDs...)
+	friends, users, err := c.batchGetUserNameAndFaceURL(ctx, userIDs...)
 	if err != nil {
 		return err
 	}
@@ -890,7 +890,15 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 	for _, conversation := range conversations {
 		if conversation.ConversationType == constant.SingleChatType ||
 			conversation.ConversationType == constant.NotificationChatType {
-			if v, ok := users[conversation.UserID]; ok {
+
+			if v, ok := friends[conversation.UserID]; ok {
+				conversation.FaceURL = v.FaceURL
+				if v.Nickname != "" {
+					conversation.ShowName = v.Nickname
+				} else {
+					conversation.ShowName = v.FirstName + " " + v.LastName
+				}
+			} else if v, ok := users[conversation.UserID]; ok {
 				conversation.FaceURL = v.FaceURL
 				if v.FirstName != "" || v.LastName != "" {
 					conversation.ShowName = v.FirstName + " " + v.LastName
@@ -918,13 +926,14 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 	return nil
 }
 
-func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs ...string) (map[string]*model_struct.LocalUser,
+func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs ...string) (map[string]*model_struct.LocalUser, map[string]*model_struct.LocalUser,
 	error) {
-	m := make(map[string]*model_struct.LocalUser)
+	friends := make(map[string]*model_struct.LocalUser, len(userIDs))
+	m := make(map[string]*model_struct.LocalUser, len(userIDs))
 	var notInFriend []string
 
 	if len(userIDs) == 0 {
-		return m, nil
+		return friends, m, nil
 	}
 
 	friendList, err := c.relation.Db().GetFriendInfoList(ctx, userIDs)
@@ -943,18 +952,18 @@ func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs .
 		} else {
 			userInfo.Nickname = localFriend.Nickname
 		}
-		m[localFriend.FriendUserID] = userInfo
+		friends[localFriend.FriendUserID] = userInfo
 	}
 
 	usersInfo, err := c.user.GetUsersInfoWithCache(ctx, notInFriend)
 	if err != nil {
-		return nil, err
+		return friends, m, nil
 	}
 
 	for _, userInfo := range usersInfo {
 		m[userInfo.UserID] = userInfo
 	}
-	return m, nil
+	return friends, m, nil
 }
 
 func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string) (faceURL, name string, err error) {

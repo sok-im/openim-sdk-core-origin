@@ -164,6 +164,9 @@ type LocalUser struct {
 	Ex               string `gorm:"column:ex;type:varchar(1024)" json:"ex"`
 	AttachedInfo     string `gorm:"column:attached_info;type:varchar(1024)" json:"attachedInfo"`
 	GlobalRecvMsgOpt int32  `gorm:"column:global_recv_msg_opt" json:"globalRecvMsgOpt"`
+	// Phone 对应服务端 UserInfo.Phone（有权限时下发）；DB 列名保持 phone_name 以兼容已有库。
+	Phone    string `gorm:"column:phone_name;type:varchar(64)" json:"phone"`
+	AreaCode string `gorm:"column:area_code;type:varchar(32)" json:"areaCode"`
 }
 
 type LocalBlack struct {

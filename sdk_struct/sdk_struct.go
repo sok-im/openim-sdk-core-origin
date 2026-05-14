@@ -340,4 +340,7 @@ type PublicUser struct {
 	FaceURL    string `json:"faceURL"`
 	Ex         string `json:"ex"`
 	CreateTime int64  `json:"createTime"`
+	// Phone 来自服务端 UserInfo.Phone（展示/脱敏手机号，无权限为空）
+	Phone    string `json:"phone"`
+	AreaCode string `json:"areaCode"`
 }

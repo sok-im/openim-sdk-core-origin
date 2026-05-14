@@ -148,6 +148,8 @@ type LocalUser struct {
 	Ex               string `json:"ex,omitempty"`
 	AttachedInfo     string `json:"attachedInfo,omitempty"`
 	GlobalRecvMsgOpt int32  `json:"globalRecvMsgOpt,omitempty"`
+	Phone            string `json:"phone,omitempty"`
+	AreaCode         string `json:"areaCode,omitempty"`
 }
 
 type LocalUserCommand struct {

@@ -56,6 +56,8 @@ func (l *LocalUsers) GetLoginUser(ctx context.Context, userID string) (*model_st
 			result.Ex = temp.Ex
 			result.AttachedInfo = temp.Ex
 			result.GlobalRecvMsgOpt = temp.GlobalRecvMsgOpt
+			result.Phone = temp.Phone
+			result.AreaCode = temp.AreaCode
 			return &result, err
 		} else {
 			return nil, exec.ErrType
@@ -91,6 +93,8 @@ func (l *LocalUsers) InsertLoginUser(ctx context.Context, user *model_struct.Loc
 	temp.Ex = user.Ex
 	temp.AttachedInfo = user.Ex
 	temp.GlobalRecvMsgOpt = user.GlobalRecvMsgOpt
+	temp.Phone = user.Phone
+	temp.AreaCode = user.AreaCode
 	_, err := exec.Exec(utils.StructToJsonString(temp))
 	return err
 }

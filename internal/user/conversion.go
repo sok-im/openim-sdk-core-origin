@@ -20,6 +20,8 @@ func ServerUserToLocalUser(user *sdkws.UserInfo) *model_struct.LocalUser {
 		//AppMangerLevel:   user.AppMangerLevel,
 		GlobalRecvMsgOpt: user.GlobalRecvMsgOpt,
 		//AttachedInfo: user.AttachedInfo,
+		Phone:    user.GetPhone(),
+		AreaCode: user.GetAreaCode(),
 	}
 }
 func ServerCommandToLocalCommand(data *user.AllCommandInfoResp) *model_struct.LocalUserCommand {
@@ -39,5 +41,7 @@ func LocalUserToPublicUser(user *model_struct.LocalUser) *sdk_struct.PublicUser 
 		FaceURL:    user.FaceURL,
 		Ex:         user.Ex,
 		CreateTime: user.CreateTime,
+		Phone:      user.Phone,
+		AreaCode:   user.AreaCode,
 	}
 }

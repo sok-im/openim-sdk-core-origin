@@ -70,6 +70,11 @@ func (r *Relation) deleteFriend(ctx context.Context, friendUserID string) error 
 	return api.DeleteFriend.Execute(ctx, req)
 }
 
+func (r *Relation) deleteFriendOneway(ctx context.Context, friendUserID string) error {
+	req := &relation.DeleteFriendReq{OwnerUserID: r.loginUserID, FriendUserID: friendUserID}
+	return api.DeleteFriendOneway.Execute(ctx, req)
+}
+
 func (r *Relation) addFriendResponse(ctx context.Context, req *relation.RespondFriendApplyReq) error {
 	req.ToUserID = r.loginUserID
 	return api.AddFriendResponse.Execute(ctx, req)

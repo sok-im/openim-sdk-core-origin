@@ -279,6 +279,21 @@ func (r *Relation) DeleteFriend(ctx context.Context, friendUserID string) error 
 	return r.IncrSyncFriends(ctx)
 }
 
+// DeleteFriendOneway calls /friend/delete_friend_oneway on the server.
+// Only the caller's friend row is removed; the peer keeps the caller in their list.
+// After the server call it runs IncrSyncFriends so the local DB reflects the
+// removal immediately without waiting for an async notification.
+func (r *Relation) DeleteFriendOneway(ctx context.Context, friendUserID string) error {
+	if err := r.deleteFriendOneway(ctx, friendUserID); err != nil {
+		return err
+	}
+
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+
+	return r.IncrSyncFriends(ctx)
+}
+
 func (r *Relation) GetFriendList(ctx context.Context, filterBlack bool) ([]*model_struct.LocalFriend, error) {
 	localFriendList, err := r.db.GetAllFriendList(ctx)
 	if err != nil {

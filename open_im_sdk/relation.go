@@ -55,6 +55,11 @@ func DeleteFriend(callback open_im_sdk_callback.Base, operationID string, friend
 	call(callback, operationID, UserForSDK.Relation().DeleteFriend, friendUserID)
 }
 
+// DeleteFriendOneway removes the friend only on the caller's side; the peer still has the caller as friend.
+func DeleteFriendOneway(callback open_im_sdk_callback.Base, operationID string, friendUserID string) {
+	call(callback, operationID, UserForSDK.Relation().DeleteFriendOneway, friendUserID)
+}
+
 func GetFriendApplicationListAsRecipient(callback open_im_sdk_callback.Base, operationID, req string) {
 	call(callback, operationID, UserForSDK.Relation().GetFriendApplicationListAsRecipient, req)
 }

@@ -74,6 +74,11 @@ func (w *WrapperFriend) DeleteFriend(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.DeleteFriend, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperFriend) DeleteFriendOneway(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.DeleteFriendOneway, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperFriend) GetFriendApplicationListAsRecipient(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetFriendApplicationListAsRecipient, callback, &args).AsyncCallWithCallback()

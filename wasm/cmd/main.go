@@ -186,6 +186,7 @@ func registerFunc() {
 	js.Global().Set("addFriend", js.FuncOf(wrapperFriend.AddFriend))
 	js.Global().Set("updateFriends", js.FuncOf(wrapperFriend.UpdateFriends))
 	js.Global().Set("deleteFriend", js.FuncOf(wrapperFriend.DeleteFriend))
+	js.Global().Set("deleteFriendOneway", js.FuncOf(wrapperFriend.DeleteFriendOneway))
 	js.Global().Set("getFriendApplicationListAsRecipient", js.FuncOf(wrapperFriend.GetFriendApplicationListAsRecipient))
 	js.Global().Set("getFriendApplicationListAsApplicant", js.FuncOf(wrapperFriend.GetFriendApplicationListAsApplicant))
 	js.Global().Set("acceptFriendApplication", js.FuncOf(wrapperFriend.AcceptFriendApplication))

@@ -195,19 +195,20 @@ func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struc
 		if err != nil {
 			log.ZWarn(ctx, "GetConversationByUserID failed", err, "userInfo", usersInfo)
 		} else {
-			if _, ok := friendMap[userInfo.UserID]; ok {
-				continue
-			}
 			log.ZDebug(ctx, "GetConversationByUserID", "conversation", conversation)
 
-			showname := userInfo.Nickname
-			if userInfo.FirstName != "" || userInfo.LastName != "" {
+			var showname string
+			if friend, ok := friendMap[userInfo.UserID]; ok && friend.Remark != "" {
+				showname = friend.Remark
+			} else if userInfo.FirstName != "" || userInfo.LastName != "" {
 				showname = userInfo.FirstName + " " + userInfo.LastName
+			} else {
+				showname = userInfo.Nickname
 			}
 
 			if conversation.ShowName != showname || conversation.FaceURL != userInfo.FaceURL {
 				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,
-					Args: common.SourceIDAndSessionType{SourceID: userInfo.UserID, SessionType: conversation.ConversationType, FaceURL: userInfo.FaceURL, Nickname: userInfo.Nickname}}, u.conversationCh)
+					Args: common.SourceIDAndSessionType{SourceID: userInfo.UserID, SessionType: conversation.ConversationType, FaceURL: userInfo.FaceURL, Nickname: showname}}, u.conversationCh)
 				_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{Action: constant.UpdateMsgFaceUrlAndNickName,
 					Args: common.UpdateMessageInfo{SessionType: conversation.ConversationType, UserID: userInfo.UserID, FaceURL: userInfo.FaceURL, Nickname: userInfo.Nickname}}, u.conversationCh)
 				log.ZInfo(ctx, "lintao GetUsersInfo", "conversation", conversation, "userInfo", userInfo, "showname", showname)

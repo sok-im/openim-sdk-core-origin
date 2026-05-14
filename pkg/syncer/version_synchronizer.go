@@ -87,7 +87,7 @@ func (o *VersionSynchronizer[V, R]) IncrementalSync() error {
 	}
 
 	if len(delIDs) == 0 && len(changes) == 0 && len(insert) == 0 && !o.Full(resp) && extraData == nil {
-		log.ZDebug(o.Ctx, "lintao no data to sync", "table", o.TableName, "entityID", o.EntityID)
+		log.ZDebug(o.Ctx, "no data to sync", "table", o.TableName, "entityID", o.EntityID)
 		return nil
 	}
 

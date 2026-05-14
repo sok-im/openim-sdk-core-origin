@@ -925,7 +925,7 @@ func (c *Conversation) SetMessageLocalEx(ctx context.Context, conversationID str
 	var latestMsg sdk_struct.MsgStruct
 	utils.JsonStringToStruct(conversation.LatestMsg, &latestMsg)
 	if latestMsg.ClientMsgID == clientMsgID {
-		log.ZDebug(ctx, "latestMsg local ex changed", "seq", latestMsg.Seq, "clientMsgID", latestMsg.ClientMsgID)
+		log.ZDebug(ctx, "lintao latestMsg local ex changed", "seq", latestMsg.Seq, "clientMsgID", latestMsg.ClientMsgID)
 		latestMsg.LocalEx = localEx
 		latestMsgStr := utils.StructToJsonString(latestMsg)
 		if err = c.db.UpdateColumnsConversation(ctx, conversationID, map[string]interface{}{"latest_msg": latestMsgStr, "latest_msg_send_time": latestMsg.SendTime}); err != nil {

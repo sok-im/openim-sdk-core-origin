@@ -46,17 +46,17 @@ func (r *Relation) GetSpecifiedFriendsInfo(ctx context.Context, friendUserIDList
 
 	localFriendList, err := dataFetcher.FetchMissingAndFillLocal(ctx, friendUserIDList)
 	if err != nil {
-		log.ZWarn(ctx, "lintao GetDesignatedFriendsInfo", err)
+		log.ZWarn(ctx, "GetDesignatedFriendsInfo", err)
 		return nil, err
 	}
 
-	log.ZDebug(ctx, "lintao GetDesignatedFriendsInfo", "localFriendList", localFriendList)
+	log.ZDebug(ctx, "GetDesignatedFriendsInfo", "localFriendList", localFriendList)
 
 	if !filterBlack {
-		log.ZDebug(ctx, "lintao GetDesignatedFriendsInfo", "localFriendList", localFriendList)
+		log.ZDebug(ctx, "GetDesignatedFriendsInfo", "localFriendList", localFriendList)
 		return localFriendList, nil
 	}
-	log.ZDebug(ctx, "lintao GetDesignatedFriendsInfo", "localFriendList", localFriendList)
+	log.ZDebug(ctx, "GetDesignatedFriendsInfo", "localFriendList", localFriendList)
 	blackList, err := r.db.GetBlackInfoList(ctx, friendUserIDList)
 	if err != nil {
 		return nil, err
@@ -87,17 +87,15 @@ func (r *Relation) AddFriend(ctx context.Context, req *relation.ApplyToAddFriend
 // After the incremental friend sync it synchronously updates the conversation show_name
 // so that GetConversationListSplit reflects the remark immediately.
 func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAddFriendReq) error {
-	log.ZInfo(ctx, "lintao AddOnewayFriend", "req", req)
-
 	if err := r.addOnewayFriend(ctx, req); err != nil {
-		log.ZWarn(ctx, "lintao AddOnewayFriend failed", err, "req", req)
+		log.ZWarn(ctx, "AddOnewayFriend failed", err, "req", req)
 		return err
 	}
 
 	r.relationSyncMutex.Lock()
 	if err := r.IncrSyncFriends(ctx); err != nil {
 		r.relationSyncMutex.Unlock()
-		log.ZWarn(ctx, "lintao IncrSyncFriends failed", err, "req", req)
+		log.ZWarn(ctx, "IncrSyncFriends failed", err, "req", req)
 		return err
 	}
 	r.relationSyncMutex.Unlock()
@@ -106,11 +104,10 @@ func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAdd
 	// updated atomically), the new friend may not be in local DB. Fetch it directly
 	// from the server and insert it so that GetSpecifiedFriendsInfo is never empty.
 	if err := r.ensureFriendInLocalDB(ctx, req.ToUserID); err != nil {
-		log.ZWarn(ctx, "lintao ensureFriendInLocalDB failed", err, "toUserID", req.ToUserID)
+		log.ZWarn(ctx, "ensureFriendInLocalDB failed", err, "toUserID", req.ToUserID)
 	}
 
 	r.syncConversationShowNameForFriend(ctx, req.ToUserID, req.Remark)
-	log.ZInfo(ctx, "lintao AddOnewayFriend success", "req", req)
 	return nil
 }
 
@@ -119,29 +116,28 @@ func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAdd
 // directly from the server and inserts it, preventing GetSpecifiedFriendsInfo
 // from returning empty when the server's incremental version lags behind.
 func (r *Relation) ensureFriendInLocalDB(ctx context.Context, toUserID string) error {
-	log.ZInfo(ctx, "lintao ensureFriendInLocalDB", "toUserID", toUserID)
 	existing, err := r.db.GetFriendInfoList(ctx, []string{toUserID})
 	if err != nil {
-		log.ZWarn(ctx, "lintao ensureFriendInLocalDB failed", err, "toUserID", toUserID)
+		log.ZWarn(ctx, "ensureFriendInLocalDB failed", err, "toUserID", toUserID)
 		return err
 	}
 	if len(existing) > 0 {
-		log.ZInfo(ctx, "lintao ensureFriendInLocalDB success", "toUserID", toUserID)
+		log.ZInfo(ctx, "ensureFriendInLocalDB success", "toUserID", toUserID)
 		return nil
 	}
 	serverFriends, err := r.getDesignatedFriends(ctx, []string{toUserID})
 	if err != nil {
-		log.ZWarn(ctx, "lintao ensureFriendInLocalDB failed", err, "toUserID", toUserID)
+		log.ZWarn(ctx, "ensureFriendInLocalDB failed", err, "toUserID", toUserID)
 		return err
 	}
 	for _, sf := range serverFriends {
 		local := ServerFriendToLocalFriend(sf)
 		if err := r.db.InsertFriend(ctx, local); err != nil {
-			log.ZWarn(ctx, "lintao ensureFriendInLocalDB failed", err, "toUserID", toUserID)
+			log.ZWarn(ctx, "ensureFriendInLocalDB failed", err, "toUserID", toUserID)
 			return err
 		}
 	}
-	log.ZInfo(ctx, "lintao ensureFriendInLocalDB success", "toUserID", toUserID)
+	log.ZInfo(ctx, "ensureFriendInLocalDB success", "toUserID", toUserID)
 	return nil
 }
 

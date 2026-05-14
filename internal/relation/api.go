@@ -87,7 +87,6 @@ func (r *Relation) AddFriend(ctx context.Context, req *relation.ApplyToAddFriend
 // After the incremental friend sync it synchronously updates the conversation show_name
 // so that GetConversationListSplit reflects the remark immediately.
 func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAddFriendReq) error {
-
 	if err := r.addOnewayFriend(ctx, req); err != nil {
 		log.ZWarn(ctx, "AddOnewayFriend failed", err, "req", req)
 		return err
@@ -109,7 +108,6 @@ func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAdd
 	}
 
 	r.syncConversationShowNameForFriend(ctx, req.ToUserID, req.Remark)
-	log.ZInfo(ctx, "AddOnewayFriend success", "req", req)
 	return nil
 }
 
@@ -118,7 +116,6 @@ func (r *Relation) AddOnewayFriend(ctx context.Context, req *relation.ApplyToAdd
 // directly from the server and inserts it, preventing GetSpecifiedFriendsInfo
 // from returning empty when the server's incremental version lags behind.
 func (r *Relation) ensureFriendInLocalDB(ctx context.Context, toUserID string) error {
-	log.ZInfo(ctx, "ensureFriendInLocalDB", "toUserID", toUserID)
 	existing, err := r.db.GetFriendInfoList(ctx, []string{toUserID})
 	if err != nil {
 		log.ZWarn(ctx, "ensureFriendInLocalDB failed", err, "toUserID", toUserID)

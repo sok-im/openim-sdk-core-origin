@@ -84,6 +84,13 @@ func (u *User) initSyncer() {
 			switch state {
 			case syncer.Update:
 				u.listener().OnSelfInfoUpdated(utils.StructToJsonString(server))
+				if server.FirstName != "" || server.LastName != "" {
+					server.Nickname = server.FirstName + " " + server.LastName
+				} else {
+					server.Nickname = server.Nickname
+				}
+				log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
+
 				if server.Nickname != local.Nickname || server.FaceURL != local.FaceURL {
 					_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,
 						Args: common.SourceIDAndSessionType{SourceID: server.UserID, SessionType: constant.SingleChatType, FaceURL: server.FaceURL, Nickname: server.Nickname}}, u.conversationCh)

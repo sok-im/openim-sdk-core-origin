@@ -128,7 +128,7 @@ func (c *Conversation) SyncAllConversationHashReadSeqs(ctx context.Context) erro
 		stepStartTime = time.Now()
 		common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.ConChange, Args: conversationChangedIDs}, c.GetCh())
 		common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.TotalUnreadMessageChanged}, c.GetCh())
-		log.ZDebug(ctx, "TriggerCmdUpdateConversation completed", "duration", time.Since(stepStartTime).Seconds())
+		log.ZDebug(ctx, "lintao TriggerCmdUpdateConversation completed", "duration", time.Since(stepStartTime).Seconds())
 	}
 
 	log.ZDebug(ctx, "SyncAllConversationHashReadSeqs completed", "totalDuration", time.Since(startTime).Seconds())

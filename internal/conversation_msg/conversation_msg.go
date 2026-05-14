@@ -171,6 +171,7 @@ func (c *Conversation) initSyncer() {
 		}),
 		syncer.WithNotice[*model_struct.LocalConversation, pbConversation.GetOwnerConversationResp, string](func(ctx context.Context, state int, server, local *model_struct.LocalConversation) error {
 			if state == syncer.Update || state == syncer.Insert {
+				log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
 				c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: server.ConversationID, Action: constant.ConChange, Args: []string{server.ConversationID}}})
 			}
 			return nil

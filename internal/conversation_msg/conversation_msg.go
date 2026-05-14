@@ -921,6 +921,7 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 			}
 
 		}
+		log.ZInfo(ctx, "batchAddFaceURLAndName", "conversation", conversation)
 	}
 
 	return nil
@@ -947,11 +948,7 @@ func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs .
 	}
 	for _, localFriend := range friendList {
 		userInfo := &model_struct.LocalUser{UserID: localFriend.FriendUserID, FaceURL: localFriend.FaceURL}
-		if localFriend.Remark != "" {
-			userInfo.Nickname = localFriend.Remark
-		} else {
-			userInfo.Nickname = localFriend.Nickname
-		}
+		userInfo.Nickname = localFriend.ConversationShowName()
 		friends[localFriend.FriendUserID] = userInfo
 	}
 
@@ -969,15 +966,7 @@ func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs .
 func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string) (faceURL, name string, err error) {
 	friendInfo, err := c.relation.Db().GetFriendInfoByFriendUserID(ctx, userID)
 	if err == nil {
-		faceURL = friendInfo.FaceURL
-		if friendInfo.Remark != "" {
-			name = friendInfo.Remark
-		} else if friendInfo.FirstName != "" || friendInfo.LastName != "" {
-			name = friendInfo.FirstName + " " + friendInfo.LastName
-		} else {
-			name = friendInfo.Nickname
-		}
-		return faceURL, name, nil
+		return friendInfo.FaceURL, friendInfo.ConversationShowName(), nil
 	}
 	userInfo, err := c.user.GetUserInfoWithCache(ctx, userID)
 	if err != nil {

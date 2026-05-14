@@ -165,7 +165,7 @@ func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friend
 			log.ZWarn(ctx, "lintao syncConversationShowNameForFriend failed", err, "friendUserID", friendUserID)
 			return
 		}
-		showName = friend.Nickname
+		showName = friend.ConversationShowName()
 	}
 	if showName == "" {
 		log.ZInfo(ctx, "lintao syncConversationShowNameForFriend failed", "friendUserID", friendUserID)

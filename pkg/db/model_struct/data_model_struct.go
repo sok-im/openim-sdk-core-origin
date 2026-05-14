@@ -17,6 +17,7 @@ package model_struct
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"strings"
 
 	"github.com/openimsdk/tools/errs"
 )
@@ -35,6 +36,21 @@ type LocalFriend struct {
 	Ex             string `gorm:"column:ex;type:varchar(1024)" json:"ex"`
 	AttachedInfo   string `gorm:"column:attached_info;type:varchar(1024)" json:"attachedInfo"`
 	IsPinned       bool   `gorm:"column:is_pinned;" json:"isPinned"`
+}
+
+// ConversationShowName is the single-chat session list title for this friend:
+// remark, else firstName+lastName (trimmed), else nickname.
+func (f *LocalFriend) ConversationShowName() string {
+	if f == nil {
+		return ""
+	}
+	if f.Remark != "" {
+		return f.Remark
+	}
+	if f.FirstName != "" || f.LastName != "" {
+		return strings.TrimSpace(f.FirstName + " " + f.LastName)
+	}
+	return f.Nickname
 }
 
 func (LocalFriend) TableName() string {

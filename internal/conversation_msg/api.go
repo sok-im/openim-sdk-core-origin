@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/openimsdk/tools/errs"
 
@@ -72,6 +71,8 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = name
 			newConversation.FaceURL = faceUrl
+			log.ZInfo(ctx, "lintao GetOneConversation", "conversation", newConversation)
+
 		case constant.WriteGroupChatType, constant.ReadGroupChatType:
 			newConversation.GroupID = sourceID
 			g, err := c.group.FetchGroupOrError(ctx, sourceID)
@@ -80,6 +81,8 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = g.GroupName
 			newConversation.FaceURL = g.FaceURL
+			log.ZInfo(ctx, "linao GetOneConversation", "conversation", newConversation)
+
 		}
 		//double check if the conversation exists
 		lc, err := c.db.GetConversation(ctx, conversationID)
@@ -233,9 +236,9 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 			s.AttachedInfoElem = &attachedInfo
 		}
 		if err != nil {
-			t := time.Now()
+			//t := time.Now()
 			faceUrl, name, err := c.getUserNameAndFaceURL(ctx, recvID)
-			log.ZDebug(ctx, "GetUserNameAndFaceURL", "cost time", time.Since(t))
+			log.ZDebug(ctx, "lintao GetUserNameAndFaceURL", "conversation", lc)
 			if err != nil {
 				return nil, err
 			}
@@ -827,7 +830,7 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 		conversation.ShowName = name
 		conversation.UserID = sendID
 		conversation.ConversationID = c.getConversationIDBySessionType(sendID, constant.SingleChatType)
-
+		log.ZInfo(ctx, "lintao InsertSingleMessageToLocalStorage", "conversation", conversation)
 	} else {
 		conversation.UserID = recvID
 		conversation.ConversationID = c.getConversationIDBySessionType(recvID, constant.SingleChatType)
@@ -839,6 +842,8 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 			}
 			conversation.FaceURL = faceUrl
 			conversation.ShowName = name
+			log.ZInfo(ctx, "lintao InsertSingleMessageToLocalStorage", "conversation", conversation)
+
 		}
 	}
 
@@ -893,6 +898,7 @@ func (c *Conversation) InsertGroupMessageToLocalStorage(ctx context.Context, s *
 	conversation.LatestMsgSendTime = s.SendTime
 	conversation.FaceURL = s.SenderFaceURL
 	conversation.ShowName = s.SenderNickname
+	log.ZInfo(ctx, "lintao InsertGroupMessageToLocalStorage", "conversation", conversation)
 	err = c.insertMessageToLocalStorage(ctx, conversation.ConversationID, localMessage)
 	if err != nil {
 		return nil, err

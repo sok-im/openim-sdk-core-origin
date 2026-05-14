@@ -370,6 +370,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 						lc.UserID = v.SendID
 						lc.ShowName = msg.SenderNickname
 						lc.FaceURL = msg.SenderFaceURL
+						log.ZInfo(ctx, "lintao othersInsertMessage", "conversation", lc)
 					case constant.WriteGroupChatType, constant.ReadGroupChatType:
 						lc.GroupID = v.GroupID
 					case constant.NotificationChatType:
@@ -921,7 +922,7 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 			}
 
 		}
-		log.ZInfo(ctx, "batchAddFaceURLAndName", "conversation", conversation)
+		log.ZInfo(ctx, "lintaobatchAddFaceURLAndName", "conversation", conversation)
 	}
 
 	return nil
@@ -966,10 +967,12 @@ func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs .
 func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string) (faceURL, name string, err error) {
 	friendInfo, err := c.relation.Db().GetFriendInfoByFriendUserID(ctx, userID)
 	if err == nil {
+		log.ZInfo(ctx, "lintao getUserNameAndFaceURL", "friendInfo", friendInfo)
 		return friendInfo.FaceURL, friendInfo.ConversationShowName(), nil
 	}
 	userInfo, err := c.user.GetUserInfoWithCache(ctx, userID)
 	if err != nil {
+		log.ZInfo(ctx, "lintao getUserNameAndFaceURL", "userInfo", userInfo)
 		return "", "", nil
 	}
 	if userInfo.FirstName != "" || userInfo.LastName != "" {
@@ -977,5 +980,6 @@ func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string)
 	} else {
 		name = userInfo.Nickname
 	}
+	log.ZInfo(ctx, "lintao getUserNameAndFaceURL", "userInfo", userInfo)
 	return userInfo.FaceURL, name, nil
 }

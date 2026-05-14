@@ -207,11 +207,11 @@ func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struc
 			}
 
 			if conversation.ShowName != showname || conversation.FaceURL != userInfo.FaceURL {
+				log.ZInfo(ctx, "lintao GetUsersInfo", "conversation", conversation, "userInfo", userInfo, "showname", showname)
 				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,
 					Args: common.SourceIDAndSessionType{SourceID: userInfo.UserID, SessionType: conversation.ConversationType, FaceURL: userInfo.FaceURL, Nickname: showname}}, u.conversationCh)
 				_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{Action: constant.UpdateMsgFaceUrlAndNickName,
 					Args: common.UpdateMessageInfo{SessionType: conversation.ConversationType, UserID: userInfo.UserID, FaceURL: userInfo.FaceURL, Nickname: userInfo.Nickname}}, u.conversationCh)
-				log.ZInfo(ctx, "lintao GetUsersInfo", "conversation", conversation, "userInfo", userInfo, "showname", showname)
 			}
 		}
 	}

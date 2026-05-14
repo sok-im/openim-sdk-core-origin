@@ -63,7 +63,12 @@ func (r *Relation) initSyncer() {
 				r.friendshipListener.OnFriendAdded(*server)
 				if server.Remark != "" {
 					server.Nickname = server.Remark
+				} else if server.FirstName != "" || server.LastName != "" {
+					server.Nickname = server.FirstName + " " + server.LastName
+				} else {
+					server.Nickname = server.Nickname
 				}
+				log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
 				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
 					Action: constant.UpdateConFaceUrlAndNickName,
 					Args: common.SourceIDAndSessionType{
@@ -90,7 +95,12 @@ func (r *Relation) initSyncer() {
 				if local.Nickname != server.Nickname || local.FaceURL != server.FaceURL || local.Remark != server.Remark {
 					if server.Remark != "" {
 						server.Nickname = server.Remark
+					} else if server.FirstName != "" || server.LastName != "" {
+						server.Nickname = server.FirstName + " " + server.LastName
+					} else {
+						server.Nickname = server.Nickname
 					}
+					log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
 					_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
 						Action: constant.UpdateConFaceUrlAndNickName,
 						Args: common.SourceIDAndSessionType{

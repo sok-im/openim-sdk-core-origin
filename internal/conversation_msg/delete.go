@@ -160,6 +160,7 @@ func (c *Conversation) deleteMessageFromLocal(ctx context.Context, conversationI
 	// Convert the latest message in the conversation table.
 	utils.JsonStringToStruct(conversation.LatestMsg, &latestMsg)
 
+	latestMsgUpdated := false
 	if latestMsg.ClientMsgID == clientMsgID {
 		log.ZDebug(ctx, "latestMsg deleted", "seq", latestMsg.Seq, "clientMsgID", latestMsg.ClientMsgID)
 		msg, err := c.db.GetLatestActiveMessage(ctx, conversationID, false)
@@ -178,6 +179,13 @@ func (c *Conversation) deleteMessageFromLocal(ctx context.Context, conversationI
 		if err := c.db.UpdateColumnsConversation(ctx, conversationID, map[string]interface{}{"latest_msg": latestMsgStr, "latest_msg_send_time": latestMsgSendTime}); err != nil {
 			return err
 		}
+		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.ConChange, Args: []string{conversationID}}})
+		latestMsgUpdated = true
+	}
+	// Ensure the conversation list is always refreshed after a deletion, even when
+	// the deleted message is already read and not the latestMsg (both branches above
+	// would have been skipped, leaving the UI stale).
+	if !latestMsgUpdated && (s.IsRead || s.SendID == c.loginUserID) {
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.ConChange, Args: []string{conversationID}}})
 	}
 	c.msgListener().OnMsgDeleted(utils.StructToJsonString(s))

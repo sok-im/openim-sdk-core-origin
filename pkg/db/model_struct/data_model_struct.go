@@ -239,6 +239,9 @@ type LocalConversation struct {
 	MinSeq                int64  `gorm:"column:min_seq" json:"minSeq"`
 	MsgDestructTime       int64  `gorm:"column:msg_destruct_time;default:604800" json:"msgDestructTime"`
 	IsMsgDestruct         bool   `gorm:"column:is_msg_destruct;default:false" json:"isMsgDestruct"`
+	IsMuted               bool   `gorm:"column:is_muted;default:false" json:"isMuted"`
+	MuteDuration          int32  `gorm:"column:mute_duration;default:0" json:"muteDuration"`
+	MuteEndTime           int64  `gorm:"column:mute_end_time;default:0" json:"muteEndTime"`
 }
 
 func (LocalConversation) TableName() string {

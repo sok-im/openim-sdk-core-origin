@@ -60,6 +60,9 @@ type LocalConversation struct {
 	UpdateUnreadCountTime int64  ` json:"updateUnreadCountTime,omitempty"`
 	AttachedInfo          string ` json:"attachedInfo,omitempty"`
 	Ex                    string ` json:"ex,omitempty"`
+	IsMuted               bool   ` json:"isMuted,omitempty"`
+	MuteDuration          int32  ` json:"muteDuration,omitempty"`
+	MuteEndTime           int64  ` json:"muteEndTime,omitempty"`
 }
 type LocalPartConversation struct {
 	RecvMsgOpt            int32  ` json:"recvMsgOpt"`
@@ -71,6 +74,9 @@ type LocalPartConversation struct {
 	BurnDuration          int32  ` json:"burnDuration,omitempty"`
 	AttachedInfo          string ` json:"attachedInfo"`
 	Ex                    string ` json:"ex"`
+	IsMuted               bool   ` json:"isMuted,omitempty"`
+	MuteDuration          int32  ` json:"muteDuration,omitempty"`
+	MuteEndTime           int64  ` json:"muteEndTime,omitempty"`
 }
 
 type LocalGroup struct {

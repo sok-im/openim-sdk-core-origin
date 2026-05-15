@@ -221,6 +221,9 @@ func (i *LocalConversations) UpdateConversation(ctx context.Context, c *model_st
 		UpdateUnreadCountTime: c.UpdateUnreadCountTime,
 		AttachedInfo:          c.AttachedInfo,
 		Ex:                    c.Ex,
+		IsMuted:               c.IsMuted,
+		MuteDuration:          c.MuteDuration,
+		MuteEndTime:           c.MuteEndTime,
 	}
 	_, err := exec.Exec(c.ConversationID, utils.StructToJsonString(tempLocalConversation))
 	return err
@@ -240,6 +243,9 @@ func (i *LocalConversations) UpdateConversationForSync(ctx context.Context, c *m
 		BurnDuration:          c.BurnDuration,
 		AttachedInfo:          c.AttachedInfo,
 		Ex:                    c.Ex,
+		IsMuted:               c.IsMuted,
+		MuteDuration:          c.MuteDuration,
+		MuteEndTime:           c.MuteEndTime,
 	}
 	_, err := exec.Exec(c.ConversationID, utils.StructToJsonString(tempLocalConversation))
 	return err

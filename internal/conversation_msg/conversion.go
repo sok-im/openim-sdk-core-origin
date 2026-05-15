@@ -43,6 +43,9 @@ func ServerConversationToLocal(conversation *pbConversation.Conversation) *model
 		Ex:               conversation.Ex,
 		MsgDestructTime:  conversation.MsgDestructTime,
 		IsMsgDestruct:    conversation.IsMsgDestruct,
+		IsMuted:          conversation.IsMuted,
+		MuteDuration:     conversation.MuteDuration,
+		MuteEndTime:      conversation.MuteEndTime,
 	}
 }
 
@@ -61,6 +64,9 @@ func LocalConversationToServer(conversation *model_struct.LocalConversation) *pb
 		MsgDestructTime:  conversation.MsgDestructTime,
 		Ex:               conversation.Ex,
 		IsMsgDestruct:    conversation.IsMsgDestruct,
+		IsMuted:          conversation.IsMuted,
+		MuteDuration:     conversation.MuteDuration,
+		MuteEndTime:      conversation.MuteEndTime,
 	}
 }
 

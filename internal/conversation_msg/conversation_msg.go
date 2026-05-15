@@ -145,6 +145,7 @@ func (c *Conversation) initSyncer() {
 					"update_unread_count_time": serverConversation.UpdateUnreadCountTime,
 					"attached_info":            serverConversation.AttachedInfo, "ex": serverConversation.Ex, "msg_destruct_time": serverConversation.MsgDestructTime,
 					"is_msg_destruct": serverConversation.IsMsgDestruct,
+					"is_muted": serverConversation.IsMuted, "mute_duration": serverConversation.MuteDuration, "mute_end_time": serverConversation.MuteEndTime,
 					"max_seq":         serverConversation.MaxSeq, "min_seq": serverConversation.MinSeq})
 		}),
 		syncer.WithUUID[*model_struct.LocalConversation, pbConversation.GetOwnerConversationResp, string](func(value *model_struct.LocalConversation) string {
@@ -163,7 +164,10 @@ func (c *Conversation) initSyncer() {
 				server.MaxSeq != local.MaxSeq ||
 				server.MinSeq != local.MinSeq ||
 				server.MsgDestructTime != local.MsgDestructTime ||
-				server.IsMsgDestruct != local.IsMsgDestruct {
+				server.IsMsgDestruct != local.IsMsgDestruct ||
+				server.IsMuted != local.IsMuted ||
+				server.MuteDuration != local.MuteDuration ||
+				server.MuteEndTime != local.MuteEndTime {
 				log.ZDebug(context.Background(), "not same", "conversationID", server.ConversationID, "server", server.RecvMsgOpt, "local", local.RecvMsgOpt)
 				return false
 			}
@@ -463,6 +467,9 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			nc.Ex = v.Ex
 			nc.IsMsgDestruct = v.IsMsgDestruct
 			nc.MsgDestructTime = v.MsgDestructTime
+			nc.IsMuted = v.IsMuted
+			nc.MuteDuration = v.MuteDuration
+			nc.MuteEndTime = v.MuteEndTime
 		}
 	}
 

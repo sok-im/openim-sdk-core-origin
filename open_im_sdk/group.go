@@ -124,6 +124,10 @@ func GetGroupApplicationUnhandledCount(callback open_im_sdk_callback.Base, opera
 	call(callback, operationID, UserForSDK.Group().GetGroupApplicationUnhandledCount, req)
 }
 
+func GetCommonGroupsWithFriend(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Group().GetCommonGroupsWithFriend, req)
+}
+
 func PinGroupMessage(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Group().PinGroupMessage, req)
 }

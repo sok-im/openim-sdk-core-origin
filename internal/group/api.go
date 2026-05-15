@@ -530,6 +530,10 @@ func (g *Group) GetGroupApplicationUnhandledCount(ctx context.Context, req *sdk_
 	return g.getGroupApplicationUnhandledCount(ctx, req.Time)
 }
 
+func (g *Group) GetCommonGroupsWithFriend(ctx context.Context, req *sdk_params_callback.GetCommonGroupsWithFriendReq) (*group.GetCommonGroupsWithFriendResp, error) {
+	return g.getCommonGroupsWithFriend(ctx, req.FriendUserID)
+}
+
 func (g *Group) PinGroupMessage(ctx context.Context, req *sdk_params_callback.PinGroupMessageReq) (*group.PinGroupMessageResp, error) {
 	return g.pinGroupMessage(ctx, &group.PinGroupMessageReq{GroupID: req.GroupID, Seq: req.Seq})
 }

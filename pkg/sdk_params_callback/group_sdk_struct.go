@@ -48,6 +48,10 @@ type GetGroupApplicationUnhandledCountReq struct {
 	Time int64 `json:"time"`
 }
 
+type GetCommonGroupsWithFriendReq struct {
+	FriendUserID string `json:"friendUserID"`
+}
+
 type PinGroupMessageReq struct {
 	GroupID string `json:"groupID"`
 	Seq     int64  `json:"seq"`

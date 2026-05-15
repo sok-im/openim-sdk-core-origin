@@ -133,6 +133,10 @@ func (g *Group) getGroupApplicationUnhandledCount(ctx context.Context, time int6
 	return int32(resp.GetCount()), nil
 }
 
+func (g *Group) getCommonGroupsWithFriend(ctx context.Context, friendUserID string) (*group.GetCommonGroupsWithFriendResp, error) {
+	return api.GetCommonGroupsWithFriend.Invoke(ctx, &group.GetCommonGroupsWithFriendReq{FriendUserID: friendUserID})
+}
+
 func (g *Group) pinGroupMessage(ctx context.Context, req *group.PinGroupMessageReq) (*group.PinGroupMessageResp, error) {
 	return api.PinGroupMessage.Invoke(ctx, req)
 }

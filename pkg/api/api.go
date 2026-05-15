@@ -106,6 +106,7 @@ var (
 	GetIncrementalGroupMemberBatch    = newApi[group.BatchGetIncrementalGroupMemberReq, group.BatchGetIncrementalGroupMemberResp]("/group/get_incremental_group_members_batch")
 	GetFullJoinedGroupIDs             = newApi[group.GetFullJoinGroupIDsReq, group.GetFullJoinGroupIDsResp]("/group/get_full_join_group_ids")
 	GetFullGroupMemberUserIDs         = newApi[group.GetFullGroupMemberUserIDsReq, group.GetFullGroupMemberUserIDsResp]("/group/get_full_group_member_user_ids")
+	GetCommonGroupsWithFriend         = newApi[group.GetCommonGroupsWithFriendReq, group.GetCommonGroupsWithFriendResp]("/group/get_common_groups_with_friend")
 	PinGroupMessage                   = newApi[group.PinGroupMessageReq, group.PinGroupMessageResp]("/group/pin_group_message")
 	UnpinGroupMessage                 = newApi[group.UnpinGroupMessageReq, group.UnpinGroupMessageResp]("/group/unpin_group_message")
 	GetGroupPinnedMessages            = newApi[group.GetGroupPinnedMessagesReq, group.GetGroupPinnedMessagesResp]("/group/get_group_pinned_messages")

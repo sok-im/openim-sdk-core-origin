@@ -169,6 +169,11 @@ func (w *WrapperGroup) GetGroupApplicationUnhandledCount(_ js.Value, args []js.V
 	return event_listener.NewCaller(open_im_sdk.GetGroupApplicationUnhandledCount, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperGroup) GetCommonGroupsWithFriend(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetCommonGroupsWithFriend, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperGroup) PinGroupMessage(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.PinGroupMessage, callback, &args).AsyncCallWithCallback()

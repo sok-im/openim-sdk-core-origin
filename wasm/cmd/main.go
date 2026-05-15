@@ -98,6 +98,7 @@ func registerFunc() {
 	js.Global().Set("hideConversation", js.FuncOf(wrapperConMsg.HideConversation))
 	js.Global().Set("setConversationDraft", js.FuncOf(wrapperConMsg.SetConversationDraft))
 	js.Global().Set("setConversation", js.FuncOf(wrapperConMsg.SetConversation))
+	js.Global().Set("setConversationMute", js.FuncOf(wrapperConMsg.SetConversationMute))
 
 	js.Global().Set("getTotalUnreadMsgCount", js.FuncOf(wrapperConMsg.GetTotalUnreadMsgCount))
 	js.Global().Set("findMessageList", js.FuncOf(wrapperConMsg.FindMessageList))

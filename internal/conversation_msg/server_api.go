@@ -75,3 +75,7 @@ func (c *Conversation) getIncrementalConversationFromServer(ctx context.Context,
 	req := &pbConversation.GetIncrementalConversationReq{UserID: c.loginUserID, Version: version, VersionID: versionID}
 	return api.GetIncrementalConversation.Invoke(ctx, req)
 }
+
+func (c *Conversation) setConversationMute(ctx context.Context, req *pbConversation.SetConversationMuteReq) error {
+	return api.SetConversationMute.Execute(ctx, req)
+}

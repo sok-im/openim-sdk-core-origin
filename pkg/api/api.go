@@ -123,6 +123,7 @@ var (
 	GetIncrementalConversation = newApi[conversation.GetIncrementalConversationReq, conversation.GetIncrementalConversationResp]("/conversation/get_incremental_conversations")
 	GetFullConversationIDs     = newApi[conversation.GetFullOwnerConversationIDsReq, conversation.GetFullOwnerConversationIDsResp]("/conversation/get_full_conversation_ids")
 	GetOwnerConversation       = newApi[conversation.GetOwnerConversationReq, conversation.GetOwnerConversationResp]("/conversation/get_owner_conversation")
+	SetConversationMute        = newApi[conversation.SetConversationMuteReq, conversation.SetConversationMuteResp]("/conversation/set_mute")
 )
 
 var (

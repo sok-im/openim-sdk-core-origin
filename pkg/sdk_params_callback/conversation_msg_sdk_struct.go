@@ -78,3 +78,9 @@ type SearchByConversationResult struct {
 	MessageCount      int                     `json:"messageCount"`
 	MessageList       []*sdk_struct.MsgStruct `json:"messageList"`
 }
+
+// SetConversationMuteReq 对应 conversation.SetConversationMuteReq：duration 为秒，-1 永久，0 取消静音。
+type SetConversationMuteReq struct {
+	ConversationID string `json:"conversationID"`
+	Duration       int32  `json:"duration"`
+}

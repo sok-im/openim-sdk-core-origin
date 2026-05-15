@@ -40,6 +40,11 @@ func SetConversation(callback open_im_sdk_callback.Base, operationID string, con
 	call(callback, operationID, UserForSDK.Conversation().SetConversation, conversationID, req)
 }
 
+// SetConversationMute 设置会话静音；req 为 JSON，字段见 sdk_params_callback.SetConversationMuteReq。
+func SetConversationMute(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Conversation().SetConversationMute, req)
+}
+
 func HideConversation(callback open_im_sdk_callback.Base, operationID string, conversationID string) {
 	call(callback, operationID, UserForSDK.Conversation().HideConversation, conversationID)
 }

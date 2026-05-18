@@ -298,6 +298,11 @@ func (w *WrapperConMsg) SetConversationMute(_ js.Value, args []js.Value) interfa
 	return event_listener.NewCaller(open_im_sdk.SetConversationMute, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperConMsg) SetConversationBurn(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetConversationBurn, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperConMsg) SetConversationDraft(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SetConversationDraft, callback, &args).AsyncCallWithCallback()

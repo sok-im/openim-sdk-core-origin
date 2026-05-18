@@ -124,6 +124,7 @@ var (
 	GetFullConversationIDs     = newApi[conversation.GetFullOwnerConversationIDsReq, conversation.GetFullOwnerConversationIDsResp]("/conversation/get_full_conversation_ids")
 	GetOwnerConversation       = newApi[conversation.GetOwnerConversationReq, conversation.GetOwnerConversationResp]("/conversation/get_owner_conversation")
 	SetConversationMute        = newApi[conversation.SetConversationMuteReq, conversation.SetConversationMuteResp]("/conversation/set_mute")
+	SetConversationBurn        = newApi[conversation.SetConversationBurnReq, conversation.SetConversationBurnResp]("/conversation/set_burn")
 )
 
 var (

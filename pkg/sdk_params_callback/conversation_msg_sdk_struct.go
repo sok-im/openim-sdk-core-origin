@@ -85,6 +85,12 @@ type SetConversationMuteReq struct {
 	Duration       int32  `json:"duration"`
 }
 
+// SetConversationBurnReq 对应 conversation.SetConversationBurnReq：burnDuration 为秒，0 关闭阅后即焚。
+type SetConversationBurnReq struct {
+	ConversationID string `json:"conversationID"`
+	BurnDuration   int32  `json:"burnDuration"`
+}
+
 // DeleteSyncOptParam 对应 msg.DeleteSyncOpt。
 type DeleteSyncOptParam struct {
 	IsSyncSelf  bool `json:"IsSyncSelf"`

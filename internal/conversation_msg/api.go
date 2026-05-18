@@ -155,6 +155,19 @@ func (c *Conversation) SetConversationMute(ctx context.Context, req *sdk_params_
 	return c.IncrSyncConversations(ctx)
 }
 
+func (c *Conversation) SetConversationBurn(ctx context.Context, req *sdk_params_callback.SetConversationBurnReq) error {
+	if err := c.setConversationBurn(ctx, &pbConversation.SetConversationBurnReq{
+		OwnerUserID:    c.loginUserID,
+		ConversationID: req.ConversationID,
+		BurnDuration:   req.BurnDuration,
+	}); err != nil {
+		return err
+	}
+	c.conversationSyncMutex.Lock()
+	defer c.conversationSyncMutex.Unlock()
+	return c.IncrSyncConversations(ctx)
+}
+
 func (c *Conversation) GetTotalUnreadMsgCount(ctx context.Context) (totalUnreadCount int32, err error) {
 	return c.db.GetTotalUnreadMsgCountDB(ctx)
 }

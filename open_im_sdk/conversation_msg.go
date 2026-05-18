@@ -45,6 +45,11 @@ func SetConversationMute(callback open_im_sdk_callback.Base, operationID, req st
 	call(callback, operationID, UserForSDK.Conversation().SetConversationMute, req)
 }
 
+// SetConversationBurn 设置会话阅后即焚；req 为 JSON，字段见 sdk_params_callback.SetConversationBurnReq。
+func SetConversationBurn(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Conversation().SetConversationBurn, req)
+}
+
 func HideConversation(callback open_im_sdk_callback.Base, operationID string, conversationID string) {
 	call(callback, operationID, UserForSDK.Conversation().HideConversation, conversationID)
 }

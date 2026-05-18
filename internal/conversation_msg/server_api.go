@@ -84,3 +84,7 @@ func (c *Conversation) getIncrementalConversationFromServer(ctx context.Context,
 func (c *Conversation) setConversationMute(ctx context.Context, req *pbConversation.SetConversationMuteReq) error {
 	return api.SetConversationMute.Execute(ctx, req)
 }
+
+func (c *Conversation) setConversationBurn(ctx context.Context, req *pbConversation.SetConversationBurnReq) error {
+	return api.SetConversationBurn.Execute(ctx, req)
+}

@@ -808,7 +808,21 @@ func (c *Conversation) DeleteMessageFromLocalStorage(ctx context.Context, conver
 }
 
 func (c *Conversation) DeleteMessage(ctx context.Context, conversationID string, clientMsgID string) error {
-	return c.deleteMessage(ctx, conversationID, clientMsgID)
+	return c.deleteMessage(ctx, conversationID, clientMsgID, nil)
+}
+
+func (c *Conversation) DeleteMessageWithOptions(ctx context.Context, req *sdk_params_callback.DeleteMessageReq) error {
+	if req == nil {
+		return sdkerrs.ErrArgs.WrapMsg("DeleteMessageReq is nil")
+	}
+	var opt *pbMsg.DeleteSyncOpt
+	if req.DeleteSyncOpt != nil {
+		opt = &pbMsg.DeleteSyncOpt{
+			IsSyncSelf:  req.DeleteSyncOpt.IsSyncSelf,
+			IsSyncOther: req.DeleteSyncOpt.IsSyncOther,
+		}
+	}
+	return c.deleteMessage(ctx, req.ConversationID, req.ClientMsgID, opt)
 }
 
 func (c *Conversation) DeleteAllMsgFromLocalAndServer(ctx context.Context) error {

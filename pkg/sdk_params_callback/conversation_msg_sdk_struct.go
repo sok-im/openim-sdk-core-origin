@@ -84,3 +84,17 @@ type SetConversationMuteReq struct {
 	ConversationID string `json:"conversationID"`
 	Duration       int32  `json:"duration"`
 }
+
+// DeleteSyncOptParam 对应 msg.DeleteSyncOpt。
+type DeleteSyncOptParam struct {
+	IsSyncSelf  bool `json:"IsSyncSelf"`
+	IsSyncOther bool `json:"IsSyncOther"`
+}
+
+// DeleteMessageReq 删除本地与服务端消息；deleteSyncOpt 可选。
+// IsSyncOther=true 时双向物理删除并通知对方；默认仅对自己软删。
+type DeleteMessageReq struct {
+	ConversationID string              `json:"conversationID"`
+	ClientMsgID    string              `json:"clientMsgID"`
+	DeleteSyncOpt  *DeleteSyncOptParam `json:"deleteSyncOpt,omitempty"`
+}

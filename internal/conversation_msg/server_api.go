@@ -37,8 +37,13 @@ func (c *Conversation) deleteAllMessageFromServer(ctx context.Context) error {
 }
 
 // The user deletes part of the message from the server
-func (c *Conversation) deleteMessagesFromServer(ctx context.Context, conversationID string, seqs []int64) error {
-	req := &pbMsg.DeleteMsgsReq{UserID: c.loginUserID, Seqs: seqs, ConversationID: conversationID}
+func (c *Conversation) deleteMessagesFromServer(ctx context.Context, conversationID string, seqs []int64, deleteSyncOpt *pbMsg.DeleteSyncOpt) error {
+	req := &pbMsg.DeleteMsgsReq{
+		UserID:         c.loginUserID,
+		Seqs:           seqs,
+		ConversationID: conversationID,
+		DeleteSyncOpt:  deleteSyncOpt,
+	}
 	return api.DeleteMsgs.Execute(ctx, req)
 }
 

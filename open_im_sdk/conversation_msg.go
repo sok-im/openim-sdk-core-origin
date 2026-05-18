@@ -188,6 +188,12 @@ func DeleteMessage(callback open_im_sdk_callback.Base, operationID string, conve
 	call(callback, operationID, UserForSDK.Conversation().DeleteMessage, conversationID, clientMsgID)
 }
 
+// DeleteMessageWithOptions 删除消息；req 为 JSON，字段见 sdk_params_callback.DeleteMessageReq。
+// deleteSyncOpt.IsSyncOther=true 时双向物理删除并通知对方。
+func DeleteMessageWithOptions(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Conversation().DeleteMessageWithOptions, req)
+}
+
 func HideAllConversations(callback open_im_sdk_callback.Base, operationID string) {
 	call(callback, operationID, UserForSDK.Conversation().HideAllConversations)
 }

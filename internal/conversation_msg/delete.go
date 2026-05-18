@@ -24,6 +24,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
 	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
 
+	pbMsg "github.com/openimsdk/protocol/msg"
 	"github.com/openimsdk/protocol/sdkws"
 	"github.com/openimsdk/tools/log"
 )
@@ -108,7 +109,7 @@ func (c *Conversation) deleteAllMsgFromLocal(ctx context.Context, markDelete boo
 }
 
 // Delete a message from the local
-func (c *Conversation) deleteMessage(ctx context.Context, conversationID string, clientMsgID string) error {
+func (c *Conversation) deleteMessage(ctx context.Context, conversationID string, clientMsgID string, deleteSyncOpt *pbMsg.DeleteSyncOpt) error {
 	_, err := c.db.GetMessage(ctx, conversationID, clientMsgID)
 	if err != nil {
 		return err
@@ -125,7 +126,7 @@ func (c *Conversation) deleteMessage(ctx context.Context, conversationID string,
 		log.ZInfo(ctx, "delete msg seq is 0, try again", "msg", localMessage)
 		return sdkerrs.ErrMsgHasNoSeq
 	}
-	err = c.deleteMessagesFromServer(ctx, conversationID, []int64{localMessage.Seq})
+	err = c.deleteMessagesFromServer(ctx, conversationID, []int64{localMessage.Seq}, deleteSyncOpt)
 	if err != nil {
 		return err
 	}

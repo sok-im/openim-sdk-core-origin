@@ -102,6 +102,11 @@ func GetFriendMute(callback open_im_sdk_callback.Base, operationID, req string) 
 	call(callback, operationID, UserForSDK.Relation().GetFriendMute, req)
 }
 
+// GetFriendPhone 查询好友手机号与区号（受对方可见性限制）；friendUserID 为对方用户 ID。
+func GetFriendPhone(callback open_im_sdk_callback.Base, operationID string, friendUserID string) {
+	call(callback, operationID, UserForSDK.Relation().GetFriendPhone, friendUserID)
+}
+
 // PinFriend 置顶好友会话；req 为 JSON，字段见 sdk_params_callback.PinFriendReq。
 func PinFriend(callback open_im_sdk_callback.Base, operationID, req string) {
 	call(callback, operationID, UserForSDK.Relation().PinFriend, req)

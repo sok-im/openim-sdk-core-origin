@@ -129,6 +129,11 @@ func (w *WrapperFriend) GetFriendMute(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.GetFriendMute, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperFriend) GetFriendPhone(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetFriendPhone, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperFriend) PinFriend(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.PinFriend, callback, &args).AsyncCallWithCallback()

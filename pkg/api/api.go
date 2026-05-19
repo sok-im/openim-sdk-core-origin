@@ -63,6 +63,7 @@ var (
 	GetFriendMute                = newApi[relation.GetMuteReq, relation.GetMuteResp]("/friend/get_mute")
 	PinFriend                    = newApi[relation.PinFriendReq, relation.PinFriendResp]("/friend/pin")
 	UnpinFriend                  = newApi[relation.UnpinFriendReq, relation.UnpinFriendResp]("/friend/unpin")
+	GetFriendPhone               = newApi[relation.GetFriendPhoneReq, relation.GetFriendPhoneResp]("/friend/get_phone")
 )
 
 var (

@@ -99,7 +99,6 @@ func registerFunc() {
 	js.Global().Set("setConversationDraft", js.FuncOf(wrapperConMsg.SetConversationDraft))
 	js.Global().Set("setConversation", js.FuncOf(wrapperConMsg.SetConversation))
 	js.Global().Set("setConversationMute", js.FuncOf(wrapperConMsg.SetConversationMute))
-	js.Global().Set("setConversationBurn", js.FuncOf(wrapperConMsg.SetConversationBurn))
 
 	js.Global().Set("getTotalUnreadMsgCount", js.FuncOf(wrapperConMsg.GetTotalUnreadMsgCount))
 	js.Global().Set("findMessageList", js.FuncOf(wrapperConMsg.FindMessageList))
@@ -201,6 +200,7 @@ func registerFunc() {
 	js.Global().Set("getFriendApplicationUnhandledCount", js.FuncOf(wrapperFriend.GetFriendApplicationUnhandledCount))
 	js.Global().Set("setFriendMute", js.FuncOf(wrapperFriend.SetFriendMute))
 	js.Global().Set("getFriendMute", js.FuncOf(wrapperFriend.GetFriendMute))
+	js.Global().Set("getFriendPhone", js.FuncOf(wrapperFriend.GetFriendPhone))
 	js.Global().Set("pinFriend", js.FuncOf(wrapperFriend.PinFriend))
 	js.Global().Set("unpinFriend", js.FuncOf(wrapperFriend.UnpinFriend))
 

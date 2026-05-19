@@ -455,6 +455,14 @@ func (r *Relation) GetFriendMute(ctx context.Context, req *sdk.GetFriendMuteReq)
 	})
 }
 
+// GetFriendPhone 调用 /friend/get_phone，返回好友手机号与区号（受对方 phone_visibility 约束）。
+func (r *Relation) GetFriendPhone(ctx context.Context, friendUserID string) (*relation.GetFriendPhoneResp, error) {
+	return r.getFriendPhone(ctx, &relation.GetFriendPhoneReq{
+		OwnerUserID:  r.loginUserID,
+		FriendUserID: friendUserID,
+	})
+}
+
 func (r *Relation) PinFriend(ctx context.Context, req *sdk.PinFriendReq) error {
 	if err := r.pinFriend(ctx, &relation.PinFriendReq{
 		OwnerUserID:  r.loginUserID,

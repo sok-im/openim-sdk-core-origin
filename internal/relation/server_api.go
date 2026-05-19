@@ -113,6 +113,10 @@ func (r *Relation) getFriendMute(ctx context.Context, req *relation.GetMuteReq) 
 	return api.GetFriendMute.Invoke(ctx, req)
 }
 
+func (r *Relation) getFriendPhone(ctx context.Context, req *relation.GetFriendPhoneReq) (*relation.GetFriendPhoneResp, error) {
+	return api.GetFriendPhone.Invoke(ctx, req)
+}
+
 func (r *Relation) pinFriend(ctx context.Context, req *relation.PinFriendReq) error {
 	return api.PinFriend.Execute(ctx, req)
 }

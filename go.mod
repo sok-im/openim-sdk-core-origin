@@ -35,7 +35,7 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/mobile v0.0.0-20260514233045-7de0a8fa7f4d // indirect
+	golang.org/x/mobile v0.0.0-20260519152538-35b1249819c3 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect

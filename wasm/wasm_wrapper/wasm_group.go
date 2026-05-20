@@ -129,6 +129,16 @@ func (w *WrapperGroup) GetEditSetting(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.GetEditSetting, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperGroup) SetMsgBurnDuration(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetMsgBurnDuration, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetMsgBurnDuration(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetMsgBurnDuration, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperGroup) GetGroupMemberList(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetGroupMemberList, callback, &args).AsyncCallWithCallback()

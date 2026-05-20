@@ -3,7 +3,7 @@ package api
 import "github.com/openimsdk/protocol/group"
 
 // Types below match open-im-server internal/api/group.go JSON for
-// /group/set_*_setting and /group/get_*_setting routes.
+// /group/set_*_setting, /group/get_*_setting, /group/set_msg_burn_duration, and /group/get_msg_burn_duration routes.
 
 type SetSendMessageSettingReq struct {
 	GroupID      string `json:"groupID"`
@@ -61,6 +61,21 @@ type GetEditSettingResp struct {
 	AllowEditGroupInfo int32  `json:"allowEditGroupInfo"`
 }
 
+// SetMsgBurnDurationReq matches HTTP POST /group/set_msg_burn_duration (burnDuration in seconds; 0 = off).
+type SetMsgBurnDurationReq struct {
+	GroupID      string `json:"groupID"`
+	BurnDuration int32  `json:"burnDuration"`
+}
+
+type GetMsgBurnDurationReq struct {
+	GroupID string `json:"groupID"`
+}
+
+type GetMsgBurnDurationResp struct {
+	GroupID      string `json:"groupID"`
+	BurnDuration int32  `json:"burnDuration"`
+}
+
 var (
 	SetSendMessageSetting = newApi[SetSendMessageSettingReq, group.SetGroupInfoExResp]("/group/set_send_message_setting")
 	GetSendMessageSetting = newApi[GetSendMessageSettingReq, GetSendMessageSettingResp]("/group/get_send_message_setting")
@@ -70,4 +85,6 @@ var (
 	GetPinSetting         = newApi[GetPinSettingReq, GetPinSettingResp]("/group/get_pin_setting")
 	SetEditSetting        = newApi[SetEditSettingReq, group.SetGroupInfoExResp]("/group/set_edit_setting")
 	GetEditSetting        = newApi[GetEditSettingReq, GetEditSettingResp]("/group/get_edit_setting")
+	SetMsgBurnDuration    = newApi[SetMsgBurnDurationReq, group.SetGroupInfoExResp]("/group/set_msg_burn_duration")
+	GetMsgBurnDuration    = newApi[GetMsgBurnDurationReq, GetMsgBurnDurationResp]("/group/get_msg_burn_duration")
 )

@@ -77,6 +77,14 @@ func (g *Group) getEditSetting(ctx context.Context, groupID string) (*api.GetEdi
 	return api.GetEditSetting.Invoke(ctx, &api.GetEditSettingReq{GroupID: groupID})
 }
 
+func (g *Group) setMsgBurnDuration(ctx context.Context, req *api.SetMsgBurnDurationReq) error {
+	return api.SetMsgBurnDuration.Execute(ctx, req)
+}
+
+func (g *Group) getMsgBurnDuration(ctx context.Context, groupID string) (*api.GetMsgBurnDurationResp, error) {
+	return api.GetMsgBurnDuration.Invoke(ctx, &api.GetMsgBurnDurationReq{GroupID: groupID})
+}
+
 func (g *Group) setGroupMemberInfo(ctx context.Context, req *group.SetGroupMemberInfoReq) error {
 	return api.SetGroupMemberInfo.Execute(ctx, req)
 }

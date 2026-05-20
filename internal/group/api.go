@@ -238,6 +238,26 @@ func (g *Group) GetEditSetting(ctx context.Context, groupID string) (*api.GetEdi
 	return g.getEditSetting(ctx, groupID)
 }
 
+// SetMsgBurnDuration 设置群消息阅后即焚时长（HTTP POST /group/set_msg_burn_duration）：
+//
+//	burnDuration 单位为秒，0 = 关闭
+func (g *Group) SetMsgBurnDuration(ctx context.Context, groupID string, burnDuration int32) error {
+	if err := g.setMsgBurnDuration(ctx, &api.SetMsgBurnDurationReq{
+		GroupID:      groupID,
+		BurnDuration: burnDuration,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetMsgBurnDuration 查询群消息阅后即焚时长（HTTP POST /group/get_msg_burn_duration）。
+func (g *Group) GetMsgBurnDuration(ctx context.Context, groupID string) (*api.GetMsgBurnDurationResp, error) {
+	return g.getMsgBurnDuration(ctx, groupID)
+}
+
 func (g *Group) SetGroupMemberInfo(ctx context.Context, groupMemberInfo *group.SetGroupMemberInfo) error {
 	req := &group.SetGroupMemberInfoReq{Members: []*group.SetGroupMemberInfo{groupMemberInfo}}
 	if err := g.setGroupMemberInfo(ctx, req); err != nil {

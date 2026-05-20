@@ -92,6 +92,16 @@ func GetEditSetting(callback open_im_sdk_callback.Base, operationID string, grou
 	call(callback, operationID, UserForSDK.Group().GetEditSetting, groupID)
 }
 
+// SetMsgBurnDuration 设置群消息阅后即焚时长（秒）；0 表示关闭。对应 HTTP POST /group/set_msg_burn_duration。
+func SetMsgBurnDuration(callback open_im_sdk_callback.Base, operationID string, groupID string, burnDuration int32) {
+	call(callback, operationID, UserForSDK.Group().SetMsgBurnDuration, groupID, burnDuration)
+}
+
+// GetMsgBurnDuration 查询群消息阅后即焚时长。成功回调 JSON：groupID、burnDuration。对应 HTTP POST /group/get_msg_burn_duration。
+func GetMsgBurnDuration(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetMsgBurnDuration, groupID)
+}
+
 func SetGroupMemberInfo(callback open_im_sdk_callback.Base, operationID string, groupMemberInfo string) {
 	call(callback, operationID, UserForSDK.Group().SetGroupMemberInfo, groupMemberInfo)
 }

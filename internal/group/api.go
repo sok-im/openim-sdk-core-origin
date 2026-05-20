@@ -25,6 +25,7 @@ import (
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/datafetcher"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/api"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/sdk_params_callback"
@@ -155,6 +156,86 @@ func (g *Group) SetGroupInfo(ctx context.Context, groupInfo *group.SetGroupInfoE
 	defer g.groupSyncMutex.Unlock()
 
 	return g.IncrSyncJoinGroup(ctx)
+}
+
+// SetSendMessageSetting 设置群成员发消息权限（HTTP POST /group/set_send_message_setting）：
+//
+//	allowSendMsg 0 = 全员可发，1 = 仅群主/管理员可发
+func (g *Group) SetSendMessageSetting(ctx context.Context, groupID string, allowSendMsg int32) error {
+	if err := g.setSendMessageSetting(ctx, &api.SetSendMessageSettingReq{
+		GroupID:      groupID,
+		AllowSendMsg: allowSendMsg,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetSendMessageSetting 查询群发消息权限（HTTP POST /group/get_send_message_setting）。
+func (g *Group) GetSendMessageSetting(ctx context.Context, groupID string) (*api.GetSendMessageSettingResp, error) {
+	return g.getSendMessageSetting(ctx, groupID)
+}
+
+// SetInviteSetting 设置群成员邀请他人入群权限（HTTP POST /group/set_invite_setting）：
+//
+//	allowAddMember 0 = 全员可邀请，1 = 仅群主/管理员可邀请
+func (g *Group) SetInviteSetting(ctx context.Context, groupID string, allowAddMember int32) error {
+	if err := g.setInviteSetting(ctx, &api.SetInviteSettingReq{
+		GroupID:        groupID,
+		AllowAddMember: allowAddMember,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetInviteSetting 查询群邀请权限（HTTP POST /group/get_invite_setting）。
+func (g *Group) GetInviteSetting(ctx context.Context, groupID string) (*api.GetInviteSettingResp, error) {
+	return g.getInviteSetting(ctx, groupID)
+}
+
+// SetPinSetting 设置群成员置顶消息权限（HTTP POST /group/set_pin_setting）：
+//
+//	allowPinMsg 0 = 全员可置顶，1 = 仅群主/管理员可置顶
+func (g *Group) SetPinSetting(ctx context.Context, groupID string, allowPinMsg int32) error {
+	if err := g.setPinSetting(ctx, &api.SetPinSettingReq{
+		GroupID:     groupID,
+		AllowPinMsg: allowPinMsg,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetPinSetting 查询群置顶消息权限（HTTP POST /group/get_pin_setting）。
+func (g *Group) GetPinSetting(ctx context.Context, groupID string) (*api.GetPinSettingResp, error) {
+	return g.getPinSetting(ctx, groupID)
+}
+
+// SetEditSetting 设置群成员编辑群资料权限（HTTP POST /group/set_edit_setting）：
+//
+//	allowEditGroupInfo 0 = 全员可编辑，1 = 仅群主/管理员可编辑
+func (g *Group) SetEditSetting(ctx context.Context, groupID string, allowEditGroupInfo int32) error {
+	if err := g.setEditSetting(ctx, &api.SetEditSettingReq{
+		GroupID:            groupID,
+		AllowEditGroupInfo: allowEditGroupInfo,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetEditSetting 查询群编辑资料权限（HTTP POST /group/get_edit_setting）。
+func (g *Group) GetEditSetting(ctx context.Context, groupID string) (*api.GetEditSettingResp, error) {
+	return g.getEditSetting(ctx, groupID)
 }
 
 func (g *Group) SetGroupMemberInfo(ctx context.Context, groupMemberInfo *group.SetGroupMemberInfo) error {

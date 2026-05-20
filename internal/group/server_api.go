@@ -45,6 +45,38 @@ func (g *Group) setGroupInfo(ctx context.Context, req *group.SetGroupInfoExReq) 
 	return api.SetGroupInfoEx.Execute(ctx, req)
 }
 
+func (g *Group) setSendMessageSetting(ctx context.Context, req *api.SetSendMessageSettingReq) error {
+	return api.SetSendMessageSetting.Execute(ctx, req)
+}
+
+func (g *Group) getSendMessageSetting(ctx context.Context, groupID string) (*api.GetSendMessageSettingResp, error) {
+	return api.GetSendMessageSetting.Invoke(ctx, &api.GetSendMessageSettingReq{GroupID: groupID})
+}
+
+func (g *Group) setInviteSetting(ctx context.Context, req *api.SetInviteSettingReq) error {
+	return api.SetInviteSetting.Execute(ctx, req)
+}
+
+func (g *Group) getInviteSetting(ctx context.Context, groupID string) (*api.GetInviteSettingResp, error) {
+	return api.GetInviteSetting.Invoke(ctx, &api.GetInviteSettingReq{GroupID: groupID})
+}
+
+func (g *Group) setPinSetting(ctx context.Context, req *api.SetPinSettingReq) error {
+	return api.SetPinSetting.Execute(ctx, req)
+}
+
+func (g *Group) getPinSetting(ctx context.Context, groupID string) (*api.GetPinSettingResp, error) {
+	return api.GetPinSetting.Invoke(ctx, &api.GetPinSettingReq{GroupID: groupID})
+}
+
+func (g *Group) setEditSetting(ctx context.Context, req *api.SetEditSettingReq) error {
+	return api.SetEditSetting.Execute(ctx, req)
+}
+
+func (g *Group) getEditSetting(ctx context.Context, groupID string) (*api.GetEditSettingResp, error) {
+	return api.GetEditSetting.Invoke(ctx, &api.GetEditSettingReq{GroupID: groupID})
+}
+
 func (g *Group) setGroupMemberInfo(ctx context.Context, req *group.SetGroupMemberInfoReq) error {
 	return api.SetGroupMemberInfo.Execute(ctx, req)
 }

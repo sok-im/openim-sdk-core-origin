@@ -89,6 +89,46 @@ func (w *WrapperGroup) SetGroupInfo(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.SetGroupInfo, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperGroup) SetSendMessageSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetSendMessageSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetSendMessageSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetSendMessageSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) SetInviteSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetInviteSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetInviteSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetInviteSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) SetPinSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetPinSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetPinSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetPinSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) SetEditSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetEditSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetEditSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetEditSetting, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperGroup) GetGroupMemberList(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetGroupMemberList, callback, &args).AsyncCallWithCallback()

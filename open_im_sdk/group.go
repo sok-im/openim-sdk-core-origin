@@ -52,6 +52,46 @@ func SetGroupInfo(callback open_im_sdk_callback.Base, operationID string, groupI
 	call(callback, operationID, UserForSDK.Group().SetGroupInfo, groupInfo)
 }
 
+// SetSendMessageSetting 设置群成员发消息权限（allowSendMsg：0=全员可发 1=仅群主/管理员）。对应 HTTP POST /group/set_send_message_setting。
+func SetSendMessageSetting(callback open_im_sdk_callback.Base, operationID string, groupID string, allowSendMsg int32) {
+	call(callback, operationID, UserForSDK.Group().SetSendMessageSetting, groupID, allowSendMsg)
+}
+
+// GetSendMessageSetting 查询群发消息权限。成功回调 JSON：groupID、allowSendMsg。对应 HTTP POST /group/get_send_message_setting。
+func GetSendMessageSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetSendMessageSetting, groupID)
+}
+
+// SetInviteSetting 设置群成员邀请他人入群权限（allowAddMember：0=全员 1=仅群主/管理员）。对应 HTTP POST /group/set_invite_setting。
+func SetInviteSetting(callback open_im_sdk_callback.Base, operationID string, groupID string, allowAddMember int32) {
+	call(callback, operationID, UserForSDK.Group().SetInviteSetting, groupID, allowAddMember)
+}
+
+// GetInviteSetting 查询群邀请权限。成功回调 JSON：groupID、allowAddMember。
+func GetInviteSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetInviteSetting, groupID)
+}
+
+// SetPinSetting 设置群成员置顶消息权限（allowPinMsg：0=全员 1=仅群主/管理员）。对应 HTTP POST /group/set_pin_setting。
+func SetPinSetting(callback open_im_sdk_callback.Base, operationID string, groupID string, allowPinMsg int32) {
+	call(callback, operationID, UserForSDK.Group().SetPinSetting, groupID, allowPinMsg)
+}
+
+// GetPinSetting 查询群置顶消息权限。成功回调 JSON：groupID、allowPinMsg。
+func GetPinSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetPinSetting, groupID)
+}
+
+// SetEditSetting 设置群成员编辑群资料权限（allowEditGroupInfo：0=全员 1=仅群主/管理员）。对应 HTTP POST /group/set_edit_setting。
+func SetEditSetting(callback open_im_sdk_callback.Base, operationID string, groupID string, allowEditGroupInfo int32) {
+	call(callback, operationID, UserForSDK.Group().SetEditSetting, groupID, allowEditGroupInfo)
+}
+
+// GetEditSetting 查询群编辑资料权限。成功回调 JSON：groupID、allowEditGroupInfo。
+func GetEditSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetEditSetting, groupID)
+}
+
 func SetGroupMemberInfo(callback open_im_sdk_callback.Base, operationID string, groupMemberInfo string) {
 	call(callback, operationID, UserForSDK.Group().SetGroupMemberInfo, groupMemberInfo)
 }

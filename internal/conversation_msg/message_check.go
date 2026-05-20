@@ -567,7 +567,7 @@ func (c *Conversation) singleHandle(ctx context.Context, self, others []*model_s
 		if err == nil {
 			for _, chatLog := range self {
 				chatLog.SenderFaceURL = userInfo.FaceURL
-				chatLog.SenderNickname = userInfo.Nickname
+				chatLog.SenderNickname = userInfo.DisplayName()
 			}
 		}
 	}
@@ -581,36 +581,20 @@ func (c *Conversation) singleHandle(ctx context.Context, self, others []*model_s
 }
 
 // groupHandle processes chat logs for group chat conversations.
-// It merges the `self` and `others` chat logs and updates the SenderFaceURL and SenderNickname fields
-// using the group members' information. If group member information is not available,
-// it attempts to retrieve the sender's information from a local cache.
-func (c *Conversation) groupHandle(ctx context.Context, self, others []*model_struct.LocalChatLog, lc *model_struct.LocalConversation) {
+// It updates SenderFaceURL and SenderNickname using friend remark > firstName+lastName > nickname.
+func (c *Conversation) groupHandle(ctx context.Context, self, others []*model_struct.LocalChatLog, _ *model_struct.LocalConversation) {
 	allMessage := append(self, others...)
-
-	allSenders := datautil.Slice(allMessage, func(e *model_struct.LocalChatLog) string {
-		return e.SendID
-	})
-	groupMap, err := c.group.GetGroupMemberNameAndFaceURL(ctx, lc.GroupID, datautil.Distinct(allSenders))
-	if err != nil {
-		log.ZError(ctx, "get group member info err", err)
-		return
-	}
 	for _, chatLog := range allMessage {
-		if g, ok := groupMap[chatLog.SendID]; ok { // If group member info is successfully retrieved
-			log.ZDebug(ctx, "find in GetGroupMemberNameAndFaceURL", "sendID", chatLog.SendID, "faceURL", g.FaceURL, "nickName", g.Nickname)
-			if g.FaceURL != "" && g.Nickname != "" {
-				chatLog.SenderFaceURL = g.FaceURL
-				chatLog.SenderNickname = g.Nickname
-			}
-		} else { // Otherwise, retrieve from local temporary cache
-			faceURL, name, err := c.getUserNameAndFaceURL(ctx, chatLog.SendID)
-			if err != nil {
-				log.ZWarn(ctx, "getUserNameAndFaceURL error", err, "senderID", chatLog.SendID)
-			} else if faceURL != "" && name != "" {
-				log.ZDebug(ctx, "find in getUserNameAndFaceURL", "sendID", chatLog.SendID, "faceURL", faceURL, "nickName", name)
-				chatLog.SenderFaceURL = faceURL
-				chatLog.SenderNickname = name
-			}
+		faceURL, name, err := c.getUserNameAndFaceURL(ctx, chatLog.SendID)
+		if err != nil {
+			log.ZWarn(ctx, "getUserNameAndFaceURL error", err, "senderID", chatLog.SendID)
+			continue
+		}
+		if name != "" {
+			chatLog.SenderNickname = name
+		}
+		if faceURL != "" {
+			chatLog.SenderFaceURL = faceURL
 		}
 	}
 }

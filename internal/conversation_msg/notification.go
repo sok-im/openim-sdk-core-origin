@@ -325,8 +325,17 @@ func (c *Conversation) doUpdateConversation(c2v common.Cmd2Value) {
 			} else {
 				// 只有当“会话最后一条消息发送者”恰好是本次变更成员时，才需要更新 latest_msg 的头像昵称。
 				if latestMsg.SendID == args.UserID {
-					latestMsg.SenderFaceURL = args.FaceURL
-					latestMsg.SenderNickname = args.Nickname
+					faceURL, name, _ := c.getUserNameAndFaceURL(ctx, args.UserID)
+					if faceURL != "" {
+						latestMsg.SenderFaceURL = faceURL
+					} else if args.FaceURL != "" {
+						latestMsg.SenderFaceURL = args.FaceURL
+					}
+					if name != "" {
+						latestMsg.SenderNickname = name
+					} else if args.Nickname != "" {
+						latestMsg.SenderNickname = args.Nickname
+					}
 					newLatestMessage := utils.StructToJsonString(latestMsg)
 					lc.LatestMsg = newLatestMessage
 					err = c.db.UpdateColumnsConversation(ctx, conversationID, map[string]interface{}{"latest_msg": newLatestMessage})
@@ -397,6 +406,14 @@ func (c *Conversation) doUpdateMessage(c2v common.Cmd2Value) {
 	case constant.UpdateMsgFaceUrlAndNickName:
 		// 外部传入的资料变更信息（用户/群/会话类型）。
 		args := node.Args.(common.UpdateMessageInfo)
+		if faceURL, name, _ := c.getUserNameAndFaceURL(ctx, args.UserID); name != "" || faceURL != "" {
+			if name != "" {
+				args.Nickname = name
+			}
+			if faceURL != "" {
+				args.FaceURL = faceURL
+			}
+		}
 		switch args.SessionType {
 		case constant.SingleChatType:
 			// 单聊分两种场景：

@@ -38,6 +38,22 @@ type LocalFriend struct {
 	IsPinned       bool   `gorm:"column:is_pinned;" json:"isPinned"`
 }
 
+// UserDisplayName returns remark > firstName+lastName (trimmed) > nickname for non-friend users.
+func UserDisplayName(firstName, lastName, nickname string) string {
+	if firstName != "" || lastName != "" {
+		return strings.TrimSpace(firstName + " " + lastName)
+	}
+	return nickname
+}
+
+// DisplayName returns firstName+lastName (trimmed) > nickname for the login user.
+func (u *LocalUser) DisplayName() string {
+	if u == nil {
+		return ""
+	}
+	return UserDisplayName(u.FirstName, u.LastName, u.Nickname)
+}
+
 // ConversationShowName is the single-chat session list title for this friend:
 // remark, else firstName+lastName (trimmed), else nickname.
 func (f *LocalFriend) ConversationShowName() string {
@@ -47,10 +63,7 @@ func (f *LocalFriend) ConversationShowName() string {
 	if f.Remark != "" {
 		return f.Remark
 	}
-	if f.FirstName != "" || f.LastName != "" {
-		return strings.TrimSpace(f.FirstName + " " + f.LastName)
-	}
-	return f.Nickname
+	return UserDisplayName(f.FirstName, f.LastName, f.Nickname)
 }
 
 func (LocalFriend) TableName() string {

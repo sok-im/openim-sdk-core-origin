@@ -194,7 +194,7 @@ func (c *Conversation) updateMsgStatusAndTriggerConversation(ctx context.Context
 	if err != nil {
 		log.ZWarn(ctx, "send message delete sending message error", err)
 	}
-	lc.LatestMsg = utils.StructToJsonString(s)
+	lc.LatestMsg = c.latestMsgJSON(ctx, s)
 	lc.LatestMsgSendTime = sendTime
 	_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{ConID: lc.ConversationID, Action: constant.AddConOrUpLatMsg, Args: *lc}, c.GetCh())
 }
@@ -231,19 +231,6 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 		}
 		s.GroupID = groupID
 		lc.GroupID = groupID
-		gm, err := c.db.GetGroupMemberInfoByGroupIDUserID(ctx, groupID, c.loginUserID)
-		if err == nil && gm != nil {
-			if gm.Nickname != "" {
-				s.SenderNickname = gm.Nickname
-			}
-		} else { //Maybe the group member information hasn't been pulled locally yet.
-			gm, err := c.group.GetSpecifiedGroupMembersInfo(ctx, groupID, []string{c.loginUserID})
-			if err == nil && gm != nil {
-				if gm[0].Nickname != "" {
-					s.SenderNickname = gm[0].Nickname
-				}
-			}
-		}
 		var attachedInfo sdk_struct.AttachedInfoElem
 		attachedInfo.GroupHasReadInfo.GroupMemberCount = g.MemberCount
 		s.AttachedInfoElem = &attachedInfo
@@ -340,7 +327,7 @@ func (c *Conversation) SendMessage(ctx context.Context, s *sdk_struct.MsgStruct,
 				}
 			}
 		}
-		lc.LatestMsg = utils.StructToJsonString(s)
+		lc.LatestMsg = c.latestMsgJSON(ctx, s)
 		log.ZDebug(ctx, "send message come here", "conversion", *lc)
 		_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{ConID: lc.ConversationID, Action: constant.AddConOrUpLatMsg, Args: *lc}, c.GetCh())
 	}
@@ -597,7 +584,7 @@ func (c *Conversation) SendMessageNotOss(ctx context.Context, s *sdk_struct.MsgS
 			}
 		}
 	}
-	lc.LatestMsg = utils.StructToJsonString(s)
+	lc.LatestMsg = c.latestMsgJSON(ctx, s)
 	var delFile []string
 	switch s.ContentType {
 	case constant.Picture:
@@ -894,7 +881,7 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 	s.SessionType = constant.SingleChatType
 	s.Status = constant.MsgStatusSendSuccess
 	localMessage := MsgStructToLocalChatLog(s)
-	conversation.LatestMsg = utils.StructToJsonString(s)
+	conversation.LatestMsg = c.latestMsgJSON(ctx, s)
 	conversation.ConversationType = constant.SingleChatType
 	conversation.LatestMsgSendTime = s.SendTime
 	err := c.insertMessageToLocalStorage(ctx, conversation.ConversationID, localMessage)
@@ -934,7 +921,7 @@ func (c *Conversation) InsertGroupMessageToLocalStorage(ctx context.Context, s *
 	s.SessionType = conversation.ConversationType
 	s.Status = constant.MsgStatusSendSuccess
 	localMessage := MsgStructToLocalChatLog(s)
-	conversation.LatestMsg = utils.StructToJsonString(s)
+	conversation.LatestMsg = c.latestMsgJSON(ctx, s)
 	conversation.LatestMsgSendTime = s.SendTime
 	conversation.FaceURL = s.SenderFaceURL
 	conversation.ShowName = s.SenderNickname
@@ -967,7 +954,7 @@ func (c *Conversation) SetMessageLocalEx(ctx context.Context, conversationID str
 	if latestMsg.ClientMsgID == clientMsgID {
 		log.ZDebug(ctx, "lintao latestMsg local ex changed", "seq", latestMsg.Seq, "clientMsgID", latestMsg.ClientMsgID)
 		latestMsg.LocalEx = localEx
-		latestMsgStr := utils.StructToJsonString(latestMsg)
+		latestMsgStr := c.latestMsgJSON(ctx, &latestMsg)
 		if err = c.db.UpdateColumnsConversation(ctx, conversationID, map[string]interface{}{"latest_msg": latestMsgStr, "latest_msg_send_time": latestMsg.SendTime}); err != nil {
 			return err
 		}
@@ -987,7 +974,7 @@ func (c *Conversation) initBasicInfo(ctx context.Context, message *sdk_struct.Ms
 		return err
 	}
 	message.SenderFaceURL = userInfo.FaceURL
-	message.SenderNickname = userInfo.Nickname
+	message.SenderNickname = model_struct.UserDisplayName(userInfo.FirstName, userInfo.LastName, userInfo.Nickname)
 	ClientMsgID := utils.GetMsgID(message.SendID)
 	message.ClientMsgID = ClientMsgID
 	message.MsgFrom = msgFrom

@@ -335,7 +335,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 					// 本地不存在该消息：构造会话快照，按开关决定是否更新会话/回调。
 					lc := model_struct.LocalConversation{
 						ConversationType:  v.SessionType,
-						LatestMsg:         utils.StructToJsonString(msg),
+						LatestMsg:         c.latestMsgJSON(ctx, msg),
 						LatestMsgSendTime: msg.SendTime,
 						ConversationID:    conversationID,
 					}
@@ -365,7 +365,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 					// 本地不存在该消息：构建会话更新基础信息。
 					lc := model_struct.LocalConversation{
 						ConversationType:  v.SessionType,
-						LatestMsg:         utils.StructToJsonString(msg),
+						LatestMsg:         c.latestMsgJSON(ctx, msg),
 						LatestMsgSendTime: msg.SendTime,
 						ConversationID:    conversationID,
 					}
@@ -599,7 +599,7 @@ func (c *Conversation) doMsgSyncByReinstalled(c2v common.Cmd2Value) {
 
 		if latestMsg != nil {
 			conversationList = append(conversationList, &model_struct.LocalConversation{
-				LatestMsg:         utils.StructToJsonString(latestMsg),
+				LatestMsg:         c.latestMsgJSON(ctx, latestMsg),
 				LatestMsgSendTime: latestMsg.SendTime,
 				ConversationID:    conversationID,
 			})
@@ -980,14 +980,7 @@ func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string)
 	}
 	userInfo, err := c.user.GetUserInfoWithCache(ctx, userID)
 	if err != nil {
-		log.ZInfo(ctx, "lintao getUserNameAndFaceURL", "userInfo", userInfo)
 		return "", "", nil
 	}
-	if userInfo.FirstName != "" || userInfo.LastName != "" {
-		name = userInfo.FirstName + " " + userInfo.LastName
-	} else {
-		name = userInfo.Nickname
-	}
-	log.ZInfo(ctx, "lintao getUserNameAndFaceURL", "userInfo", userInfo)
-	return userInfo.FaceURL, name, nil
+	return userInfo.FaceURL, model_struct.UserDisplayName(userInfo.FirstName, userInfo.LastName, userInfo.Nickname), nil
 }

@@ -57,7 +57,7 @@ func SetSendMessageSetting(callback open_im_sdk_callback.Base, operationID strin
 	call(callback, operationID, UserForSDK.Group().SetSendMessageSetting, groupID, allowSendMsg)
 }
 
-// GetGroupSetting 查询群权限相关设置。成功回调 JSON：groupID、allowSendMsg、allowAddMember、allowPinMsg、allowEditGroupInfo。对应 HTTP POST /group/get_group_setting。
+// GetGroupSetting 查询群权限相关设置。成功回调 JSON：groupID、allowSendMsg、allowAddMember、allowPinMsg、allowEditGroupInfo、allowMemberBurn。对应 HTTP POST /group/get_group_setting。
 func GetGroupSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
 	call(callback, operationID, UserForSDK.Group().GetGroupSetting, groupID)
 }
@@ -95,6 +95,16 @@ func SetEditSetting(callback open_im_sdk_callback.Base, operationID string, grou
 // GetEditSetting 查询群编辑资料权限。成功回调 JSON：groupID、allowEditGroupInfo。
 func GetEditSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
 	call(callback, operationID, UserForSDK.Group().GetEditSetting, groupID)
+}
+
+// SetBurnSetting 设置群成员阅后即焚权限（allowBurn：0=仅群主 1=全员可设置）。对应 HTTP POST /group/set_burn_setting。
+func SetBurnSetting(callback open_im_sdk_callback.Base, operationID string, groupID string, allowBurn int32) {
+	call(callback, operationID, UserForSDK.Group().SetBurnSetting, groupID, allowBurn)
+}
+
+// GetBurnSetting 查询群成员阅后即焚权限。成功回调 JSON：groupID、allowMemberBurn。
+func GetBurnSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetBurnSetting, groupID)
 }
 
 // SetMsgBurnDuration 设置群消息阅后即焚时长（秒）；0 表示关闭。对应 HTTP POST /group/set_msg_burn_duration。

@@ -61,6 +61,20 @@ type GetEditSettingResp struct {
 	AllowEditGroupInfo int32  `json:"allowEditGroupInfo"`
 }
 
+type SetBurnSettingReq struct {
+	GroupID   string `json:"groupID"`
+	AllowBurn int32  `json:"allowBurn"`
+}
+
+type GetBurnSettingReq struct {
+	GroupID string `json:"groupID"`
+}
+
+type GetBurnSettingResp struct {
+	GroupID         string `json:"groupID"`
+	AllowMemberBurn int32  `json:"allowMemberBurn"`
+}
+
 type GetGroupSettingReq struct {
 	GroupID string `json:"groupID"`
 }
@@ -71,6 +85,7 @@ type GetGroupSettingResp struct {
 	AllowAddMember     int32  `json:"allowAddMember"`
 	AllowPinMsg        int32  `json:"allowPinMsg"`
 	AllowEditGroupInfo int32  `json:"allowEditGroupInfo"`
+	AllowMemberBurn    int32  `json:"allowMemberBurn"`
 }
 
 // SetMsgBurnDurationReq matches HTTP POST /group/set_msg_burn_duration (burnDuration in seconds; 0 = off).
@@ -93,6 +108,7 @@ var (
 	SetInviteSetting      = newApi[SetInviteSettingReq, group.SetGroupInfoExResp]("/group/set_invite_setting")
 	SetPinSetting         = newApi[SetPinSettingReq, group.SetGroupInfoExResp]("/group/set_pin_setting")
 	SetEditSetting        = newApi[SetEditSettingReq, group.SetGroupInfoExResp]("/group/set_edit_setting")
+	SetBurnSetting        = newApi[SetBurnSettingReq, group.SetGroupInfoExResp]("/group/set_burn_setting")
 	GetGroupSetting       = newApi[GetGroupSettingReq, GetGroupSettingResp]("/group/get_group_setting")
 	SetMsgBurnDuration    = newApi[SetMsgBurnDurationReq, group.SetGroupInfoExResp]("/group/set_msg_burn_duration")
 	GetMsgBurnDuration    = newApi[GetMsgBurnDurationReq, GetMsgBurnDurationResp]("/group/get_msg_burn_duration")

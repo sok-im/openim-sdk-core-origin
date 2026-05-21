@@ -243,6 +243,26 @@ func (g *Group) GetEditSetting(ctx context.Context, groupID string) (*api.GetEdi
 	return g.getEditSetting(ctx, groupID)
 }
 
+// SetBurnSetting 设置群成员阅后即焚权限（HTTP POST /group/set_burn_setting）：
+//
+//	allowBurn 0 = 仅群主可设置（默认），1 = 全员可设置
+func (g *Group) SetBurnSetting(ctx context.Context, groupID string, allowBurn int32) error {
+	if err := g.setBurnSetting(ctx, &api.SetBurnSettingReq{
+		GroupID:   groupID,
+		AllowBurn: allowBurn,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetBurnSetting 查询群成员阅后即焚权限（委托 GetGroupSetting，成功回调仅含 groupID、allowMemberBurn）。
+func (g *Group) GetBurnSetting(ctx context.Context, groupID string) (*api.GetBurnSettingResp, error) {
+	return g.getBurnSetting(ctx, groupID)
+}
+
 // SetMsgBurnDuration 设置群消息阅后即焚时长（HTTP POST /group/set_msg_burn_duration）：
 //
 //	burnDuration 单位为秒，0 = 关闭

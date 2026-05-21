@@ -98,6 +98,21 @@ func (g *Group) setEditSetting(ctx context.Context, req *api.SetEditSettingReq) 
 	return api.SetEditSetting.Execute(ctx, req)
 }
 
+func (g *Group) setBurnSetting(ctx context.Context, req *api.SetBurnSettingReq) error {
+	return api.SetBurnSetting.Execute(ctx, req)
+}
+
+func (g *Group) getBurnSetting(ctx context.Context, groupID string) (*api.GetBurnSettingResp, error) {
+	resp, err := g.getGroupSetting(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &api.GetBurnSettingResp{
+		GroupID:         resp.GroupID,
+		AllowMemberBurn: resp.AllowMemberBurn,
+	}, nil
+}
+
 func (g *Group) getEditSetting(ctx context.Context, groupID string) (*api.GetEditSettingResp, error) {
 	resp, err := g.getGroupSetting(ctx, groupID)
 	if err != nil {

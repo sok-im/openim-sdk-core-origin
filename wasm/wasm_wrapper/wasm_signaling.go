@@ -90,12 +90,6 @@ func (w *WrapperSignaling) SignalingGetLocalCallRecords(_ js.Value, args []js.Va
 	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecords, callback, &args).AsyncCallWithCallback()
 }
 
-// SignalingGetLocalCallRecordsWithUser 查询与指定用户的全部本地通话记录。
-func (w *WrapperSignaling) SignalingGetLocalCallRecordsWithUser(_ js.Value, args []js.Value) interface{} {
-	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
-	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecordsWithUser, callback, &args).AsyncCallWithCallback()
-}
-
 // SignalingGetLocalMissedCallRecords 查询本地未接来电（被叫未接）。
 func (w *WrapperSignaling) SignalingGetLocalMissedCallRecords(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)

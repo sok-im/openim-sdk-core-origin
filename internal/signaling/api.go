@@ -302,44 +302,6 @@ func (s *Signaling) GetLocalCallRecords(ctx context.Context, params *sdk_struct.
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }
 
-// GetLocalCallRecordsWithUser 查询与指定用户的全部本地通话记录（含已接听、未接通等）。
-func (s *Signaling) GetLocalCallRecordsWithUser(ctx context.Context, params *sdk_struct.GetLocalCallRecordsWithUserParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
-	if s.db == nil {
-		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
-	}
-	if params == nil {
-		params = &sdk_struct.GetLocalCallRecordsWithUserParams{}
-	}
-	if strings.TrimSpace(params.UserID) == "" {
-		return nil, sdkerrs.ErrArgs.WrapMsg("userID is empty")
-	}
-	if params.Count <= 0 {
-		params.Count = 20
-	}
-	total, err := s.db.CountSignalCallRecords(ctx,
-		params.SessionType,
-		0, 0,
-		params.StartTime, params.EndTime,
-		"", "", "", "", params.UserID)
-	if err != nil {
-		return nil, err
-	}
-	list, err := s.db.SearchSignalCallRecords(ctx,
-		params.Offset, params.Count,
-		params.SessionType,
-		0, 0,
-		params.StartTime, params.EndTime,
-		"", "", "", "", params.UserID)
-	if err != nil {
-		return nil, err
-	}
-	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
-	for _, l := range list {
-		records = append(records, localRecordToSDK(l))
-	}
-	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
-}
-
 // SearchLocalSignalCallRecords 查询本地通话记录列表。
 func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sdk_struct.SearchLocalSignalCallRecordsParams) ([]*sdk_struct.SignalCallRecordWithDialStatus, error) {
 	if s.db == nil {

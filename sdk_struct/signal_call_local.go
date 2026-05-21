@@ -20,17 +20,6 @@ type SearchLocalSignalCallRecordsParams struct {
 	InviteeNickname string `json:"inviteeNickname"`
 }
 
-// GetLocalCallRecordsWithUserParams 查询与指定用户的全部本地通话记录。
-type GetLocalCallRecordsWithUserParams struct {
-	// UserID 对方用户 ID（必填，匹配主叫或被叫列表）
-	UserID      string `json:"userID"`
-	Offset      int    `json:"offset"`
-	Count       int    `json:"count"`
-	SessionType int32  `json:"sessionType"`
-	StartTime   int64  `json:"startTime"`
-	EndTime     int64  `json:"endTime"`
-}
-
 // GetLocalCallRecordsParams 查询本地通话记录（可按用户筛选）。
 type GetLocalCallRecordsParams struct {
 	// UserID 对方用户 ID；为空则不过滤用户

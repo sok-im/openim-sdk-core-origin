@@ -3,6 +3,7 @@ package signaling
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/api"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
@@ -23,10 +24,18 @@ func (s *Signaling) signalingRequest(ctx context.Context, req *rtc.SignalReq) (*
 	return &resp, nil
 }
 
-// Invite 主叫侧发起邀请：启动超时定时器。
+// Invite 主叫侧发起邀请：记录拨打开始时间，启动超时定时器。
 func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInviteReq) (*rtc.SignalInviteResp, error) {
 	s.fillInviteDefaults(signalInviteReq.Invitation)
 	signalInviteReq.UserID = s.loginUserID
+
+	if signalInviteReq.Invitation != nil && signalInviteReq.Invitation.RoomID != "" {
+		inviteMs := signalInviteReq.Invitation.InitiateTime
+		if inviteMs <= 0 {
+			inviteMs = time.Now().UnixMilli()
+		}
+		s.storeInviteTime(signalInviteReq.Invitation.RoomID, inviteMs)
+	}
 
 	req := &rtc.SignalReq{
 		Payload: &rtc.SignalReq_Invite{
@@ -51,10 +60,18 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 	return &rtc.SignalInviteResp{}, nil
 }
 
-// InviteInGroup 主叫侧发起群组邀请：启动超时定时器。
+// InviteInGroup 主叫侧发起群组邀请：同样记录拨出时间并启动超时定时器。
 func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *rtc.SignalInviteInGroupReq) (*rtc.SignalInviteInGroupResp, error) {
 	s.fillInviteDefaults(signalInviteInGroupReq.Invitation)
 	signalInviteInGroupReq.UserID = s.loginUserID
+
+	if signalInviteInGroupReq.Invitation != nil && signalInviteInGroupReq.Invitation.RoomID != "" {
+		inviteMs := signalInviteInGroupReq.Invitation.InitiateTime
+		if inviteMs <= 0 {
+			inviteMs = time.Now().UnixMilli()
+		}
+		s.storeInviteTime(signalInviteInGroupReq.Invitation.RoomID, inviteMs)
+	}
 
 	req := &rtc.SignalReq{
 		Payload: &rtc.SignalReq_InviteInGroup{
@@ -78,13 +95,14 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 	return &rtc.SignalInviteInGroupResp{}, nil
 }
 
-// Accept 被叫侧接听：取消超时定时器。
+// Accept 被叫侧接听：取消超时定时器，记录接通时间。
 func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAcceptReq) (*rtc.SignalAcceptResp, error) {
 	signalAcceptReq.UserID = s.loginUserID
 	signalAcceptReq.OpUserPlatformID = s.platformID
 
 	if signalAcceptReq.Invitation != nil && signalAcceptReq.Invitation.RoomID != "" {
 		s.cancelInviteTimer(signalAcceptReq.Invitation.RoomID)
+		s.storeConnectTime(signalAcceptReq.Invitation.RoomID, time.Now().UnixMilli())
 	}
 
 	req := &rtc.SignalReq{
@@ -102,7 +120,7 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 	return &rtc.SignalAcceptResp{}, nil
 }
 
-// Reject 被叫侧拒接：取消超时定时器。
+// Reject 被叫侧拒接：取消超时定时器，写未拨通记录（incoming 方向）。
 func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejectReq) error {
 	signalRejectReq.UserID = s.loginUserID
 	signalRejectReq.OpUserPlatformID = s.platformID
@@ -118,11 +136,18 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 	}
 	if signalRejectReq.Invitation != nil {
 		s.cancelInviteTimer(signalRejectReq.Invitation.RoomID)
+		inviteMs, connectMs := s.popTiming(signalRejectReq.Invitation.RoomID)
+		s.persistLocalCallRecord(ctx,
+			signalRejectReq.Invitation,
+			signalRejectReq.Participant,
+			constant.SignalCallDialStatusNotConnected,
+			constant.SignalCallDirectionIncoming,
+			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
 }
 
-// Cancel 主叫侧取消：取消超时定时器。
+// Cancel 主叫侧取消：取消超时定时器，写未拨通记录（outgoing 方向）。
 func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCancelReq) error {
 	signalCancelReq.UserID = s.loginUserID
 
@@ -137,29 +162,18 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 	}
 	if signalCancelReq.Invitation != nil {
 		s.cancelInviteTimer(signalCancelReq.Invitation.RoomID)
+		inviteMs, connectMs := s.popTiming(signalCancelReq.Invitation.RoomID)
+		s.persistLocalCallRecord(ctx,
+			signalCancelReq.Invitation,
+			signalCancelReq.Participant,
+			constant.SignalCallDialStatusNotConnected,
+			constant.SignalCallDirectionOutgoing,
+			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
 }
 
-// Timeout 主叫侧振铃超时未接通：向服务端发送超时信号。
-// 通常由 startInviteTimer 的到期回调触发，计时器已到期无需再调用 cancelInviteTimer。
-// 服务端收到后会通知所有被叫方关闭振铃界面，并写通话记录。
-func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTimeoutReq) error {
-	signalTimeoutReq.UserID = s.loginUserID
-
-	req := &rtc.SignalReq{
-		Payload: &rtc.SignalReq_Timeout{
-			Timeout: signalTimeoutReq,
-		},
-	}
-	_, err := s.signalingRequest(ctx, req)
-	if err != nil {
-		log.ZWarn(ctx, "Timeout signal to server failed", err, "roomID", signalTimeoutReq.Invitation.GetRoomID())
-	}
-	return err
-}
-
-// HungUp 任意一方挂断：取消超时定时器。
+// HungUp 任意一方挂断：取消超时定时器，写已拨通记录。
 func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungUpReq) error {
 	signalHungUpReq.UserID = s.loginUserID
 
@@ -174,6 +188,17 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 	}
 	if signalHungUpReq.Invitation != nil {
 		s.cancelInviteTimer(signalHungUpReq.Invitation.RoomID)
+		direction := constant.SignalCallDirectionOutgoing
+		if signalHungUpReq.Invitation.InviterUserID != s.loginUserID {
+			direction = constant.SignalCallDirectionIncoming
+		}
+		inviteMs, connectMs := s.popTiming(signalHungUpReq.Invitation.RoomID)
+		s.persistLocalCallRecord(ctx,
+			signalHungUpReq.Invitation,
+			nil,
+			constant.SignalCallDialStatusConnected,
+			direction,
+			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
 }

@@ -221,8 +221,8 @@ func (s *Signaling) GetTokenByRoomID(ctx context.Context, signalGetTokenReq *rtc
 	return &rtc.SignalGetTokenByRoomIDResp{}, nil
 }
 
-func (s *Signaling) GetRoomByGroupID(ctx context.Context, req *rtc.SignalGetRoomByGroupIDReq) (*rtc.SignalGetRoomByGroupIDResp, error) {
-	return api.SignalGetRoomByGroupID.Invoke(ctx, req)
+func (s *Signaling) GetRoomByGroupID(ctx context.Context, groupID string) (*rtc.SignalGetRoomByGroupIDResp, error) {
+	return api.SignalGetRoomByGroupID.Invoke(ctx, &rtc.SignalGetRoomByGroupIDReq{GroupID: groupID})
 }
 
 func (s *Signaling) GetSignalInvitationInfoStartApp(ctx context.Context, req *rtc.GetSignalInvitationInfoStartAppReq) (*rtc.GetSignalInvitationInfoStartAppResp, error) {

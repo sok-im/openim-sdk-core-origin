@@ -239,11 +239,11 @@ const (
 
 const BigVersion = "v3"
 
-// SignalCallDialStatus 本地音视频通话记录：拨通状态（用于按未拨通/已拨通筛选）。
+// SignalCallStatus 本地音视频通话记录状态（与 rtc.CallRecordItem.status 对齐）。
 const (
-	SignalCallDialStatusUnknown      int32 = 0 // 查询：不筛选；历史兼容占位
-	SignalCallDialStatusNotConnected int32 = 1 // 未拨通（拒接、取消、超时等，未形成有效通话即结束）
-	SignalCallDialStatusConnected    int32 = 2 // 已拨通（会话已建立，如正常挂断）
+	SignalCallStatusUnknown      int32 = 0 // 查询：不筛选
+	SignalCallStatusAnswered     int32 = 1 // 已接听
+	SignalCallStatusNotConnected int32 = 2 // 未接通
 )
 
 // SignalCallDirection 本地通话记录：通话方向（主叫 / 被叫 / 未接来电）。
@@ -253,6 +253,25 @@ const (
 	SignalCallDirectionIncoming int32 = 2 // 被叫（已接听，通话已建立）
 	SignalCallDirectionMissed   int32 = 3 // 被叫未接（对方取消、超时或本端被拒）
 )
+
+// SignalCallRole 本端在通话中的角色（主叫 / 被叫）。
+const (
+	SignalCallRoleUnknown  int32 = 0 // 查询：不筛选
+	SignalCallRoleOutgoing int32 = 1 // 主叫
+	SignalCallRoleIncoming int32 = 2 // 被叫
+)
+
+// SignalCallRoleFromDirection 由 direction 推导 role（incoming/missed 均视为被叫）。
+func SignalCallRoleFromDirection(direction int32) int32 {
+	switch direction {
+	case SignalCallDirectionOutgoing:
+		return SignalCallRoleOutgoing
+	case SignalCallDirectionIncoming, SignalCallDirectionMissed:
+		return SignalCallRoleIncoming
+	default:
+		return SignalCallRoleUnknown
+	}
+}
 
 const (
 	MsgSyncBegin      = 1001 //

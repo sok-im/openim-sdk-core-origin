@@ -58,6 +58,11 @@ func (w *WrapperSignaling) SignalingCancel(_ js.Value, args []js.Value) interfac
 	return event_listener.NewCaller(open_im_sdk.SignalingCancel, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperSignaling) SignalingTimeout(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingTimeout, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperSignaling) SignalingHungUp(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SignalingHungUp, callback, &args).AsyncCallWithCallback()
@@ -77,6 +82,12 @@ func (w *WrapperSignaling) SignalingGetTokenByRoomID(_ js.Value, args []js.Value
 func (w *WrapperSignaling) SignalingGetInvitationRecords(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SignalingGetInvitationRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingGetLocalCallRecords 按用户查询本地通话记录（status：0=全部 1=已接听 2=未接通）。
+func (w *WrapperSignaling) SignalingGetLocalCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecords, callback, &args).AsyncCallWithCallback()
 }
 
 // SignalingSearchLocalCallRecords 查询 SDK 本地缓存的通话记录表。

@@ -22,6 +22,10 @@ func SignalingCancel(callback open_im_sdk_callback.Base, operationID string, sig
 	call(callback, operationID, UserForSDK.Signaling().Cancel, signalCancelReq)
 }
 
+func SignalingTimeout(callback open_im_sdk_callback.Base, operationID string, signalTimeoutReq string) {
+	call(callback, operationID, UserForSDK.Signaling().Timeout, signalTimeoutReq)
+}
+
 func SignalingHungUp(callback open_im_sdk_callback.Base, operationID string, signalHungUpReq string) {
 	call(callback, operationID, UserForSDK.Signaling().HungUp, signalHungUpReq)
 }
@@ -40,6 +44,10 @@ func SignalingGetInvitationInfoStartApp(callback open_im_sdk_callback.Base, oper
 
 func SignalingGetInvitationRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().GetSignalInvitationRecords, req)
+}
+
+func SignalingGetLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecords, req)
 }
 
 func SignalingSearchLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {

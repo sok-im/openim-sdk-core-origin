@@ -30,8 +30,8 @@ func (i *SignalCallRecords) BatchUpsertSignalCallRecords(ctx context.Context, re
 	return err
 }
 
-func (i *SignalCallRecords) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, dialStatus int32, direction int32, startTime, endTime int64, keyword, userName string) ([]*model_struct.LocalSignalCallRecord, error) {
-	gList, err := exec.Exec(offset, count, sessionType, dialStatus, direction, startTime, endTime, keyword, userName, i.loginUserID)
+func (i *SignalCallRecords) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) ([]*model_struct.LocalSignalCallRecord, error) {
+	gList, err := exec.Exec(offset, count, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, i.loginUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +45,34 @@ func (i *SignalCallRecords) SearchSignalCallRecords(ctx context.Context, offset,
 	return nil, exec.ErrType
 }
 
-func (i *SignalCallRecords) CountSignalCallRecords(ctx context.Context, sessionType int32, dialStatus int32, direction int32, startTime, endTime int64, keyword, userName string) (int64, error) {
-	n, err := exec.Exec(sessionType, dialStatus, direction, startTime, endTime, keyword, userName, i.loginUserID)
+func (i *SignalCallRecords) CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) (int64, error) {
+	n, err := exec.Exec(sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, i.loginUserID)
+	if err != nil {
+		return 0, err
+	}
+	if v, ok := n.(float64); ok {
+		return int64(v), nil
+	}
+	return 0, exec.ErrType
+}
+
+func (i *SignalCallRecords) SearchSignalCallRecordsByUser(ctx context.Context, userID string, status int32, offset, count int, startTime, endTime int64) ([]*model_struct.LocalSignalCallRecord, error) {
+	gList, err := exec.Exec(userID, status, offset, count, startTime, endTime, i.loginUserID)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := gList.(string); ok {
+		var result []*model_struct.LocalSignalCallRecord
+		if err := utils.JsonStringToStruct(v, &result); err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return nil, exec.ErrType
+}
+
+func (i *SignalCallRecords) CountSignalCallRecordsByUser(ctx context.Context, userID string, status int32, startTime, endTime int64) (int64, error) {
+	n, err := exec.Exec(userID, status, startTime, endTime, i.loginUserID)
 	if err != nil {
 		return 0, err
 	}

@@ -167,10 +167,31 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
-	// 旧数据无 dial_status 列时补为「已拨通」（历史记录均为挂断产生）
+	var dialStatusColCount int64
+	if err = d.conn.WithContext(ctx).Raw(
+		`SELECT COUNT(*) FROM pragma_table_info('local_signal_call_records') WHERE name = 'dial_status'`,
+	).Scan(&dialStatusColCount).Error; err != nil {
+		return err
+	}
+	if dialStatusColCount > 0 {
+		// 从旧 dial_status 迁移：旧 1(未拨通)→2(未接通)，旧 2(已拨通)→1(已接听)
+		if err = d.conn.WithContext(ctx).Exec(
+			`UPDATE local_signal_call_records SET status = CASE
+				WHEN dial_status = 1 THEN ?
+				WHEN dial_status = 2 THEN ?
+				ELSE ?
+			END WHERE status = 0 OR status IS NULL`,
+			constant.SignalCallStatusNotConnected,
+			constant.SignalCallStatusAnswered,
+			constant.SignalCallStatusAnswered,
+		).Error; err != nil {
+			return err
+		}
+	}
+
 	if err = d.conn.WithContext(ctx).Exec(
-		`UPDATE local_signal_call_records SET dial_status = ? WHERE dial_status = 0 OR dial_status IS NULL`,
-		constant.SignalCallDialStatusConnected,
+		`UPDATE local_signal_call_records SET status = ? WHERE status = 0 OR status IS NULL`,
+		constant.SignalCallStatusAnswered,
 	).Error; err != nil {
 		return err
 	}
@@ -182,7 +203,7 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
-	// 旧数据无 direction 列时根据 inviter_user_id 推断：inviterUserID == loginUserID → outgoing(1)，否则 → incoming(2)
+	// 旧数据无 direction 列时根据 inviter_user_id 推断
 	if err = d.conn.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET direction = CASE WHEN inviter_user_id = ? THEN ? ELSE ? END WHERE direction = 0 OR direction IS NULL`,
 		d.loginUserID, constant.SignalCallDirectionOutgoing, constant.SignalCallDirectionIncoming,
@@ -190,18 +211,43 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
-	// 旧数据无 connect_time 列时：已拨通(dial_status=2)的记录将 connect_time 设为 create_time（近似值）
+	// 由 direction 补全 role：1=主叫 2/3=被叫
 	if err = d.conn.WithContext(ctx).Exec(
-		`UPDATE local_signal_call_records SET connect_time = create_time WHERE (connect_time = 0 OR connect_time IS NULL) AND dial_status = ?`,
-		constant.SignalCallDialStatusConnected,
+		`UPDATE local_signal_call_records SET role = CASE
+			WHEN direction = ? THEN ?
+			WHEN direction IN (?, ?) THEN ?
+			ELSE ?
+		END WHERE role = 0 OR role IS NULL`,
+		constant.SignalCallDirectionOutgoing, constant.SignalCallRoleOutgoing,
+		constant.SignalCallDirectionIncoming, constant.SignalCallDirectionMissed, constant.SignalCallRoleIncoming,
+		constant.SignalCallRoleUnknown,
 	).Error; err != nil {
 		return err
 	}
 
-	// 旧数据无 call_duration 列时：已拨通的记录用 end_time - connect_time 近似通话时长
+	// 已接听记录补全 connect_time
 	if err = d.conn.WithContext(ctx).Exec(
-		`UPDATE local_signal_call_records SET call_duration = CASE WHEN end_time > connect_time THEN end_time - connect_time ELSE 0 END WHERE (call_duration = 0 OR call_duration IS NULL) AND dial_status = ? AND connect_time > 0`,
-		constant.SignalCallDialStatusConnected,
+		`UPDATE local_signal_call_records SET connect_time = create_time WHERE (connect_time = 0 OR connect_time IS NULL) AND status = ?`,
+		constant.SignalCallStatusAnswered,
+	).Error; err != nil {
+		return err
+	}
+
+	// 已接听记录补全 call_duration
+	if err = d.conn.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET call_duration = CASE WHEN end_time > connect_time THEN end_time - connect_time ELSE 0 END WHERE (call_duration = 0 OR call_duration IS NULL) AND status = ? AND connect_time > 0`,
+		constant.SignalCallStatusAnswered,
+	).Error; err != nil {
+		return err
+	}
+
+	// 补全 dial_duration：已接听=connect_time-create_time；未接通=end_time-create_time
+	if err = d.conn.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET dial_duration = CASE
+			WHEN connect_time > 0 AND connect_time > create_time THEN connect_time - create_time
+			WHEN end_time > create_time THEN end_time - create_time
+			ELSE 0
+		END WHERE dial_duration = 0 OR dial_duration IS NULL`,
 	).Error; err != nil {
 		return err
 	}

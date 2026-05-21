@@ -381,38 +381,35 @@ func (LocalAppSDKVersion) TableName() string {
 	return "local_app_sdk_version"
 }
 
-// LocalSignalCallRecord 音视频通话记录（与服务端 rtc.SignalRecord 对齐，存于本地 SQLite / IndexDB）。
+// LocalSignalCallRecord 音视频通话记录（与 rtc.CallRecordItem 对齐，存于本地 SQLite / IndexDB）。
 type LocalSignalCallRecord struct {
 	SID                 string `gorm:"column:s_id;primaryKey;type:varchar(128)" json:"sID"`
 	RoomID              string `gorm:"column:room_id;type:varchar(128);index:idx_signal_room" json:"roomID"`
-	FileName            string `gorm:"column:file_name;type:varchar(255)" json:"fileName"`
+	// Status 见 constant.SignalCallStatus*：1=已接听 2=未接通
+	Status     int32 `gorm:"column:status;index:idx_signal_status" json:"status"`
+	CreateTime int64 `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
+	// DialDuration 拨打时长（毫秒）
+	DialDuration int64 `gorm:"column:dial_duration" json:"dialDuration"`
+	// CallDuration 通话时长（毫秒），未接通为 0
+	CallDuration int64 `gorm:"column:call_duration" json:"callDuration"`
 	MediaType           string `gorm:"column:media_type;type:varchar(32)" json:"mediaType"`
 	SessionType         int32  `gorm:"column:session_type;index:idx_signal_session" json:"sessionType"`
 	InviterUserID       string `gorm:"column:inviter_user_id;type:varchar(64)" json:"inviterUserID"`
 	InviterUserNickname string `gorm:"column:inviter_user_nickname;type:varchar(255)" json:"inviterUserNickname"`
+	InviterUserFaceURL  string `gorm:"column:inviter_user_face_url;type:varchar(512)" json:"inviterUserFaceURL"`
 	GroupID             string `gorm:"column:group_id;type:varchar(64)" json:"groupID"`
 	GroupName           string `gorm:"column:group_name;type:varchar(255)" json:"groupName"`
-	InviterUsersJSON    string `gorm:"column:inviter_users;type:text" json:"-"`
-	// CalleeMatchText 被叫侧模糊查询用：由邀请时 inviteeUserIDList 等拼接（仅用于检索，非协议字段）
+	// CalleeMatchText 被叫侧模糊查询用：由邀请时 inviteeUserIDList 等拼接（仅用于检索）
 	CalleeMatchText     string `gorm:"column:callee_match_text;type:text;index:idx_signal_callee_txt" json:"-"`
-	// InviteeUserNickname 被叫昵称（单聊时首位被叫，用于 UI 展示）
 	InviteeUserNickname string `gorm:"column:invitee_user_nickname;type:varchar(255)" json:"inviteeUserNickname"`
-	// InviteeUserIDsJSON 被叫 userID 列表的 JSON 序列化（["uid1","uid2"]）
 	InviteeUserIDsJSON  string `gorm:"column:invitee_user_ids;type:text" json:"-"`
-	CreateTime          int64  `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
-	EndTime             int64  `gorm:"column:end_time" json:"endTime"`
-	// ConnectTime 接通时间（毫秒时间戳），未接通时为 0
-	ConnectTime         int64  `gorm:"column:connect_time" json:"connectTime"`
-	// DialDuration 拨打/振铃时长（毫秒）：从本端发起/收到邀请到接通/拒接/取消所经历的时间
-	DialDuration        int64  `gorm:"column:dial_duration" json:"dialDuration"`
-	// CallDuration 通话时长（毫秒），未接通时为 0
-	CallDuration        int64  `gorm:"column:call_duration" json:"callDuration"`
-	Size                string `gorm:"column:size;type:varchar(32)" json:"size"`
-	FileURL             string `gorm:"column:file_url;type:varchar(512)" json:"fileURL"`
-	// DialStatus 见 constant.SignalCallDialStatus*：1=未拨通 2=已拨通
-	DialStatus int32 `gorm:"column:dial_status;index:idx_signal_dial" json:"dialStatus"`
 	// Direction 见 constant.SignalCallDirection*：1=主叫 2=被叫(已接) 3=被叫(未接/错过)
-	Direction  int32 `gorm:"column:direction;index:idx_signal_dir" json:"direction"`
+	Direction int32 `gorm:"column:direction;index:idx_signal_dir" json:"direction"`
+	// Role 见 constant.SignalCallRole*：1=主叫 2=被叫（由本端 direction 推导）
+	Role int32 `gorm:"column:role;index:idx_signal_role" json:"role"`
+	// ConnectTime 接通时间（毫秒时间戳），未接通时为 0
+	ConnectTime int64 `gorm:"column:connect_time" json:"connectTime"`
+	EndTime     int64 `gorm:"column:end_time" json:"endTime"`
 }
 
 func (LocalSignalCallRecord) TableName() string {

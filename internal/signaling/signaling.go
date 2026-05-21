@@ -24,17 +24,19 @@ import (
 const roomTimingMaxAge = 10 * time.Minute
 
 // roomTiming 追踪单次通话的关键时间戳（本端视角），以 roomID 为键存于 sync.Map。
+// mu 保护 connectMs 的并发写入（inviteMs/createdAt 写入后只读，无需保护）。
 type roomTiming struct {
-	inviteMs  int64     // 本端发起或收到邀请的毫秒时间戳
+	mu        sync.Mutex
+	inviteMs  int64     // 本端发起或收到邀请的毫秒时间戳（写入后只读）
 	connectMs int64     // 接通时的毫秒时间戳（0 = 尚未接通）
-	createdAt time.Time // 条目创建时间，用于定期清理
+	createdAt time.Time // 条目创建时间，用于定期清理（写入后只读）
 }
 
 // recordTask 异步写记录任务，包含构建 LocalSignalCallRecord 所需的全部信息。
 type recordTask struct {
 	inv         *rtc.InvitationInfo
 	participant *rtc.ParticipantMetaData
-	dialStatus  int32
+	status      int32
 	direction   int32
 	inviteMs    int64 // 从 roomTimings 取得
 	connectMs   int64 // 从 roomTimings 取得（0 = 未接通）
@@ -95,6 +97,9 @@ func (s *Signaling) recordWorker() {
 		if r := recover(); r != nil {
 			log.ZError(context.Background(), "recordWorker panic", nil, "recover", r)
 		}
+		// 无论正常退出还是 panic 恢复，都必须关闭 done，
+		// 否则 Close() 中的 <-s.done 会永久阻塞。
+		close(s.done)
 	}()
 
 	for task := range s.recordCh {
@@ -106,11 +111,13 @@ func (s *Signaling) recordWorker() {
 		calleeText := s.composeCalleeMatchText(ctx, task.inv, task.participant)
 		inviteeNickname := s.resolveInviteeNickname(ctx, task.inv, task.participant)
 		inviterNickname := s.resolveInviterNickname(ctx, task.inv, task.participant)
+		inviterFaceURL := s.resolveInviterFaceURL(ctx, task.inv, task.participant)
+		groupName := s.resolveGroupName(ctx, task.inv, task.participant)
 		inviteeIDsJSON := buildInviteeIDsJSON(task.inv)
 
 		cfg := callRecordConfig{
 			inv:             task.inv,
-			dialStatus:      task.dialStatus,
+			status:          task.status,
 			direction:       task.direction,
 			inviteMs:        task.inviteMs,
 			connectMs:       task.connectMs,
@@ -119,6 +126,8 @@ func (s *Signaling) recordWorker() {
 			inviteeNickname: inviteeNickname,
 			inviteeIDsJSON:  inviteeIDsJSON,
 			inviterNickname: inviterNickname,
+			inviterFaceURL:  inviterFaceURL,
+			groupName:       groupName,
 		}
 		lr := newLocalSignalCallRecord(cfg)
 		if lr == nil {
@@ -128,7 +137,6 @@ func (s *Signaling) recordWorker() {
 			log.ZWarn(ctx, "async persistLocalCallRecord failed", err, "sID", lr.SID)
 		}
 	}
-	close(s.done)
 }
 
 // roomTimingsCleanup 定期清理过期的 roomTimings 条目，防止因异常断连导致的内存泄漏。
@@ -187,7 +195,10 @@ func (s *Signaling) storeInviteTime(roomID string, ms int64) {
 
 func (s *Signaling) storeConnectTime(roomID string, ms int64) {
 	if v, ok := s.roomTimings.Load(roomID); ok {
-		v.(*roomTiming).connectMs = ms
+		t := v.(*roomTiming)
+		t.mu.Lock()
+		t.connectMs = ms
+		t.mu.Unlock()
 	} else {
 		s.roomTimings.Store(roomID, &roomTiming{connectMs: ms, createdAt: time.Now()})
 	}
@@ -197,7 +208,10 @@ func (s *Signaling) storeConnectTime(roomID string, ms int64) {
 func (s *Signaling) popTiming(roomID string) (inviteMs, connectMs int64) {
 	if v, ok := s.roomTimings.LoadAndDelete(roomID); ok {
 		t := v.(*roomTiming)
-		return t.inviteMs, t.connectMs
+		t.mu.Lock()
+		inviteMs, connectMs = t.inviteMs, t.connectMs
+		t.mu.Unlock()
+		return
 	}
 	return 0, 0
 }
@@ -233,25 +247,34 @@ func (s *Signaling) cancelInviteTimer(roomID string) {
 	}
 }
 
-// onInvitationTimeout 邀请超时回调：通知 UI + 写本地未拨通记录。
+// onInvitationTimeout 本端邀请超时：主叫侧上报服务端；被叫侧仅本地回调与落库。
 func (s *Signaling) onInvitationTimeout(inv *rtc.InvitationInfo, direction int32) {
+	if inv == nil {
+		return
+	}
 	ctx := context.Background()
+	if direction == constant.SignalCallDirectionOutgoing && inv.InviterUserID == s.loginUserID {
+		if err := s.Timeout(ctx, &rtc.SignalTimeoutReq{Invitation: inv}); err != nil {
+			log.ZWarn(ctx, "Timeout request failed on local timer", err, "roomID", inv.RoomID)
+		}
+		return
+	}
+	s.notifyInvitationTimeout(ctx, inv, constant.SignalCallDirectionMissed)
+}
+
+// notifyInvitationTimeout 被叫侧超时未接：通知 UI 并写本地未接通记录。
+func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.InvitationInfo, recordDir int32) {
+	s.cancelInviteTimer(inv.RoomID)
 
 	listener := s.listener()
 	if listener != nil {
-		log.ZDebug(ctx, "OnInvitationTimeout", "roomID", inv.RoomID, "direction", direction)
+		log.ZDebug(ctx, "OnInvitationTimeout", "roomID", inv.RoomID, "direction", recordDir)
 		listener.OnInvitationTimeout(jsonutil.StructToJsonString(inv))
-	}
-
-	// 超时方向：主叫 → outgoing+未拨通；被叫 → missed+未拨通
-	recordDir := constant.SignalCallDirectionMissed
-	if direction == constant.SignalCallDirectionOutgoing {
-		recordDir = constant.SignalCallDirectionOutgoing
 	}
 
 	inviteMs, connectMs := s.popTiming(inv.RoomID)
 	s.persistLocalCallRecord(ctx, inv, nil,
-		constant.SignalCallDialStatusNotConnected,
+		constant.SignalCallStatusNotConnected,
 		recordDir,
 		inviteMs, connectMs, time.Now().UnixMilli())
 }
@@ -307,6 +330,8 @@ func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.
 		return s.handleCancel(ctx, listener, payload.Cancel)
 	case *rtc.SignalReq_HungUp:
 		return s.handleHungUp(ctx, listener, payload.HungUp)
+	case *rtc.SignalReq_Timeout:
+		return s.handleTimeout(ctx, listener, payload.Timeout)
 	default:
 		log.ZWarn(ctx, "unhandled signaling payload type", nil, "type", fmt.Sprintf("%T", signalReq.Payload))
 		return nil
@@ -384,7 +409,7 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 
 		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
-			constant.SignalCallDialStatusNotConnected,
+			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionOutgoing,
 			inviteMs, connectMs, time.Now().UnixMilli())
 		return nil
@@ -392,6 +417,20 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 	if req.UserID == s.loginUserID && req.OpUserPlatformID != s.platformID {
 		log.ZDebug(ctx, "OnInviteeRejectedByOtherDevice", "reject", req)
 		listener.OnInviteeRejectedByOtherDevice(jsonutil.StructToJsonString(req))
+	}
+	return nil
+}
+
+// handleTimeout 被叫侧收到主叫超时未接通通知。
+func (s *Signaling) handleTimeout(ctx context.Context, _ open_im_sdk_callback.OnSignalingListener, req *rtc.SignalTimeoutReq) error {
+	if req.Invitation == nil {
+		return nil
+	}
+	if req.Invitation.InviterUserID == s.loginUserID {
+		return nil
+	}
+	if datautil.Contain(s.loginUserID, req.Invitation.InviteeUserIDList...) {
+		s.notifyInvitationTimeout(ctx, req.Invitation, constant.SignalCallDirectionMissed)
 	}
 	return nil
 }
@@ -409,14 +448,15 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 
 		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
-			constant.SignalCallDialStatusNotConnected,
+			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionMissed,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
 }
 
-// handleHungUp 收到对端挂断通知：取消超时定时器，写已拨通记录。
+// handleHungUp 收到对端挂断通知：取消超时定时器，写通话记录。
+// 若 connectMs=0（对端在接听前挂断），记录为未接通；否则记录为已接听。
 func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callback.OnSignalingListener, req *rtc.SignalHungUpReq) error {
 	if req.Invitation == nil {
 		return nil
@@ -432,8 +472,12 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			direction = constant.SignalCallDirectionOutgoing
 		}
 		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
+		status := constant.SignalCallStatusAnswered
+		if connectMs == 0 {
+			status = constant.SignalCallStatusNotConnected
+		}
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
-			constant.SignalCallDialStatusConnected,
+			status,
 			direction,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
@@ -473,7 +517,7 @@ func (s *Signaling) persistLocalCallRecord(
 	ctx context.Context,
 	inv *rtc.InvitationInfo,
 	participant *rtc.ParticipantMetaData,
-	dialStatus int32,
+	status int32,
 	direction int32,
 	inviteMs, connectMs, endMs int64,
 ) {
@@ -484,7 +528,7 @@ func (s *Signaling) persistLocalCallRecord(
 	case s.recordCh <- recordTask{
 		inv:         inv,
 		participant: participant,
-		dialStatus:  dialStatus,
+		status:      status,
 		direction:   direction,
 		inviteMs:    inviteMs,
 		connectMs:   connectMs,
@@ -514,11 +558,17 @@ func (s *Signaling) appendCalleeNicknamesFromFriends(ctx context.Context, inv *r
 	}
 	var extras []string
 	for _, f := range friends {
-		if f.Nickname != "" {
-			extras = append(extras, f.Nickname)
+		name := f.ConversationShowName()
+		if name != "" {
+			extras = append(extras, name)
 		}
-		if f.Remark != "" {
-			extras = append(extras, f.Remark)
+		if !isSingleChatCall(inv) {
+			if f.Nickname != "" {
+				extras = append(extras, f.Nickname)
+			}
+			if f.Remark != "" {
+				extras = append(extras, f.Remark)
+			}
 		}
 	}
 	if len(extras) == 0 {
@@ -527,26 +577,57 @@ func (s *Signaling) appendCalleeNicknamesFromFriends(ctx context.Context, inv *r
 	return strings.TrimSpace(base + " " + strings.Join(extras, " "))
 }
 
+func isSingleChatCall(inv *rtc.InvitationInfo) bool {
+	return inv != nil && inv.SessionType == constant.SingleChatType
+}
+
+// resolve1v1UserDisplayName 单聊展示名：好友 remark > firstName+lastName > nickname；非好友仅信令 nickname。
+func (s *Signaling) resolve1v1UserDisplayName(ctx context.Context, userID string, p *rtc.ParticipantMetaData) string {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return ""
+	}
+	if s.db != nil {
+		friends, err := s.db.GetFriendInfoList(ctx, []string{userID})
+		if err == nil && len(friends) > 0 {
+			if name := friends[0].ConversationShowName(); name != "" {
+				return name
+			}
+		}
+	}
+	return nicknameFromParticipant(userID, p)
+}
+
 func (s *Signaling) resolveInviteeNickname(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if inv == nil || len(inv.InviteeUserIDList) == 0 {
+		return ""
+	}
+	firstUID := inv.InviteeUserIDList[0]
+	if isSingleChatCall(inv) {
+		return s.resolve1v1UserDisplayName(ctx, firstUID, p)
+	}
 	if nick := extractInviteeNickname(inv, p); nick != "" {
 		return nick
 	}
-	if s.db == nil || inv == nil || len(inv.InviteeUserIDList) == 0 {
-		return ""
-	}
-	friends, err := s.db.GetFriendInfoList(ctx, inv.InviteeUserIDList[:1])
-	if err != nil || len(friends) == 0 {
-		return ""
-	}
-	if friends[0].Remark != "" {
-		return friends[0].Remark
-	}
-	return friends[0].Nickname
+	return s.resolve1v1UserDisplayName(ctx, firstUID, p)
 }
 
 func (s *Signaling) resolveInviterNickname(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if inv == nil || inv.InviterUserID == "" {
+		return ""
+	}
+	if isSingleChatCall(inv) {
+		return s.resolve1v1UserDisplayName(ctx, inv.InviterUserID, p)
+	}
 	if nick := extractInviterNickname(inv, p); nick != "" {
 		return nick
+	}
+	return s.resolve1v1UserDisplayName(ctx, inv.InviterUserID, p)
+}
+
+func (s *Signaling) resolveInviterFaceURL(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if faceURL := extractInviterFaceURL(inv, p); faceURL != "" {
+		return faceURL
 	}
 	if s.db == nil || inv == nil || inv.InviterUserID == "" {
 		return ""
@@ -555,8 +636,19 @@ func (s *Signaling) resolveInviterNickname(ctx context.Context, inv *rtc.Invitat
 	if err != nil || len(friends) == 0 {
 		return ""
 	}
-	if friends[0].Remark != "" {
-		return friends[0].Remark
+	return friends[0].FaceURL
+}
+
+func (s *Signaling) resolveGroupName(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if name := extractGroupName(p); name != "" {
+		return name
 	}
-	return friends[0].Nickname
+	if s.db == nil || inv == nil || inv.GroupID == "" {
+		return ""
+	}
+	g, err := s.db.GetGroupInfoByGroupID(ctx, inv.GroupID)
+	if err != nil || g == nil {
+		return ""
+	}
+	return g.GroupName
 }

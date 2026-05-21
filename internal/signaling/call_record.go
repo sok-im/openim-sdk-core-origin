@@ -7,49 +7,24 @@ import (
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
+	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
 	"github.com/openimsdk/protocol/rtc"
 )
 
 // callRecordConfig 构建本地通话记录所需的全部参数。
 type callRecordConfig struct {
-	inv             *rtc.InvitationInfo
-	dialStatus      int32  // constant.SignalCallDialStatus*
-	direction       int32  // constant.SignalCallDirection*
-	inviteMs        int64  // 本端发起/收到邀请的毫秒时间戳（0 则回退到 inv.InitiateTime）
-	connectMs       int64  // 接通时的毫秒时间戳（0 = 未接通）
-	endMs           int64  // 通话结束时的毫秒时间戳
-	calleeMatchText string // 被叫检索串（用于模糊查询）
-	inviteeNickname string // 被叫昵称（单聊展示用）
-	inviteeIDsJSON  string // 被叫 userID 列表 JSON
-	inviterNickname string // 主叫昵称（被叫侧展示用）
-}
-
-func localToSignalRecord(l *model_struct.LocalSignalCallRecord) *rtc.SignalRecord {
-	if l == nil {
-		return nil
-	}
-	r := &rtc.SignalRecord{
-		RoomID:              l.RoomID,
-		SID:                 l.SID,
-		FileName:            l.FileName,
-		MediaType:           l.MediaType,
-		SessionType:         l.SessionType,
-		InviterUserID:       l.InviterUserID,
-		InviterUserNickname: l.InviterUserNickname,
-		GroupID:             l.GroupID,
-		GroupName:           l.GroupName,
-		CreateTime:          l.CreateTime,
-		EndTime:             l.EndTime,
-		Size:                l.Size,
-		FileURL:             l.FileURL,
-	}
-	if l.InviterUsersJSON != "" {
-		var users []*rtc.SignalUser
-		if err := json.Unmarshal([]byte(l.InviterUsersJSON), &users); err == nil {
-			r.InviterUsers = users
-		}
-	}
-	return r
+	inv              *rtc.InvitationInfo
+	status           int32 // constant.SignalCallStatus*
+	direction        int32 // constant.SignalCallDirection*
+	inviteMs         int64
+	connectMs        int64
+	endMs            int64
+	calleeMatchText  string
+	inviteeNickname  string
+	inviteeIDsJSON   string
+	inviterNickname  string
+	inviterFaceURL   string
+	groupName        string
 }
 
 // newLocalSignalCallRecord 根据 callRecordConfig 生成本地通话记录，并计算拨打时长与通话时长。
@@ -59,7 +34,6 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		return nil
 	}
 
-	// 确定通话开始时间（主叫侧拨出时刻 / 被叫侧收到邀请时刻）
 	inviteMs := cfg.inviteMs
 	if inviteMs <= 0 {
 		inviteMs = inv.InitiateTime
@@ -68,14 +42,11 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		inviteMs = cfg.endMs
 	}
 
-	// 计算拨打时长与通话时长
 	var dialDuration, callDuration int64
 	if cfg.connectMs > 0 {
-		// 已接通：振铃阶段 = connectMs - inviteMs；通话阶段 = endMs - connectMs
 		dialDuration = cfg.connectMs - inviteMs
 		callDuration = cfg.endMs - cfg.connectMs
 	} else {
-		// 未接通：全程为振铃阶段
 		dialDuration = cfg.endMs - inviteMs
 	}
 	if dialDuration < 0 {
@@ -85,9 +56,8 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		callDuration = 0
 	}
 
-	// SID 前缀区分已接通 / 未接通，便于离线排查
 	prefix := "local-nc"
-	if cfg.dialStatus == constant.SignalCallDialStatusConnected {
+	if cfg.status == constant.SignalCallStatusAnswered {
 		prefix = "local"
 	}
 	sid := fmt.Sprintf("%s-%s-%d", prefix, inv.RoomID, cfg.endMs)
@@ -95,11 +65,14 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 	return &model_struct.LocalSignalCallRecord{
 		SID:                 sid,
 		RoomID:              inv.RoomID,
+		Status:              cfg.status,
 		MediaType:           inv.MediaType,
 		SessionType:         inv.SessionType,
 		InviterUserID:       inv.InviterUserID,
 		InviterUserNickname: cfg.inviterNickname,
+		InviterUserFaceURL:  cfg.inviterFaceURL,
 		GroupID:             inv.GroupID,
+		GroupName:           cfg.groupName,
 		CreateTime:          inviteMs,
 		EndTime:             cfg.endMs,
 		ConnectTime:         cfg.connectMs,
@@ -108,12 +81,11 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		InviteeUserNickname: cfg.inviteeNickname,
 		InviteeUserIDsJSON:  cfg.inviteeIDsJSON,
 		CalleeMatchText:     strings.TrimSpace(cfg.calleeMatchText),
-		DialStatus:          cfg.dialStatus,
 		Direction:           cfg.direction,
+		Role:                constant.SignalCallRoleFromDirection(cfg.direction),
 	}
 }
 
-// buildCalleeMatchTextFromProto 从邀请与单次 participant 元数据提取被叫 userID + 昵称（信令里可能带的被叫 PublicUserInfo / 群成员昵称）。
 func buildCalleeMatchTextFromProto(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
 	if inv == nil {
 		return ""
@@ -138,38 +110,88 @@ func buildCalleeMatchTextFromProto(inv *rtc.InvitationInfo, p *rtc.ParticipantMe
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
 
-// extractInviteeNickname 从 participant 元数据或 inviteeUserIDList 提取首位被叫的展示昵称（单聊场景）。
-func extractInviteeNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
-	if inv == nil || len(inv.InviteeUserIDList) == 0 {
+func nicknameFromParticipant(userID string, p *rtc.ParticipantMetaData) string {
+	if p == nil || userID == "" {
 		return ""
 	}
-	firstUID := inv.InviteeUserIDList[0]
-	if p != nil {
-		if p.UserInfo != nil && p.UserInfo.UserID == firstUID && p.UserInfo.Nickname != "" {
-			return p.UserInfo.Nickname
-		}
-		if p.GroupMemberInfo != nil && p.GroupMemberInfo.UserID == firstUID && p.GroupMemberInfo.Nickname != "" {
-			return p.GroupMemberInfo.Nickname
-		}
-	}
-	return ""
-}
-
-// extractInviterNickname 从 participant 元数据提取主叫的展示昵称。
-func extractInviterNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
-	if inv == nil || p == nil {
-		return ""
-	}
-	if p.UserInfo != nil && p.UserInfo.UserID == inv.InviterUserID && p.UserInfo.Nickname != "" {
+	if p.UserInfo != nil && p.UserInfo.UserID == userID {
 		return p.UserInfo.Nickname
 	}
-	if p.GroupMemberInfo != nil && p.GroupMemberInfo.UserID == inv.InviterUserID && p.GroupMemberInfo.Nickname != "" {
+	if p.GroupMemberInfo != nil && p.GroupMemberInfo.UserID == userID {
 		return p.GroupMemberInfo.Nickname
 	}
 	return ""
 }
 
-// buildInviteeIDsJSON 将被叫 userID 列表序列化为 JSON 字符串（空列表返回空串）。
+func extractInviteeNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if inv == nil || len(inv.InviteeUserIDList) == 0 {
+		return ""
+	}
+	return nicknameFromParticipant(inv.InviteeUserIDList[0], p)
+}
+
+func extractInviterNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if inv == nil {
+		return ""
+	}
+	return nicknameFromParticipant(inv.InviterUserID, p)
+}
+
+func extractInviterFaceURL(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if inv == nil || p == nil {
+		return ""
+	}
+	if p.UserInfo != nil && p.UserInfo.UserID == inv.InviterUserID && p.UserInfo.FaceURL != "" {
+		return p.UserInfo.FaceURL
+	}
+	if p.GroupMemberInfo != nil && p.GroupMemberInfo.UserID == inv.InviterUserID && p.GroupMemberInfo.FaceURL != "" {
+		return p.GroupMemberInfo.FaceURL
+	}
+	return ""
+}
+
+func extractGroupName(p *rtc.ParticipantMetaData) string {
+	if p != nil && p.GroupInfo != nil && p.GroupInfo.GroupName != "" {
+		return p.GroupInfo.GroupName
+	}
+	return ""
+}
+
+func callRecordRole(l *model_struct.LocalSignalCallRecord) int32 {
+	if l == nil {
+		return constant.SignalCallRoleUnknown
+	}
+	if l.Role != 0 {
+		return l.Role
+	}
+	return constant.SignalCallRoleFromDirection(l.Direction)
+}
+
+func localRecordToSDK(l *model_struct.LocalSignalCallRecord) *sdk_struct.SignalCallRecordWithDialStatus {
+	if l == nil {
+		return nil
+	}
+	return &sdk_struct.SignalCallRecordWithDialStatus{
+		SID:                 l.SID,
+		RoomID:              l.RoomID,
+		Status:              l.Status,
+		CreateTime:          l.CreateTime,
+		DialDuration:        l.DialDuration,
+		CallDuration:        l.CallDuration,
+		MediaType:           l.MediaType,
+		SessionType:         l.SessionType,
+		InviterUserID:       l.InviterUserID,
+		InviterUserNickname: l.InviterUserNickname,
+		InviterUserFaceURL:  l.InviterUserFaceURL,
+		GroupID:             l.GroupID,
+		GroupName:           l.GroupName,
+		Direction:           l.Direction,
+		Role:                callRecordRole(l),
+		ConnectTime:         l.ConnectTime,
+		InviteeUserNickname: l.InviteeUserNickname,
+	}
+}
+
 func buildInviteeIDsJSON(inv *rtc.InvitationInfo) string {
 	if inv == nil || len(inv.InviteeUserIDList) == 0 {
 		return ""

@@ -22,6 +22,10 @@ func SignalingCancel(callback open_im_sdk_callback.Base, operationID string, sig
 	call(callback, operationID, UserForSDK.Signaling().Cancel, signalCancelReq)
 }
 
+func SignalingTimeout(callback open_im_sdk_callback.Base, operationID string, signalTimeoutReq string) {
+	call(callback, operationID, UserForSDK.Signaling().Timeout, signalTimeoutReq)
+}
+
 func SignalingHungUp(callback open_im_sdk_callback.Base, operationID string, signalHungUpReq string) {
 	call(callback, operationID, UserForSDK.Signaling().HungUp, signalHungUpReq)
 }
@@ -40,6 +44,30 @@ func SignalingGetInvitationInfoStartApp(callback open_im_sdk_callback.Base, oper
 
 func SignalingGetInvitationRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().GetSignalInvitationRecords, req)
+}
+
+func SignalingGetLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecords, req)
+}
+
+func SignalingGetLocalCallRecordsWithUser(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsWithUser, req)
+}
+
+func SignalingGetLocalMissedCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalMissedCallRecords, req)
+}
+
+func SignalingGetLocalAnsweredCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalAnsweredCallRecords, req)
+}
+
+func SignalingGetLocalAllCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalAllCallRecords, req)
+}
+
+func SignalingGetLocalCallRecordsByUserName(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsByUserName, req)
 }
 
 func SignalingSearchLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {

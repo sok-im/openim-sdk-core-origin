@@ -186,9 +186,12 @@ type TableMaster interface {
 type SignalCallRecordModel interface {
 	BatchUpsertSignalCallRecords(ctx context.Context, records []*model_struct.LocalSignalCallRecord) error
 	// SearchSignalCallRecords 查询本地通话记录；direction 见 constant.SignalCallDirection*（0=不筛选）。
-	SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, dialStatus int32, direction int32, startTime, endTime int64, keyword, userName string) ([]*model_struct.LocalSignalCallRecord, error)
-	// CountSignalCallRecords 统计符合条件的本地通话记录总数；direction 见 constant.SignalCallDirection*（0=不筛选）。
-	CountSignalCallRecords(ctx context.Context, sessionType int32, dialStatus int32, direction int32, startTime, endTime int64, keyword, userName string) (int64, error)
+	SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error)
+	// CountSignalCallRecords 统计符合条件的本地通话记录总数；status 见 constant.SignalCallStatus*（0=不筛选）。
+	CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) (int64, error)
+	// SearchSignalCallRecordsByUser 按用户 ID 查询本地通话记录；status 见 constant.SignalCallStatus*（0=不筛选）。
+	SearchSignalCallRecordsByUser(ctx context.Context, userID string, status int32, offset, count int, startTime, endTime int64) ([]*model_struct.LocalSignalCallRecord, error)
+	CountSignalCallRecordsByUser(ctx context.Context, userID string, status int32, startTime, endTime int64) (int64, error)
 	GetSignalCallRecordBySID(ctx context.Context, sID string) (*model_struct.LocalSignalCallRecord, error)
 	DeleteSignalCallRecords(ctx context.Context, sIDs []string) error
 	ClearAllSignalCallRecords(ctx context.Context) error

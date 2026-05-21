@@ -24,10 +24,12 @@ import (
 const roomTimingMaxAge = 10 * time.Minute
 
 // roomTiming 追踪单次通话的关键时间戳（本端视角），以 roomID 为键存于 sync.Map。
+// mu 保护 connectMs 的并发写入（inviteMs/createdAt 写入后只读，无需保护）。
 type roomTiming struct {
-	inviteMs  int64     // 本端发起或收到邀请的毫秒时间戳
+	mu        sync.Mutex
+	inviteMs  int64     // 本端发起或收到邀请的毫秒时间戳（写入后只读）
 	connectMs int64     // 接通时的毫秒时间戳（0 = 尚未接通）
-	createdAt time.Time // 条目创建时间，用于定期清理
+	createdAt time.Time // 条目创建时间，用于定期清理（写入后只读）
 }
 
 // recordTask 异步写记录任务，包含构建 LocalSignalCallRecord 所需的全部信息。
@@ -95,6 +97,9 @@ func (s *Signaling) recordWorker() {
 		if r := recover(); r != nil {
 			log.ZError(context.Background(), "recordWorker panic", nil, "recover", r)
 		}
+		// 无论正常退出还是 panic 恢复，都必须关闭 done，
+		// 否则 Close() 中的 <-s.done 会永久阻塞。
+		close(s.done)
 	}()
 
 	for task := range s.recordCh {
@@ -132,7 +137,6 @@ func (s *Signaling) recordWorker() {
 			log.ZWarn(ctx, "async persistLocalCallRecord failed", err, "sID", lr.SID)
 		}
 	}
-	close(s.done)
 }
 
 // roomTimingsCleanup 定期清理过期的 roomTimings 条目，防止因异常断连导致的内存泄漏。
@@ -191,7 +195,10 @@ func (s *Signaling) storeInviteTime(roomID string, ms int64) {
 
 func (s *Signaling) storeConnectTime(roomID string, ms int64) {
 	if v, ok := s.roomTimings.Load(roomID); ok {
-		v.(*roomTiming).connectMs = ms
+		t := v.(*roomTiming)
+		t.mu.Lock()
+		t.connectMs = ms
+		t.mu.Unlock()
 	} else {
 		s.roomTimings.Store(roomID, &roomTiming{connectMs: ms, createdAt: time.Now()})
 	}
@@ -201,7 +208,10 @@ func (s *Signaling) storeConnectTime(roomID string, ms int64) {
 func (s *Signaling) popTiming(roomID string) (inviteMs, connectMs int64) {
 	if v, ok := s.roomTimings.LoadAndDelete(roomID); ok {
 		t := v.(*roomTiming)
-		return t.inviteMs, t.connectMs
+		t.mu.Lock()
+		inviteMs, connectMs = t.inviteMs, t.connectMs
+		t.mu.Unlock()
+		return
 	}
 	return 0, 0
 }
@@ -445,7 +455,8 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 	return nil
 }
 
-// handleHungUp 收到对端挂断通知：取消超时定时器，写已拨通记录。
+// handleHungUp 收到对端挂断通知：取消超时定时器，写通话记录。
+// 若 connectMs=0（对端在接听前挂断），记录为未接通；否则记录为已接听。
 func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callback.OnSignalingListener, req *rtc.SignalHungUpReq) error {
 	if req.Invitation == nil {
 		return nil
@@ -461,8 +472,12 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			direction = constant.SignalCallDirectionOutgoing
 		}
 		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
+		status := constant.SignalCallStatusAnswered
+		if connectMs == 0 {
+			status = constant.SignalCallStatusNotConnected
+		}
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
-			constant.SignalCallStatusAnswered,
+			status,
 			direction,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}

@@ -120,7 +120,7 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 	return &rtc.SignalAcceptResp{}, nil
 }
 
-// Reject 被叫侧拒接：取消超时定时器，写未拨通记录（incoming 方向）。
+// Reject 被叫侧拒接：取消超时定时器，写未拨通记录（missed 方向）。
 func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejectReq) error {
 	signalRejectReq.UserID = s.loginUserID
 	signalRejectReq.OpUserPlatformID = s.platformID
@@ -141,7 +141,7 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 			signalRejectReq.Invitation,
 			signalRejectReq.Participant,
 			constant.SignalCallStatusNotConnected,
-			constant.SignalCallDirectionIncoming,
+			constant.SignalCallDirectionMissed,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
@@ -155,15 +155,18 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 		s.cancelInviteTimer(signalTimeoutReq.Invitation.RoomID)
 	}
 
-	req := &rtc.SignalReq{
-		Payload: &rtc.SignalReq_Timeout{
-			Timeout: signalTimeoutReq,
-		},
-	}
-	_, err := s.signalingRequest(ctx, req)
-	if err != nil {
-		return err
-	}
+	/*
+		req := &rtc.SignalReq{
+			Payload: &rtc.SignalReq_Timeout{
+				Timeout: signalTimeoutReq,
+			},
+		}
+		_, err := s.signalingRequest(ctx, req)
+		if err != nil {
+			return err
+		}
+	*/
+
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
 		inviteMs, connectMs := s.popTiming(signalTimeoutReq.Invitation.RoomID)
 		s.persistLocalCallRecord(ctx,
@@ -206,7 +209,8 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 	return nil
 }
 
-// HungUp 任意一方挂断：取消超时定时器，写已拨通记录。
+// HungUp 任意一方挂断：取消超时定时器，写通话记录。
+// 若 connectMs=0（被叫未接通即挂断），记录为未接通；否则记录为已接听。
 func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungUpReq) error {
 	signalHungUpReq.UserID = s.loginUserID
 
@@ -226,10 +230,14 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 			direction = constant.SignalCallDirectionIncoming
 		}
 		inviteMs, connectMs := s.popTiming(signalHungUpReq.Invitation.RoomID)
+		status := constant.SignalCallStatusAnswered
+		if connectMs == 0 {
+			status = constant.SignalCallStatusNotConnected
+		}
 		s.persistLocalCallRecord(ctx,
 			signalHungUpReq.Invitation,
 			nil,
-			constant.SignalCallStatusAnswered,
+			status,
 			direction,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
@@ -255,9 +263,6 @@ func (s *Signaling) GetTokenByRoomID(ctx context.Context, signalGetTokenReq *rtc
 }
 
 func (s *Signaling) GetRoomByGroupID(ctx context.Context, groupID string) (*rtc.SignalGetRoomByGroupIDResp, error) {
-	if strings.TrimSpace(groupID) == "" {
-		return nil, sdkerrs.ErrArgs.WrapMsg("groupID is empty")
-	}
 	return api.SignalGetRoomByGroupID.Invoke(ctx, &rtc.SignalGetRoomByGroupIDReq{GroupID: groupID})
 }
 
@@ -297,6 +302,44 @@ func (s *Signaling) GetLocalCallRecords(ctx context.Context, params *sdk_struct.
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }
 
+// GetLocalCallRecordsWithUser 查询与指定用户的全部本地通话记录（含已接听、未接通等）。
+func (s *Signaling) GetLocalCallRecordsWithUser(ctx context.Context, params *sdk_struct.GetLocalCallRecordsWithUserParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalCallRecordsWithUserParams{}
+	}
+	if strings.TrimSpace(params.UserID) == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("userID is empty")
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		params.SessionType,
+		0, 0,
+		params.StartTime, params.EndTime,
+		"", "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		params.SessionType,
+		0, 0,
+		params.StartTime, params.EndTime,
+		"", "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
+}
+
 // SearchLocalSignalCallRecords 查询本地通话记录列表。
 func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sdk_struct.SearchLocalSignalCallRecordsParams) ([]*sdk_struct.SignalCallRecordWithDialStatus, error) {
 	if s.db == nil {
@@ -314,7 +357,7 @@ func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sd
 		params.Status,
 		params.Direction,
 		params.StartTime, params.EndTime,
-		params.Keyword, params.UserName, params.InviteeNickname)
+		params.Keyword, params.UserName, params.InviteeNickname, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -323,6 +366,155 @@ func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sd
 		out = append(out, localRecordToSDK(l))
 	}
 	return out, nil
+}
+
+// GetLocalMissedCallRecords 查询本地未接来电（被叫未接：status=未接通，direction=被叫-未接）。
+func (s *Signaling) GetLocalMissedCallRecords(ctx context.Context, params *sdk_struct.GetLocalMissedCallRecordsParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalMissedCallRecordsParams{}
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		params.SessionType,
+		constant.SignalCallStatusNotConnected,
+		constant.SignalCallDirectionMissed,
+		params.StartTime, params.EndTime,
+		params.Keyword, "", "", params.UserID, "")
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		params.SessionType,
+		constant.SignalCallStatusNotConnected,
+		constant.SignalCallDirectionMissed,
+		params.StartTime, params.EndTime,
+		params.Keyword, "", "", params.UserID, "")
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
+}
+
+// GetLocalAnsweredCallRecords 查询本地已接通通话（status=已接听，含主叫/被叫方向）。
+func (s *Signaling) GetLocalAnsweredCallRecords(ctx context.Context, params *sdk_struct.GetLocalAnsweredCallRecordsParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalAnsweredCallRecordsParams{}
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		params.SessionType,
+		constant.SignalCallStatusAnswered,
+		0,
+		params.StartTime, params.EndTime,
+		params.Keyword, "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		params.SessionType,
+		constant.SignalCallStatusAnswered,
+		0,
+		params.StartTime, params.EndTime,
+		params.Keyword, "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
+}
+
+// GetLocalAllCallRecords 查询本地全部通话记录（含已接听、未接通等，不筛选 status/direction）。
+func (s *Signaling) GetLocalAllCallRecords(ctx context.Context, params *sdk_struct.GetLocalAllCallRecordsParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalAllCallRecordsParams{}
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		params.SessionType,
+		0, 0,
+		params.StartTime, params.EndTime,
+		params.Keyword, "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		params.SessionType,
+		0, 0,
+		params.StartTime, params.EndTime,
+		params.Keyword, "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
+}
+
+// GetLocalCallRecordsByUserName 按用户名模糊查询本地通话记录。
+func (s *Signaling) GetLocalCallRecordsByUserName(ctx context.Context, params *sdk_struct.GetLocalCallRecordsByUserNameParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalCallRecordsByUserNameParams{}
+	}
+	if strings.TrimSpace(params.UserName) == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("userName is empty")
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		params.SessionType,
+		params.Status,
+		params.Direction,
+		params.StartTime, params.EndTime,
+		"", params.UserName, "", "", "")
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		params.SessionType,
+		params.Status,
+		params.Direction,
+		params.StartTime, params.EndTime,
+		"", params.UserName, "", "", "")
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }
 
 // GetLocalSignalCallRecordDetail 按 sID 查询单条通话详情（LRU+TTL=5min 缓存）。
@@ -390,7 +582,7 @@ func (s *Signaling) ClearAllLocalSignalCallRecords(ctx context.Context) error {
 	return nil
 }
 
-// ClearAllSignalCallRecords 清空服务端 + 本地所有记录。
+// ClearAllSignalCallRecords 清空本地所有通话记录（仅本地，不涉及服务端）。
 func (s *Signaling) ClearAllSignalCallRecords(ctx context.Context) error {
 	return s.ClearAllLocalSignalCallRecords(ctx)
 }

@@ -30,8 +30,8 @@ func (i *SignalCallRecords) BatchUpsertSignalCallRecords(ctx context.Context, re
 	return err
 }
 
-func (i *SignalCallRecords) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) ([]*model_struct.LocalSignalCallRecord, error) {
-	gList, err := exec.Exec(offset, count, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, i.loginUserID)
+func (i *SignalCallRecords) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error) {
+	gList, err := exec.Exec(offset, count, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID, i.loginUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +45,8 @@ func (i *SignalCallRecords) SearchSignalCallRecords(ctx context.Context, offset,
 	return nil, exec.ErrType
 }
 
-func (i *SignalCallRecords) CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) (int64, error) {
-	n, err := exec.Exec(sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, i.loginUserID)
+func (i *SignalCallRecords) CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) (int64, error) {
+	n, err := exec.Exec(sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID, i.loginUserID)
 	if err != nil {
 		return 0, err
 	}

@@ -50,6 +50,26 @@ func SignalingGetLocalCallRecords(callback open_im_sdk_callback.Base, operationI
 	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecords, req)
 }
 
+func SignalingGetLocalCallRecordsWithUser(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsWithUser, req)
+}
+
+func SignalingGetLocalMissedCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalMissedCallRecords, req)
+}
+
+func SignalingGetLocalAnsweredCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalAnsweredCallRecords, req)
+}
+
+func SignalingGetLocalAllCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalAllCallRecords, req)
+}
+
+func SignalingGetLocalCallRecordsByUserName(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsByUserName, req)
+}
+
 func SignalingSearchLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().SearchLocalSignalCallRecords, req)
 }

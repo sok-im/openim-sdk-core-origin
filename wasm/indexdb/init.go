@@ -40,8 +40,8 @@ import (
 // 8. For any map types, use JSON string conversion, and document this clearly.
 // 9. 音视频通话本地表：**必须**在 JS 侧（宿主环境）实现以下函数（参数顺序必须严格匹配 Go 的 exec.Exec 调用）：
 //   - batchUpsertSignalCallRecords(recordsJson)
-//   - searchSignalCallRecords(offset, count, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, loginUserID)
-//   - countSignalCallRecords(sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, loginUserID)
+//   - searchSignalCallRecords(offset, count, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID, loginUserID)
+//   - countSignalCallRecords(sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID, loginUserID)
 //   - searchSignalCallRecordsByUser(userID, status, offset, count, startTime, endTime, loginUserID)
 //   - countSignalCallRecordsByUser(userID, status, startTime, endTime, loginUserID)
 //   - getSignalCallRecordBySID(sID, loginUserID) → 返回 JSON 或空字符串（未找到时）

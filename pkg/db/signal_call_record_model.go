@@ -33,27 +33,27 @@ func (d *DataBase) BatchUpsertSignalCallRecords(ctx context.Context, records []*
 	return nil
 }
 
-func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) ([]*model_struct.LocalSignalCallRecord, error) {
+func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	tx := d.conn.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
-	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname)
+	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID)
 	var list []*model_struct.LocalSignalCallRecord
 	err := tx.Order("create_time DESC").Offset(offset).Limit(count).Find(&list).Error
 	return list, errs.WrapMsg(err, "SearchSignalCallRecords failed")
 }
 
-func (d *DataBase) CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) (int64, error) {
+func (d *DataBase) CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) (int64, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	tx := d.conn.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
-	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname)
+	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID)
 	var n int64
 	err := tx.Count(&n).Error
 	return n, errs.WrapMsg(err, "CountSignalCallRecords failed")
 }
 
-func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname string) *gorm.DB {
+func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) *gorm.DB {
 	if sessionType != 0 {
 		tx = tx.Where("session_type = ?", sessionType)
 	}
@@ -62,6 +62,13 @@ func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direct
 	}
 	if direction != 0 {
 		tx = tx.Where("direction = ?", direction)
+	}
+	if uid := strings.TrimSpace(inviterUserID); uid != "" {
+		tx = tx.Where("inviter_user_id = ?", uid)
+	}
+	if peer := strings.TrimSpace(peerUserID); peer != "" {
+		pattern := "%\"" + peer + "\"%"
+		tx = tx.Where("inviter_user_id = ? OR invitee_user_ids LIKE ?", peer, pattern)
 	}
 	if startTime > 0 {
 		tx = tx.Where("create_time >= ?", startTime)
@@ -78,7 +85,8 @@ func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direct
 	un := strings.TrimSpace(userName)
 	if un != "" {
 		p := "%" + un + "%"
-		tx = tx.Where("callee_match_text LIKE ? OR invitee_user_nickname LIKE ?", p, p)
+		tx = tx.Where("inviter_user_nickname LIKE ? OR invitee_user_nickname LIKE ? OR callee_match_text LIKE ?",
+			p, p, p)
 	}
 	in := strings.TrimSpace(inviteeNickname)
 	if in != "" {

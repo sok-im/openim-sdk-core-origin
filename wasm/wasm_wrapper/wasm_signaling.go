@@ -90,6 +90,36 @@ func (w *WrapperSignaling) SignalingGetLocalCallRecords(_ js.Value, args []js.Va
 	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecords, callback, &args).AsyncCallWithCallback()
 }
 
+// SignalingGetLocalCallRecordsWithUser 查询与指定用户的全部本地通话记录。
+func (w *WrapperSignaling) SignalingGetLocalCallRecordsWithUser(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecordsWithUser, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingGetLocalMissedCallRecords 查询本地未接来电（被叫未接）。
+func (w *WrapperSignaling) SignalingGetLocalMissedCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalMissedCallRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingGetLocalAnsweredCallRecords 查询本地已接通通话。
+func (w *WrapperSignaling) SignalingGetLocalAnsweredCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalAnsweredCallRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingGetLocalAllCallRecords 查询本地全部通话记录。
+func (w *WrapperSignaling) SignalingGetLocalAllCallRecords(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalAllCallRecords, callback, &args).AsyncCallWithCallback()
+}
+
+// SignalingGetLocalCallRecordsByUserName 按用户名模糊查询本地通话记录。
+func (w *WrapperSignaling) SignalingGetLocalCallRecordsByUserName(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingGetLocalCallRecordsByUserName, callback, &args).AsyncCallWithCallback()
+}
+
 // SignalingSearchLocalCallRecords 查询 SDK 本地缓存的通话记录表。
 func (w *WrapperSignaling) SignalingSearchLocalCallRecords(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)

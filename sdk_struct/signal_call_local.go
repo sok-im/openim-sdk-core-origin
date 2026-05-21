@@ -14,10 +14,21 @@ type SearchLocalSignalCallRecordsParams struct {
 	StartTime int64 `json:"startTime"`
 	EndTime   int64 `json:"endTime"`
 	Keyword   string `json:"keyword"`
-	// UserName 被叫侧模糊查询：匹配 callee_match_text、invitee_user_nickname
+	// UserName 用户名模糊查询：匹配 inviter_user_nickname、invitee_user_nickname、callee_match_text
 	UserName string `json:"userName"`
 	// InviteeNickname 被叫昵称模糊查询：匹配 invitee_user_nickname
 	InviteeNickname string `json:"inviteeNickname"`
+}
+
+// GetLocalCallRecordsWithUserParams 查询与指定用户的全部本地通话记录。
+type GetLocalCallRecordsWithUserParams struct {
+	// UserID 对方用户 ID（必填，匹配主叫或被叫列表）
+	UserID      string `json:"userID"`
+	Offset      int    `json:"offset"`
+	Count       int    `json:"count"`
+	SessionType int32  `json:"sessionType"`
+	StartTime   int64  `json:"startTime"`
+	EndTime     int64  `json:"endTime"`
 }
 
 // GetLocalCallRecordsParams 查询本地通话记录（可按用户筛选）。
@@ -36,6 +47,57 @@ type GetLocalCallRecordsParams struct {
 type GetLocalCallRecordsResp struct {
 	Total   int64                             `json:"total"`
 	Records []*SignalCallRecordWithDialStatus `json:"records"`
+}
+
+// GetLocalMissedCallRecordsParams 查询本地未接来电（被叫未接，direction=3）。
+type GetLocalMissedCallRecordsParams struct {
+	// UserID 主叫用户 ID（inviter_user_id）；为空则不过滤
+	UserID      string `json:"userID"`
+	Offset      int    `json:"offset"`
+	Count       int    `json:"count"`
+	SessionType int32  `json:"sessionType"`
+	StartTime   int64  `json:"startTime"`
+	EndTime     int64  `json:"endTime"`
+	Keyword     string `json:"keyword"`
+}
+
+// GetLocalAnsweredCallRecordsParams 查询本地已接通通话（status=已接听）。
+type GetLocalAnsweredCallRecordsParams struct {
+	// UserID 对方用户 ID；为空则不过滤（匹配主叫或被叫列表）
+	UserID      string `json:"userID"`
+	Offset      int    `json:"offset"`
+	Count       int    `json:"count"`
+	SessionType int32  `json:"sessionType"`
+	StartTime   int64  `json:"startTime"`
+	EndTime     int64  `json:"endTime"`
+	Keyword     string `json:"keyword"`
+}
+
+// GetLocalCallRecordsByUserNameParams 按用户名模糊查询本地通话记录。
+type GetLocalCallRecordsByUserNameParams struct {
+	// UserName 用户名关键字（模糊匹配主叫/被叫昵称及 callee_match_text）
+	UserName    string `json:"userName"`
+	Offset      int    `json:"offset"`
+	Count       int    `json:"count"`
+	SessionType int32  `json:"sessionType"`
+	// Status 见 constant.SignalCallStatus*：0=全部 1=已接听 2=未接通
+	Status int32 `json:"status"`
+	// Direction 见 constant.SignalCallDirection*：0=全部 1=主叫 2=被叫-已接 3=被叫-未接
+	Direction int32 `json:"direction"`
+	StartTime int64  `json:"startTime"`
+	EndTime   int64  `json:"endTime"`
+}
+
+// GetLocalAllCallRecordsParams 查询本地全部通话记录（不筛选 status/direction）。
+type GetLocalAllCallRecordsParams struct {
+	// UserID 对方用户 ID；为空则不过滤（匹配主叫或被叫列表）
+	UserID      string `json:"userID"`
+	Offset      int    `json:"offset"`
+	Count       int    `json:"count"`
+	SessionType int32  `json:"sessionType"`
+	StartTime   int64  `json:"startTime"`
+	EndTime     int64  `json:"endTime"`
+	Keyword     string `json:"keyword"`
 }
 
 // SignalCallRecordWithDialStatus 本地查询结果。

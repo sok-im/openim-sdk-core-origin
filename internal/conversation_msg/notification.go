@@ -281,7 +281,7 @@ func (c *Conversation) doUpdateConversation(c2v common.Cmd2Value) {
 			// log.Error("internal", "setConversationFaceUrlAndNickName database err:", err.Error())
 			return
 		}
-		log.ZInfo(ctx, "lintao doUpdateConversation", "lc", lc, "node", node, "cmd", c2v.Cmd, "caller", c2v.Caller)
+		log.ZInfo(ctx, " doUpdateConversation", "lc", lc, "node", node, "cmd", c2v.Cmd, "caller", c2v.Caller)
 		// 更新 DB 后，复用 ConChange 分支触发标准会话变更回调。
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: lc.ConversationID, Action: constant.ConChange, Args: []string{lc.ConversationID}}})
 

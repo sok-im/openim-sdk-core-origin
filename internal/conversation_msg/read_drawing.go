@@ -164,7 +164,7 @@ func (c *Conversation) unreadChangeTrigger(ctx context.Context, conversationID s
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: conversationID,
 			Action: constant.UpdateLatestMessageReadState, Args: []string{conversationID}}, Ctx: ctx})
 	}
-	log.ZInfo(ctx, "lintao unreadChangeTrigger", "conversationID", conversationID, "latestMsgIsRead", latestMsgIsRead)
+	log.ZInfo(ctx, " unreadChangeTrigger", "conversationID", conversationID, "latestMsgIsRead", latestMsgIsRead)
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: conversationID,
 		Action: constant.ConChange, Args: []string{conversationID}}, Ctx: ctx})
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.TotalUnreadMessageChanged},
@@ -219,7 +219,7 @@ func (c *Conversation) doUnreadCount(ctx context.Context, conversation *model_st
 			return err
 		}
 	}
-	log.ZInfo(ctx, "lintao doUnreadCount", "conversation", conversation)
+	log.ZInfo(ctx, " doUnreadCount", "conversation", conversation)
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: conversation.ConversationID, Action: constant.ConChange, Args: []string{conversation.ConversationID}}})
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.TotalUnreadMessageChanged}})
 

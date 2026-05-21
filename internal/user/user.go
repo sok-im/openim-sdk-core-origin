@@ -89,7 +89,7 @@ func (u *User) initSyncer() {
 				} else {
 					server.Nickname = server.Nickname
 				}
-				log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
+				log.ZInfo(ctx, " syncer notice", "server", server, "local", local)
 
 				if server.Nickname != local.Nickname || server.FaceURL != local.FaceURL {
 					_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,

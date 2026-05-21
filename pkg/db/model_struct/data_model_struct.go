@@ -410,6 +410,8 @@ type LocalSignalCallRecord struct {
 	// ConnectTime 接通时间（毫秒时间戳），未接通时为 0
 	ConnectTime int64 `gorm:"column:connect_time" json:"connectTime"`
 	EndTime     int64 `gorm:"column:end_time" json:"endTime"`
+	// Action 触发本条记录的信令动作：accept / reject / cancel / hungup / timeout
+	Action string `gorm:"column:action;type:varchar(32);index:idx_signal_action" json:"action"`
 }
 
 func (LocalSignalCallRecord) TableName() string {

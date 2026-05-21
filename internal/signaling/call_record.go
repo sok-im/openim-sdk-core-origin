@@ -16,6 +16,7 @@ type callRecordConfig struct {
 	inv              *rtc.InvitationInfo
 	status           int32 // constant.SignalCallStatus*
 	direction        int32 // constant.SignalCallDirection*
+	action           string // constant.SignalCallAction*
 	inviteMs         int64
 	connectMs        int64
 	endMs            int64
@@ -83,6 +84,7 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		CalleeMatchText:     strings.TrimSpace(cfg.calleeMatchText),
 		Direction:           cfg.direction,
 		Role:                constant.SignalCallRoleFromDirection(cfg.direction),
+		Action:              cfg.action,
 	}
 }
 
@@ -189,6 +191,7 @@ func localRecordToSDK(l *model_struct.LocalSignalCallRecord) *sdk_struct.SignalC
 		Role:                callRecordRole(l),
 		ConnectTime:         l.ConnectTime,
 		InviteeUserNickname: l.InviteeUserNickname,
+		Action:              l.Action,
 	}
 }
 

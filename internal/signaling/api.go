@@ -44,7 +44,7 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 	}
 	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
-		log.ZError(ctx, "Invite failed", err)
+		log.ZError(ctx, "Invite failed", err, "req", req)
 		return nil, err
 	}
 
@@ -52,6 +52,8 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 	if signalInviteReq.Invitation != nil {
 		s.startInviteTimer(signalInviteReq.Invitation, constant.SignalCallDirectionOutgoing)
 	}
+
+	log.ZInfo(ctx, "Invite success", "req", req, "resp", resp)
 
 	if inviteResp := resp.GetInvite(); inviteResp != nil {
 		log.ZInfo(ctx, "Invite success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
@@ -88,6 +90,8 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 		s.startInviteTimer(signalInviteInGroupReq.Invitation, constant.SignalCallDirectionOutgoing)
 	}
 
+	log.ZInfo(ctx, "InviteInGroup success", "req", req, "resp", resp)
+
 	if inviteResp := resp.GetInviteInGroup(); inviteResp != nil {
 		log.ZInfo(ctx, "InviteInGroup success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
 		return inviteResp, nil
@@ -114,6 +118,26 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 	if err != nil {
 		return nil, err
 	}
+
+	log.ZInfo(ctx, "Accept success", "req", req, "resp", resp)
+
+	if signalAcceptReq.Invitation != nil {
+		inv := signalAcceptReq.Invitation
+		inviteMs, connectMs := s.peekTiming(inv.RoomID)
+		if connectMs <= 0 {
+			connectMs = time.Now().UnixMilli()
+		}
+		direction := constant.SignalCallDirectionIncoming
+		if inv.InviterUserID == s.loginUserID {
+			direction = constant.SignalCallDirectionOutgoing
+		}
+		s.persistLocalCallRecord(ctx, inv, signalAcceptReq.Participant,
+			constant.SignalCallStatusAnswered,
+			direction,
+			constant.SignalCallActionAccept,
+			inviteMs, connectMs, connectMs)
+	}
+
 	if acceptResp := resp.GetAccept(); acceptResp != nil {
 		return acceptResp, nil
 	}
@@ -130,10 +154,13 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 			Reject: signalRejectReq,
 		},
 	}
-	_, err := s.signalingRequest(ctx, req)
+	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
 		return err
 	}
+
+	log.ZInfo(ctx, "Reject success", "req", req, "resp", resp)
+
 	if signalRejectReq.Invitation != nil {
 		s.cancelInviteTimer(signalRejectReq.Invitation.RoomID)
 		inviteMs, connectMs := s.popTiming(signalRejectReq.Invitation.RoomID)
@@ -142,6 +169,7 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 			signalRejectReq.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionMissed,
+			constant.SignalCallActionReject,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
@@ -174,6 +202,7 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 			nil,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionOutgoing,
+			constant.SignalCallActionTimeout,
 			inviteMs, connectMs, time.Now().UnixMilli())
 
 		if listener := s.listener(); listener != nil {
@@ -192,10 +221,13 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 			Cancel: signalCancelReq,
 		},
 	}
-	_, err := s.signalingRequest(ctx, req)
+	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
 		return err
 	}
+
+	log.ZInfo(ctx, "Cancel success", "req", req, "resp", resp)
+
 	if signalCancelReq.Invitation != nil {
 		s.cancelInviteTimer(signalCancelReq.Invitation.RoomID)
 		inviteMs, connectMs := s.popTiming(signalCancelReq.Invitation.RoomID)
@@ -204,6 +236,7 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 			signalCancelReq.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionOutgoing,
+			constant.SignalCallActionCancel,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
@@ -219,10 +252,13 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 			HungUp: signalHungUpReq,
 		},
 	}
-	_, err := s.signalingRequest(ctx, req)
+	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
 		return err
 	}
+
+	log.ZInfo(ctx, "HungUp success", "req", req, "resp", resp)
+
 	if signalHungUpReq.Invitation != nil {
 		s.cancelInviteTimer(signalHungUpReq.Invitation.RoomID)
 		direction := constant.SignalCallDirectionOutgoing
@@ -239,6 +275,7 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 			nil,
 			status,
 			direction,
+			constant.SignalCallActionHungUp,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil

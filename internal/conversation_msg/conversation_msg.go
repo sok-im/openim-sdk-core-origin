@@ -145,8 +145,8 @@ func (c *Conversation) initSyncer() {
 					"update_unread_count_time": serverConversation.UpdateUnreadCountTime,
 					"attached_info":            serverConversation.AttachedInfo, "ex": serverConversation.Ex, "msg_destruct_time": serverConversation.MsgDestructTime,
 					"is_msg_destruct": serverConversation.IsMsgDestruct,
-					"is_muted": serverConversation.IsMuted, "mute_duration": serverConversation.MuteDuration, "mute_end_time": serverConversation.MuteEndTime,
-					"max_seq":         serverConversation.MaxSeq, "min_seq": serverConversation.MinSeq})
+					"is_muted":        serverConversation.IsMuted, "mute_duration": serverConversation.MuteDuration, "mute_end_time": serverConversation.MuteEndTime,
+					"max_seq": serverConversation.MaxSeq, "min_seq": serverConversation.MinSeq})
 		}),
 		syncer.WithUUID[*model_struct.LocalConversation, pbConversation.GetOwnerConversationResp, string](func(value *model_struct.LocalConversation) string {
 			return value.ConversationID
@@ -175,7 +175,7 @@ func (c *Conversation) initSyncer() {
 		}),
 		syncer.WithNotice[*model_struct.LocalConversation, pbConversation.GetOwnerConversationResp, string](func(ctx context.Context, state int, server, local *model_struct.LocalConversation) error {
 			if state == syncer.Update || state == syncer.Insert {
-				log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
+				log.ZInfo(ctx, " syncer notice", "server", server, "local", local)
 				c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: server.ConversationID, Action: constant.ConChange, Args: []string{server.ConversationID}}})
 			}
 			return nil
@@ -375,7 +375,7 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 						lc.UserID = v.SendID
 						lc.ShowName = msg.SenderNickname
 						lc.FaceURL = msg.SenderFaceURL
-						log.ZInfo(ctx, "lintao othersInsertMessage", "conversation", lc)
+						log.ZInfo(ctx, " othersInsertMessage", "conversation", lc)
 					case constant.WriteGroupChatType, constant.ReadGroupChatType:
 						lc.GroupID = v.GroupID
 					case constant.NotificationChatType:
@@ -930,7 +930,7 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 			}
 
 		}
-		log.ZInfo(ctx, "lintaobatchAddFaceURLAndName", "conversation", conversation)
+		log.ZInfo(ctx, "batchAddFaceURLAndName", "conversation", conversation)
 	}
 
 	return nil
@@ -975,7 +975,7 @@ func (c *Conversation) batchGetUserNameAndFaceURL(ctx context.Context, userIDs .
 func (c *Conversation) getUserNameAndFaceURL(ctx context.Context, userID string) (faceURL, name string, err error) {
 	friendInfo, err := c.relation.Db().GetFriendInfoByFriendUserID(ctx, userID)
 	if err == nil {
-		log.ZInfo(ctx, "lintao getUserNameAndFaceURL", "friendInfo", friendInfo)
+		log.ZInfo(ctx, " getUserNameAndFaceURL", "friendInfo", friendInfo)
 		return friendInfo.FaceURL, friendInfo.ConversationShowName(), nil
 	}
 	userInfo, err := c.user.GetUserInfoWithCache(ctx, userID)

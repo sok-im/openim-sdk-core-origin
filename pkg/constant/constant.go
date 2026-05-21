@@ -261,6 +261,15 @@ const (
 	SignalCallRoleIncoming int32 = 2 // 被叫
 )
 
+// SignalCallAction 本地通话记录：触发落库的信令动作。
+const (
+	SignalCallActionAccept  = "accept"
+	SignalCallActionReject  = "reject"
+	SignalCallActionCancel  = "cancel"
+	SignalCallActionHungUp  = "hungup"
+	SignalCallActionTimeout = "timeout"
+)
+
 // SignalCallRoleFromDirection 由 direction 推导 role（incoming/missed 均视为被叫）。
 func SignalCallRoleFromDirection(direction int32) int32 {
 	switch direction {

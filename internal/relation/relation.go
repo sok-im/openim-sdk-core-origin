@@ -68,7 +68,7 @@ func (r *Relation) initSyncer() {
 				} else {
 					server.Nickname = server.Nickname
 				}
-				log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
+				log.ZInfo(ctx, " syncer notice", "server", server, "local", local)
 				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
 					Action: constant.UpdateConFaceUrlAndNickName,
 					Args: common.SourceIDAndSessionType{
@@ -100,7 +100,7 @@ func (r *Relation) initSyncer() {
 					} else {
 						server.Nickname = server.Nickname
 					}
-					log.ZInfo(ctx, "lintao syncer notice", "server", server, "local", local)
+					log.ZInfo(ctx, " syncer notice", "server", server, "local", local)
 					_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
 						Action: constant.UpdateConFaceUrlAndNickName,
 						Args: common.SourceIDAndSessionType{

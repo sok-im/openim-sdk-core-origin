@@ -71,7 +71,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = name
 			newConversation.FaceURL = faceUrl
-			log.ZInfo(ctx, "lintao GetOneConversation", "conversation", newConversation)
+			log.ZInfo(ctx, " GetOneConversation", "conversation", newConversation)
 
 		case constant.WriteGroupChatType, constant.ReadGroupChatType:
 			newConversation.GroupID = sourceID
@@ -81,7 +81,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = g.GroupName
 			newConversation.FaceURL = g.FaceURL
-			log.ZInfo(ctx, "linao GetOneConversation", "conversation", newConversation)
+			log.ZInfo(ctx, " GetOneConversation", "conversation", newConversation)
 
 		}
 		//double check if the conversation exists
@@ -251,7 +251,7 @@ func (c *Conversation) checkID(ctx context.Context, s *sdk_struct.MsgStruct,
 		if err != nil {
 			//t := time.Now()
 			faceUrl, name, err := c.getUserNameAndFaceURL(ctx, recvID)
-			log.ZDebug(ctx, "lintao GetUserNameAndFaceURL", "conversation", lc)
+			log.ZDebug(ctx, " GetUserNameAndFaceURL", "conversation", lc)
 			if err != nil {
 				return nil, err
 			}
@@ -857,7 +857,7 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 		conversation.ShowName = name
 		conversation.UserID = sendID
 		conversation.ConversationID = c.getConversationIDBySessionType(sendID, constant.SingleChatType)
-		log.ZInfo(ctx, "lintao InsertSingleMessageToLocalStorage", "conversation", conversation)
+		log.ZInfo(ctx, " InsertSingleMessageToLocalStorage", "conversation", conversation)
 	} else {
 		conversation.UserID = recvID
 		conversation.ConversationID = c.getConversationIDBySessionType(recvID, constant.SingleChatType)
@@ -869,7 +869,7 @@ func (c *Conversation) InsertSingleMessageToLocalStorage(ctx context.Context, s 
 			}
 			conversation.FaceURL = faceUrl
 			conversation.ShowName = name
-			log.ZInfo(ctx, "lintao InsertSingleMessageToLocalStorage", "conversation", conversation)
+			log.ZInfo(ctx, " InsertSingleMessageToLocalStorage", "conversation", conversation)
 
 		}
 	}
@@ -925,7 +925,7 @@ func (c *Conversation) InsertGroupMessageToLocalStorage(ctx context.Context, s *
 	conversation.LatestMsgSendTime = s.SendTime
 	conversation.FaceURL = s.SenderFaceURL
 	conversation.ShowName = s.SenderNickname
-	log.ZInfo(ctx, "lintao InsertGroupMessageToLocalStorage", "conversation", conversation)
+	log.ZInfo(ctx, " InsertGroupMessageToLocalStorage", "conversation", conversation)
 	err = c.insertMessageToLocalStorage(ctx, conversation.ConversationID, localMessage)
 	if err != nil {
 		return nil, err
@@ -952,7 +952,7 @@ func (c *Conversation) SetMessageLocalEx(ctx context.Context, conversationID str
 	var latestMsg sdk_struct.MsgStruct
 	utils.JsonStringToStruct(conversation.LatestMsg, &latestMsg)
 	if latestMsg.ClientMsgID == clientMsgID {
-		log.ZDebug(ctx, "lintao latestMsg local ex changed", "seq", latestMsg.Seq, "clientMsgID", latestMsg.ClientMsgID)
+		log.ZDebug(ctx, " latestMsg local ex changed", "seq", latestMsg.Seq, "clientMsgID", latestMsg.ClientMsgID)
 		latestMsg.LocalEx = localEx
 		latestMsgStr := c.latestMsgJSON(ctx, &latestMsg)
 		if err = c.db.UpdateColumnsConversation(ctx, conversationID, map[string]interface{}{"latest_msg": latestMsgStr, "latest_msg_send_time": latestMsg.SendTime}); err != nil {

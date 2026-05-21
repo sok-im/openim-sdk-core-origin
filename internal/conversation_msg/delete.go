@@ -45,7 +45,7 @@ func (c *Conversation) clearConversationFromLocalAndServer(ctx context.Context, 
 	if err := c.clearConversationAndDeleteAllMsg(ctx, conversationID, false, f); err != nil {
 		return err
 	}
-	log.ZInfo(ctx, "lintao clearConversationFromLocalAndServer", "conversationID", conversationID)
+	log.ZInfo(ctx, " clearConversationFromLocalAndServer", "conversationID", conversationID)
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.ConChange, Args: []string{conversationID}}})
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.TotalUnreadMessageChanged}})
 	return nil
@@ -94,7 +94,7 @@ func (c *Conversation) deleteAllMsgFromLocal(ctx context.Context, markDelete boo
 		return err
 	}
 	var successCids []string
-	log.ZDebug(ctx, "lintao deleteAllMsgFromLocal", "conversations", conversations, "markDelete", markDelete)
+	log.ZDebug(ctx, " deleteAllMsgFromLocal", "conversations", conversations, "markDelete", markDelete)
 	for _, v := range conversations {
 		if err := c.clearConversationAndDeleteAllMsg(ctx, v.ConversationID, markDelete, c.db.ClearConversation); err != nil {
 			log.ZError(ctx, "clearConversation err", err, "conversationID", v.ConversationID)
@@ -149,7 +149,7 @@ func (c *Conversation) deleteMessageFromLocal(ctx context.Context, conversationI
 		if err := c.db.DecrConversationUnreadCount(ctx, conversationID, 1); err != nil {
 			return err
 		}
-		log.ZInfo(ctx, "lintao deleteMessageFromLocal", "conversationID", conversationID, "clientMsgID", clientMsgID)
+		log.ZInfo(ctx, " deleteMessageFromLocal", "conversationID", conversationID, "clientMsgID", clientMsgID)
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{ConID: conversationID, Action: constant.ConChange, Args: []string{conversationID}}})
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.TotalUnreadMessageChanged}})
 	}
@@ -182,7 +182,7 @@ func (c *Conversation) deleteMessageFromLocal(ctx context.Context, conversationI
 		if err := c.db.UpdateColumnsConversation(ctx, conversationID, map[string]interface{}{"latest_msg": latestMsgStr, "latest_msg_send_time": latestMsgSendTime}); err != nil {
 			return err
 		}
-		log.ZInfo(ctx, "lintao deleteMessageFromLocal", "conversationID", conversationID, "clientMsgID", clientMsgID)
+		log.ZInfo(ctx, " deleteMessageFromLocal", "conversationID", conversationID, "clientMsgID", clientMsgID)
 		c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.ConChange, Args: []string{conversationID}}})
 		latestMsgUpdated = true
 	}
@@ -228,7 +228,7 @@ func (c *Conversation) doClearConversations(ctx context.Context, msg *sdkws.MsgD
 			return err
 		}
 	}
-	log.ZInfo(ctx, "lintao doClearConversations", "tips", tips)
+	log.ZInfo(ctx, " doClearConversations", "tips", tips)
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.ConChange, Args: tips.ConversationIDs}})
 	c.doUpdateConversation(common.Cmd2Value{Value: common.UpdateConNode{Action: constant.TotalUnreadMessageChanged}})
 	return nil

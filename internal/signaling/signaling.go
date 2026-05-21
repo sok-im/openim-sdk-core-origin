@@ -38,6 +38,7 @@ type recordTask struct {
 	participant *rtc.ParticipantMetaData
 	status      int32
 	direction   int32
+	action      string // constant.SignalCallAction*
 	inviteMs    int64 // 从 roomTimings 取得
 	connectMs   int64 // 从 roomTimings 取得（0 = 未接通）
 	endMs       int64 // 通话结束时间（调用处捕获，避免异步延迟误差）
@@ -119,6 +120,7 @@ func (s *Signaling) recordWorker() {
 			inv:             task.inv,
 			status:          task.status,
 			direction:       task.direction,
+			action:          task.action,
 			inviteMs:        task.inviteMs,
 			connectMs:       task.connectMs,
 			endMs:           task.endMs,
@@ -204,6 +206,17 @@ func (s *Signaling) storeConnectTime(roomID string, ms int64) {
 	}
 }
 
+// peekTiming 读取 roomID 对应的时间戳（不删除）。
+func (s *Signaling) peekTiming(roomID string) (inviteMs, connectMs int64) {
+	if v, ok := s.roomTimings.Load(roomID); ok {
+		t := v.(*roomTiming)
+		t.mu.Lock()
+		inviteMs, connectMs = t.inviteMs, t.connectMs
+		t.mu.Unlock()
+	}
+	return
+}
+
 // popTiming 读取并删除 roomID 对应的时间戳记录；若不存在则返回零值。
 func (s *Signaling) popTiming(roomID string) (inviteMs, connectMs int64) {
 	if v, ok := s.roomTimings.LoadAndDelete(roomID); ok {
@@ -276,6 +289,7 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 	s.persistLocalCallRecord(ctx, inv, nil,
 		constant.SignalCallStatusNotConnected,
 		recordDir,
+		constant.SignalCallActionTimeout,
 		inviteMs, connectMs, time.Now().UnixMilli())
 }
 
@@ -411,6 +425,7 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionOutgoing,
+			constant.SignalCallActionReject,
 			inviteMs, connectMs, time.Now().UnixMilli())
 		return nil
 	}
@@ -450,6 +465,7 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionMissed,
+			constant.SignalCallActionCancel,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
@@ -479,6 +495,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
 			direction,
+			constant.SignalCallActionHungUp,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
@@ -519,6 +536,7 @@ func (s *Signaling) persistLocalCallRecord(
 	participant *rtc.ParticipantMetaData,
 	status int32,
 	direction int32,
+	action string,
 	inviteMs, connectMs, endMs int64,
 ) {
 	if s.db == nil || inv == nil || s.recordCh == nil {
@@ -530,6 +548,7 @@ func (s *Signaling) persistLocalCallRecord(
 		participant: participant,
 		status:      status,
 		direction:   direction,
+		action:      action,
 		inviteMs:    inviteMs,
 		connectMs:   connectMs,
 		endMs:       endMs,

@@ -49,8 +49,19 @@ func (g *Group) setSendMessageSetting(ctx context.Context, req *api.SetSendMessa
 	return api.SetSendMessageSetting.Execute(ctx, req)
 }
 
+func (g *Group) getGroupSetting(ctx context.Context, groupID string) (*api.GetGroupSettingResp, error) {
+	return api.GetGroupSetting.Invoke(ctx, &api.GetGroupSettingReq{GroupID: groupID})
+}
+
 func (g *Group) getSendMessageSetting(ctx context.Context, groupID string) (*api.GetSendMessageSettingResp, error) {
-	return api.GetSendMessageSetting.Invoke(ctx, &api.GetSendMessageSettingReq{GroupID: groupID})
+	resp, err := g.getGroupSetting(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &api.GetSendMessageSettingResp{
+		GroupID:      resp.GroupID,
+		AllowSendMsg: resp.AllowSendMsg,
+	}, nil
 }
 
 func (g *Group) setInviteSetting(ctx context.Context, req *api.SetInviteSettingReq) error {
@@ -58,7 +69,14 @@ func (g *Group) setInviteSetting(ctx context.Context, req *api.SetInviteSettingR
 }
 
 func (g *Group) getInviteSetting(ctx context.Context, groupID string) (*api.GetInviteSettingResp, error) {
-	return api.GetInviteSetting.Invoke(ctx, &api.GetInviteSettingReq{GroupID: groupID})
+	resp, err := g.getGroupSetting(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &api.GetInviteSettingResp{
+		GroupID:        resp.GroupID,
+		AllowAddMember: resp.AllowAddMember,
+	}, nil
 }
 
 func (g *Group) setPinSetting(ctx context.Context, req *api.SetPinSettingReq) error {
@@ -66,7 +84,14 @@ func (g *Group) setPinSetting(ctx context.Context, req *api.SetPinSettingReq) er
 }
 
 func (g *Group) getPinSetting(ctx context.Context, groupID string) (*api.GetPinSettingResp, error) {
-	return api.GetPinSetting.Invoke(ctx, &api.GetPinSettingReq{GroupID: groupID})
+	resp, err := g.getGroupSetting(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &api.GetPinSettingResp{
+		GroupID:     resp.GroupID,
+		AllowPinMsg: resp.AllowPinMsg,
+	}, nil
 }
 
 func (g *Group) setEditSetting(ctx context.Context, req *api.SetEditSettingReq) error {
@@ -74,7 +99,14 @@ func (g *Group) setEditSetting(ctx context.Context, req *api.SetEditSettingReq) 
 }
 
 func (g *Group) getEditSetting(ctx context.Context, groupID string) (*api.GetEditSettingResp, error) {
-	return api.GetEditSetting.Invoke(ctx, &api.GetEditSettingReq{GroupID: groupID})
+	resp, err := g.getGroupSetting(ctx, groupID)
+	if err != nil {
+		return nil, err
+	}
+	return &api.GetEditSettingResp{
+		GroupID:            resp.GroupID,
+		AllowEditGroupInfo: resp.AllowEditGroupInfo,
+	}, nil
 }
 
 func (g *Group) setMsgBurnDuration(ctx context.Context, req *api.SetMsgBurnDurationReq) error {

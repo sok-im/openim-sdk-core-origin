@@ -137,6 +137,7 @@ func registerFunc() {
 	js.Global().Set("searchGroups", js.FuncOf(wrapperGroup.SearchGroups))
 	js.Global().Set("setGroupInfo", js.FuncOf(wrapperGroup.SetGroupInfo))
 	js.Global().Set("setSendMessageSetting", js.FuncOf(wrapperGroup.SetSendMessageSetting))
+	js.Global().Set("getGroupSetting", js.FuncOf(wrapperGroup.GetGroupSetting))
 	js.Global().Set("getSendMessageSetting", js.FuncOf(wrapperGroup.GetSendMessageSetting))
 	js.Global().Set("setInviteSetting", js.FuncOf(wrapperGroup.SetInviteSetting))
 	js.Global().Set("getInviteSetting", js.FuncOf(wrapperGroup.GetInviteSetting))

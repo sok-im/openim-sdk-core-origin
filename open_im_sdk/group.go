@@ -57,7 +57,12 @@ func SetSendMessageSetting(callback open_im_sdk_callback.Base, operationID strin
 	call(callback, operationID, UserForSDK.Group().SetSendMessageSetting, groupID, allowSendMsg)
 }
 
-// GetSendMessageSetting 查询群发消息权限。成功回调 JSON：groupID、allowSendMsg。对应 HTTP POST /group/get_send_message_setting。
+// GetGroupSetting 查询群权限相关设置。成功回调 JSON：groupID、allowSendMsg、allowAddMember、allowPinMsg、allowEditGroupInfo。对应 HTTP POST /group/get_group_setting。
+func GetGroupSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupSetting, groupID)
+}
+
+// GetSendMessageSetting 查询群发消息权限。成功回调 JSON：groupID、allowSendMsg（委托 GetGroupSetting）。
 func GetSendMessageSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
 	call(callback, operationID, UserForSDK.Group().GetSendMessageSetting, groupID)
 }

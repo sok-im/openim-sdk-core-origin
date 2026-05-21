@@ -94,6 +94,11 @@ func (w *WrapperGroup) SetSendMessageSetting(_ js.Value, args []js.Value) interf
 	return event_listener.NewCaller(open_im_sdk.SetSendMessageSetting, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperGroup) GetGroupSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetGroupSetting, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperGroup) GetSendMessageSetting(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetSendMessageSetting, callback, &args).AsyncCallWithCallback()

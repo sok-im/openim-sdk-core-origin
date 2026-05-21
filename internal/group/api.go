@@ -173,7 +173,12 @@ func (g *Group) SetSendMessageSetting(ctx context.Context, groupID string, allow
 	return g.IncrSyncJoinGroup(ctx)
 }
 
-// GetSendMessageSetting 查询群发消息权限（HTTP POST /group/get_send_message_setting）。
+// GetGroupSetting 查询群权限相关设置（HTTP POST /group/get_group_setting）。
+func (g *Group) GetGroupSetting(ctx context.Context, groupID string) (*api.GetGroupSettingResp, error) {
+	return g.getGroupSetting(ctx, groupID)
+}
+
+// GetSendMessageSetting 查询群发消息权限（委托 GetGroupSetting，成功回调仅含 groupID、allowSendMsg）。
 func (g *Group) GetSendMessageSetting(ctx context.Context, groupID string) (*api.GetSendMessageSettingResp, error) {
 	return g.getSendMessageSetting(ctx, groupID)
 }
@@ -193,7 +198,7 @@ func (g *Group) SetInviteSetting(ctx context.Context, groupID string, allowAddMe
 	return g.IncrSyncJoinGroup(ctx)
 }
 
-// GetInviteSetting 查询群邀请权限（HTTP POST /group/get_invite_setting）。
+// GetInviteSetting 查询群邀请权限（委托 GetGroupSetting，成功回调仅含 groupID、allowAddMember）。
 func (g *Group) GetInviteSetting(ctx context.Context, groupID string) (*api.GetInviteSettingResp, error) {
 	return g.getInviteSetting(ctx, groupID)
 }
@@ -213,7 +218,7 @@ func (g *Group) SetPinSetting(ctx context.Context, groupID string, allowPinMsg i
 	return g.IncrSyncJoinGroup(ctx)
 }
 
-// GetPinSetting 查询群置顶消息权限（HTTP POST /group/get_pin_setting）。
+// GetPinSetting 查询群置顶消息权限（委托 GetGroupSetting，成功回调仅含 groupID、allowPinMsg）。
 func (g *Group) GetPinSetting(ctx context.Context, groupID string) (*api.GetPinSettingResp, error) {
 	return g.getPinSetting(ctx, groupID)
 }
@@ -233,7 +238,7 @@ func (g *Group) SetEditSetting(ctx context.Context, groupID string, allowEditGro
 	return g.IncrSyncJoinGroup(ctx)
 }
 
-// GetEditSetting 查询群编辑资料权限（HTTP POST /group/get_edit_setting）。
+// GetEditSetting 查询群编辑资料权限（委托 GetGroupSetting，成功回调仅含 groupID、allowEditGroupInfo）。
 func (g *Group) GetEditSetting(ctx context.Context, groupID string) (*api.GetEditSettingResp, error) {
 	return g.getEditSetting(ctx, groupID)
 }

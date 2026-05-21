@@ -3,7 +3,7 @@ package api
 import "github.com/openimsdk/protocol/group"
 
 // Types below match open-im-server internal/api/group.go JSON for
-// /group/set_*_setting, /group/get_*_setting, /group/set_msg_burn_duration, and /group/get_msg_burn_duration routes.
+// /group/set_*_setting, /group/get_group_setting, /group/set_msg_burn_duration, and /group/get_msg_burn_duration routes.
 
 type SetSendMessageSettingReq struct {
 	GroupID      string `json:"groupID"`
@@ -61,6 +61,18 @@ type GetEditSettingResp struct {
 	AllowEditGroupInfo int32  `json:"allowEditGroupInfo"`
 }
 
+type GetGroupSettingReq struct {
+	GroupID string `json:"groupID"`
+}
+
+type GetGroupSettingResp struct {
+	GroupID            string `json:"groupID"`
+	AllowSendMsg       int32  `json:"allowSendMsg"`
+	AllowAddMember     int32  `json:"allowAddMember"`
+	AllowPinMsg        int32  `json:"allowPinMsg"`
+	AllowEditGroupInfo int32  `json:"allowEditGroupInfo"`
+}
+
 // SetMsgBurnDurationReq matches HTTP POST /group/set_msg_burn_duration (burnDuration in seconds; 0 = off).
 type SetMsgBurnDurationReq struct {
 	GroupID      string `json:"groupID"`
@@ -78,13 +90,10 @@ type GetMsgBurnDurationResp struct {
 
 var (
 	SetSendMessageSetting = newApi[SetSendMessageSettingReq, group.SetGroupInfoExResp]("/group/set_send_message_setting")
-	GetSendMessageSetting = newApi[GetSendMessageSettingReq, GetSendMessageSettingResp]("/group/get_send_message_setting")
 	SetInviteSetting      = newApi[SetInviteSettingReq, group.SetGroupInfoExResp]("/group/set_invite_setting")
-	GetInviteSetting      = newApi[GetInviteSettingReq, GetInviteSettingResp]("/group/get_invite_setting")
 	SetPinSetting         = newApi[SetPinSettingReq, group.SetGroupInfoExResp]("/group/set_pin_setting")
-	GetPinSetting         = newApi[GetPinSettingReq, GetPinSettingResp]("/group/get_pin_setting")
 	SetEditSetting        = newApi[SetEditSettingReq, group.SetGroupInfoExResp]("/group/set_edit_setting")
-	GetEditSetting        = newApi[GetEditSettingReq, GetEditSettingResp]("/group/get_edit_setting")
+	GetGroupSetting       = newApi[GetGroupSettingReq, GetGroupSettingResp]("/group/get_group_setting")
 	SetMsgBurnDuration    = newApi[SetMsgBurnDurationReq, group.SetGroupInfoExResp]("/group/set_msg_burn_duration")
 	GetMsgBurnDuration    = newApi[GetMsgBurnDurationReq, GetMsgBurnDurationResp]("/group/get_msg_burn_duration")
 )

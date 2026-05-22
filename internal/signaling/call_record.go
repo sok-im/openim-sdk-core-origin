@@ -63,7 +63,12 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 	if cfg.status == constant.SignalCallStatusAnswered {
 		prefix = "local"
 	}
-	sid := fmt.Sprintf("%s-%s-%d", prefix, inv.RoomID, cfg.endMs)
+	// 同一 room 一次通话使用 inviteMs 作为稳定主键，避免接听/挂断多次写入产生重复记录。
+	sidKey := inviteMs
+	if sidKey <= 0 {
+		sidKey = cfg.endMs
+	}
+	sid := fmt.Sprintf("%s-%s-%d", prefix, inv.RoomID, sidKey)
 
 	return &model_struct.LocalSignalCallRecord{
 		SID:                 sid,

@@ -233,6 +233,17 @@ func (s *Signaling) popTiming(roomID string) (inviteMs, connectMs int64) {
 	return 0, 0
 }
 
+// popTimingForRecord 消费时间戳并判断是否可以落库；已被其它终结事件消费时返回 ok=false。
+func (s *Signaling) popTimingForRecord(roomID string) (inviteMs, connectMs int64, ok bool) {
+	inviteMs, connectMs = s.popTiming(roomID)
+	ok = inviteMs > 0 || connectMs > 0
+	return
+}
+
+func callWasConnected(connectMs int64) bool {
+	return connectMs > 0
+}
+
 // ── 邀请超时定时器 ────────────────────────────────────────────────────────────
 
 // startInviteTimer 启动本端邀请超时定时器。超时后触发 OnInvitationTimeout 回调并写本地记录。
@@ -289,7 +300,13 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 		listener.OnInvitationTimeout(jsonutil.StructToJsonString(inv))
 	}
 
-	inviteMs, connectMs := s.popTiming(inv.RoomID)
+	if _, connectMs := s.peekTiming(inv.RoomID); callWasConnected(connectMs) {
+		return
+	}
+	inviteMs, connectMs, ok := s.popTimingForRecord(inv.RoomID)
+	if !ok {
+		return
+	}
 	s.persistLocalCallRecord(ctx, inv, nil,
 		constant.SignalCallStatusNotConnected,
 		recordDir,
@@ -425,12 +442,14 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 		log.ZDebug(ctx, "OnInviteeRejected", "reject", req)
 		listener.OnInviteeRejected(jsonutil.StructToJsonString(req))
 
-		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
-		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
-			constant.SignalCallStatusNotConnected,
-			constant.SignalCallDirectionOutgoing,
-			constant.SignalCallActionReject,
-			inviteMs, connectMs, time.Now().UnixMilli())
+		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
+		if ok {
+			s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
+				constant.SignalCallStatusNotConnected,
+				constant.SignalCallDirectionOutgoing,
+				constant.SignalCallActionReject,
+				inviteMs, connectMs, time.Now().UnixMilli())
+		}
 		return nil
 	}
 	if req.UserID == s.loginUserID && req.OpUserPlatformID != s.platformID {
@@ -465,7 +484,14 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 		log.ZDebug(ctx, "OnInvitationCancelled", "cancel", req)
 		listener.OnInvitationCancelled(jsonutil.StructToJsonString(req))
 
-		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
+		// 主叫挂断时服务端可能同时推送 Cancel + HungUp；已接听则仅由 HungUp 落库，避免两条未接记录。
+		if _, connectMs := s.peekTiming(req.Invitation.RoomID); callWasConnected(connectMs) {
+			return nil
+		}
+		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
+		if !ok {
+			return nil
+		}
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallDirectionMissed,
@@ -491,10 +517,16 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		if req.Invitation.InviterUserID == s.loginUserID {
 			direction = constant.SignalCallDirectionOutgoing
 		}
-		inviteMs, connectMs := s.popTiming(req.Invitation.RoomID)
+		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
+		if !ok {
+			return nil
+		}
 		status := constant.SignalCallStatusAnswered
-		if connectMs == 0 {
+		if !callWasConnected(connectMs) {
 			status = constant.SignalCallStatusNotConnected
+			if direction == constant.SignalCallDirectionIncoming {
+				direction = constant.SignalCallDirectionMissed
+			}
 		}
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,

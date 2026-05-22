@@ -121,22 +121,7 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 
 	log.ZInfo(ctx, "Accept success", "req", req, "resp", resp)
 
-	if signalAcceptReq.Invitation != nil {
-		inv := signalAcceptReq.Invitation
-		inviteMs, connectMs := s.peekTiming(inv.RoomID)
-		if connectMs <= 0 {
-			connectMs = time.Now().UnixMilli()
-		}
-		direction := constant.SignalCallDirectionIncoming
-		if inv.InviterUserID == s.loginUserID {
-			direction = constant.SignalCallDirectionOutgoing
-		}
-		s.persistLocalCallRecord(ctx, inv, signalAcceptReq.Participant,
-			constant.SignalCallStatusAnswered,
-			direction,
-			constant.SignalCallActionAccept,
-			inviteMs, connectMs, connectMs)
-	}
+	// 接听阶段仅记录接通时间，不落库；通话结束时由 HungUp / 对端 HungUp 通知写入唯一一条记录。
 
 	if acceptResp := resp.GetAccept(); acceptResp != nil {
 		return acceptResp, nil
@@ -163,14 +148,16 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 
 	if signalRejectReq.Invitation != nil {
 		s.cancelInviteTimer(signalRejectReq.Invitation.RoomID)
-		inviteMs, connectMs := s.popTiming(signalRejectReq.Invitation.RoomID)
-		s.persistLocalCallRecord(ctx,
-			signalRejectReq.Invitation,
-			signalRejectReq.Participant,
-			constant.SignalCallStatusNotConnected,
-			constant.SignalCallDirectionMissed,
-			constant.SignalCallActionReject,
-			inviteMs, connectMs, time.Now().UnixMilli())
+		inviteMs, connectMs, ok := s.popTimingForRecord(signalRejectReq.Invitation.RoomID)
+		if ok {
+			s.persistLocalCallRecord(ctx,
+				signalRejectReq.Invitation,
+				signalRejectReq.Participant,
+				constant.SignalCallStatusNotConnected,
+				constant.SignalCallDirectionMissed,
+				constant.SignalCallActionReject,
+				inviteMs, connectMs, time.Now().UnixMilli())
+		}
 	}
 	return nil
 }
@@ -196,14 +183,18 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 	*/
 
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
-		inviteMs, connectMs := s.popTiming(signalTimeoutReq.Invitation.RoomID)
-		s.persistLocalCallRecord(ctx,
-			signalTimeoutReq.Invitation,
-			nil,
-			constant.SignalCallStatusNotConnected,
-			constant.SignalCallDirectionOutgoing,
-			constant.SignalCallActionTimeout,
-			inviteMs, connectMs, time.Now().UnixMilli())
+		if _, connectMs := s.peekTiming(signalTimeoutReq.Invitation.RoomID); !callWasConnected(connectMs) {
+			inviteMs, connectMs, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)
+			if ok {
+				s.persistLocalCallRecord(ctx,
+					signalTimeoutReq.Invitation,
+					nil,
+					constant.SignalCallStatusNotConnected,
+					constant.SignalCallDirectionOutgoing,
+					constant.SignalCallActionTimeout,
+					inviteMs, connectMs, time.Now().UnixMilli())
+			}
+		}
 
 		if listener := s.listener(); listener != nil {
 			listener.OnInvitationTimeout(jsonutil.StructToJsonString(signalTimeoutReq.Invitation))
@@ -230,14 +221,18 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 
 	if signalCancelReq.Invitation != nil {
 		s.cancelInviteTimer(signalCancelReq.Invitation.RoomID)
-		inviteMs, connectMs := s.popTiming(signalCancelReq.Invitation.RoomID)
-		s.persistLocalCallRecord(ctx,
-			signalCancelReq.Invitation,
-			signalCancelReq.Participant,
-			constant.SignalCallStatusNotConnected,
-			constant.SignalCallDirectionOutgoing,
-			constant.SignalCallActionCancel,
-			inviteMs, connectMs, time.Now().UnixMilli())
+		if _, connectMs := s.peekTiming(signalCancelReq.Invitation.RoomID); !callWasConnected(connectMs) {
+			inviteMs, connectMs, ok := s.popTimingForRecord(signalCancelReq.Invitation.RoomID)
+			if ok {
+				s.persistLocalCallRecord(ctx,
+					signalCancelReq.Invitation,
+					signalCancelReq.Participant,
+					constant.SignalCallStatusNotConnected,
+					constant.SignalCallDirectionOutgoing,
+					constant.SignalCallActionCancel,
+					inviteMs, connectMs, time.Now().UnixMilli())
+			}
+		}
 	}
 	return nil
 }
@@ -265,18 +260,23 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 		if signalHungUpReq.Invitation.InviterUserID != s.loginUserID {
 			direction = constant.SignalCallDirectionIncoming
 		}
-		inviteMs, connectMs := s.popTiming(signalHungUpReq.Invitation.RoomID)
-		status := constant.SignalCallStatusAnswered
-		if connectMs == 0 {
-			status = constant.SignalCallStatusNotConnected
+		inviteMs, connectMs, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
+		if ok {
+			status := constant.SignalCallStatusAnswered
+			if !callWasConnected(connectMs) {
+				status = constant.SignalCallStatusNotConnected
+				if direction == constant.SignalCallDirectionIncoming {
+					direction = constant.SignalCallDirectionMissed
+				}
+			}
+			s.persistLocalCallRecord(ctx,
+				signalHungUpReq.Invitation,
+				nil,
+				status,
+				direction,
+				constant.SignalCallActionHungUp,
+				inviteMs, connectMs, time.Now().UnixMilli())
 		}
-		s.persistLocalCallRecord(ctx,
-			signalHungUpReq.Invitation,
-			nil,
-			status,
-			direction,
-			constant.SignalCallActionHungUp,
-			inviteMs, connectMs, time.Now().UnixMilli())
 	}
 	return nil
 }

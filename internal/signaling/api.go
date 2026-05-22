@@ -25,16 +25,21 @@ func (s *Signaling) signalingRequest(ctx context.Context, req *rtc.SignalReq) (*
 }
 
 // Invite 主叫侧发起邀请：记录拨打开始时间，启动超时定时器。
+// 注意：服务端可能在响应中返回与请求不同的 roomID（如 "room-xxx" 格式）。
+// 必须在拿到响应后用服务端 roomID 更新 invitation，再落表和启动定时器，
+// 否则后续 Accept/HungUp 通知携带服务端 roomID，无法命中定时器和时间戳，
+// 导致超时定时器永不取消，进而产生多余的 timeout 通话记录。
 func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInviteReq) (*rtc.SignalInviteResp, error) {
 	s.fillInviteDefaults(signalInviteReq.Invitation)
 	signalInviteReq.UserID = s.loginUserID
 
-	if signalInviteReq.Invitation != nil && signalInviteReq.Invitation.RoomID != "" {
-		inviteMs := signalInviteReq.Invitation.InitiateTime
+	// 在发送前记录本端发起时间，但暂不落 roomTimings；等服务端确认 roomID 后再存储。
+	var inviteMs int64
+	if signalInviteReq.Invitation != nil {
+		inviteMs = signalInviteReq.Invitation.InitiateTime
 		if inviteMs <= 0 {
 			inviteMs = time.Now().UnixMilli()
 		}
-		s.storeInviteTime(signalInviteReq.Invitation.RoomID, inviteMs)
 	}
 
 	req := &rtc.SignalReq{
@@ -48,8 +53,15 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 		return nil, err
 	}
 
-	// 邀请发送成功后启动超时定时器（主叫侧）
+	// 用服务端返回的 roomID 覆盖 invitation，保证后续所有操作（Accept/HungUp 通知、
+	// 定时器、roomTimings）使用同一个 key。
 	if signalInviteReq.Invitation != nil {
+		if inviteResp := resp.GetInvite(); inviteResp != nil && inviteResp.RoomID != "" {
+			signalInviteReq.Invitation.RoomID = inviteResp.RoomID
+		}
+		if signalInviteReq.Invitation.RoomID != "" {
+			s.storeInviteTime(signalInviteReq.Invitation.RoomID, inviteMs)
+		}
 		s.startInviteTimer(signalInviteReq.Invitation)
 	}
 
@@ -63,16 +75,17 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 }
 
 // InviteInGroup 主叫侧发起群组邀请：同样记录拨出时间并启动超时定时器。
+// 与 Invite 相同，必须等服务端响应后用服务端 roomID 更新 invitation，再落表和启动定时器。
 func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *rtc.SignalInviteInGroupReq) (*rtc.SignalInviteInGroupResp, error) {
 	s.fillInviteDefaults(signalInviteInGroupReq.Invitation)
 	signalInviteInGroupReq.UserID = s.loginUserID
 
-	if signalInviteInGroupReq.Invitation != nil && signalInviteInGroupReq.Invitation.RoomID != "" {
-		inviteMs := signalInviteInGroupReq.Invitation.InitiateTime
+	var inviteMs int64
+	if signalInviteInGroupReq.Invitation != nil {
+		inviteMs = signalInviteInGroupReq.Invitation.InitiateTime
 		if inviteMs <= 0 {
 			inviteMs = time.Now().UnixMilli()
 		}
-		s.storeInviteTime(signalInviteInGroupReq.Invitation.RoomID, inviteMs)
 	}
 
 	req := &rtc.SignalReq{
@@ -87,6 +100,12 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 	}
 
 	if signalInviteInGroupReq.Invitation != nil {
+		if inviteResp := resp.GetInviteInGroup(); inviteResp != nil && inviteResp.RoomID != "" {
+			signalInviteInGroupReq.Invitation.RoomID = inviteResp.RoomID
+		}
+		if signalInviteInGroupReq.Invitation.RoomID != "" {
+			s.storeInviteTime(signalInviteInGroupReq.Invitation.RoomID, inviteMs)
+		}
 		s.startInviteTimer(signalInviteInGroupReq.Invitation)
 	}
 

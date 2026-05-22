@@ -39,9 +39,9 @@ type recordTask struct {
 	status      int32
 	direction   int32
 	action      string // constant.SignalCallAction*
-	inviteMs    int64 // 从 roomTimings 取得
-	connectMs   int64 // 从 roomTimings 取得（0 = 未接通）
-	endMs       int64 // 通话结束时间（调用处捕获，避免异步延迟误差）
+	inviteMs    int64  // 从 roomTimings 取得
+	connectMs   int64  // 从 roomTimings 取得（0 = 未接通）
+	endMs       int64  // 通话结束时间（调用处捕获，避免异步延迟误差）
 }
 
 // inviteTimer 本端收到/发起邀请后的超时定时器
@@ -322,6 +322,8 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 		constant.SignalCallStatusNotConnected,
 		constant.SignalCallActionTimeout,
 		inviteMs, connectMs, time.Now().UnixMilli())
+	log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", inv, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
+
 }
 
 // ── 通知路由 ────────────────────────────────────────────────────────────────
@@ -458,6 +460,7 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
 				inviteMs, connectMs, time.Now().UnixMilli())
+			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 		return nil
 	}
@@ -505,6 +508,7 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallActionCancel,
 			inviteMs, connectMs, time.Now().UnixMilli())
+		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 	}
 	return nil
 }
@@ -533,6 +537,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			status,
 			constant.SignalCallActionHungUp,
 			inviteMs, connectMs, time.Now().UnixMilli())
+		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
 	}
 	return nil
 }

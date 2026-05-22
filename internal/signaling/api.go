@@ -156,6 +156,7 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
 				inviteMs, connectMs, time.Now().UnixMilli())
+			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalRejectReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 	}
 	return nil
@@ -191,6 +192,7 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 					constant.SignalCallStatusNotConnected,
 					constant.SignalCallActionTimeout,
 					inviteMs, connectMs, time.Now().UnixMilli())
+				log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalTimeoutReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
 			}
 		}
 
@@ -228,6 +230,7 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 					constant.SignalCallStatusNotConnected,
 					constant.SignalCallActionCancel,
 					inviteMs, connectMs, time.Now().UnixMilli())
+				log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalCancelReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 			}
 		}
 	}
@@ -265,6 +268,8 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 				status,
 				constant.SignalCallActionHungUp,
 				inviteMs, connectMs, time.Now().UnixMilli())
+			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
+
 		}
 	}
 	return nil

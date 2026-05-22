@@ -46,9 +46,8 @@ type recordTask struct {
 
 // inviteTimer 本端收到/发起邀请后的超时定时器
 type inviteTimer struct {
-	timer     *time.Timer
-	inv       *rtc.InvitationInfo
-	direction int32 // 主叫 or 被叫，超时后用于确定记录方向
+	timer *time.Timer
+	inv   *rtc.InvitationInfo
 }
 
 type Signaling struct {
@@ -244,22 +243,34 @@ func callWasConnected(connectMs int64) bool {
 	return connectMs > 0
 }
 
+// resolveCallRecordDirection 根据本端在邀请中的角色与通话状态计算 direction。
+// 主叫：Outgoing；被叫且已接通：Incoming；被叫且未接通：Missed。
+func (s *Signaling) resolveCallRecordDirection(inv *rtc.InvitationInfo, status int32) int32 {
+	if inv == nil {
+		return constant.SignalCallDirectionUnknown
+	}
+	if inv.InviterUserID == s.loginUserID {
+		return constant.SignalCallDirectionOutgoing
+	}
+	if status == constant.SignalCallStatusAnswered {
+		return constant.SignalCallDirectionIncoming
+	}
+	return constant.SignalCallDirectionMissed
+}
+
 // ── 邀请超时定时器 ────────────────────────────────────────────────────────────
 
 // startInviteTimer 启动本端邀请超时定时器。超时后触发 OnInvitationTimeout 回调并写本地记录。
-func (s *Signaling) startInviteTimer(inv *rtc.InvitationInfo, direction int32) {
+func (s *Signaling) startInviteTimer(inv *rtc.InvitationInfo) {
 	if inv == nil || inv.RoomID == "" || inv.Timeout <= 0 {
 		return
 	}
 
 	timeout := time.Duration(inv.Timeout) * time.Second
-	it := &inviteTimer{
-		inv:       inv,
-		direction: direction,
-	}
+	it := &inviteTimer{inv: inv}
 	it.timer = time.AfterFunc(timeout, func() {
 		s.inviteTimers.Delete(inv.RoomID)
-		s.onInvitationTimeout(inv, direction)
+		s.onInvitationTimeout(inv)
 	})
 	// 如已有旧定时器（如重复邀请），先停止
 	if old, loaded := s.inviteTimers.LoadAndDelete(inv.RoomID); loaded {
@@ -276,27 +287,27 @@ func (s *Signaling) cancelInviteTimer(roomID string) {
 }
 
 // onInvitationTimeout 本端邀请超时：主叫侧上报服务端；被叫侧仅本地回调与落库。
-func (s *Signaling) onInvitationTimeout(inv *rtc.InvitationInfo, direction int32) {
+func (s *Signaling) onInvitationTimeout(inv *rtc.InvitationInfo) {
 	if inv == nil {
 		return
 	}
 	ctx := context.Background()
-	if direction == constant.SignalCallDirectionOutgoing && inv.InviterUserID == s.loginUserID {
+	if inv.InviterUserID == s.loginUserID {
 		if err := s.Timeout(ctx, &rtc.SignalTimeoutReq{Invitation: inv}); err != nil {
 			log.ZWarn(ctx, "Timeout request failed on local timer", err, "roomID", inv.RoomID)
 		}
 		return
 	}
-	s.notifyInvitationTimeout(ctx, inv, constant.SignalCallDirectionMissed)
+	s.notifyInvitationTimeout(ctx, inv)
 }
 
 // notifyInvitationTimeout 被叫侧超时未接：通知 UI 并写本地未接通记录。
-func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.InvitationInfo, recordDir int32) {
+func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.InvitationInfo) {
 	s.cancelInviteTimer(inv.RoomID)
 
 	listener := s.listener()
 	if listener != nil {
-		log.ZDebug(ctx, "OnInvitationTimeout", "roomID", inv.RoomID, "direction", recordDir)
+		log.ZDebug(ctx, "OnInvitationTimeout", "roomID", inv.RoomID)
 		listener.OnInvitationTimeout(jsonutil.StructToJsonString(inv))
 	}
 
@@ -309,7 +320,6 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 	}
 	s.persistLocalCallRecord(ctx, inv, nil,
 		constant.SignalCallStatusNotConnected,
-		recordDir,
 		constant.SignalCallActionTimeout,
 		inviteMs, connectMs, time.Now().UnixMilli())
 }
@@ -384,7 +394,7 @@ func (s *Signaling) handleInvite(ctx context.Context, listener open_im_sdk_callb
 			inviteMs = req.Invitation.InitiateTime
 		}
 		s.storeInviteTime(req.Invitation.RoomID, inviteMs)
-		s.startInviteTimer(req.Invitation, constant.SignalCallDirectionMissed)
+		s.startInviteTimer(req.Invitation)
 
 		log.ZDebug(ctx, "OnReceiveNewInvitation", "invitation", req)
 		listener.OnReceiveNewInvitation(jsonutil.StructToJsonString(req))
@@ -403,7 +413,7 @@ func (s *Signaling) handleInviteInGroup(ctx context.Context, listener open_im_sd
 			inviteMs = req.Invitation.InitiateTime
 		}
 		s.storeInviteTime(req.Invitation.RoomID, inviteMs)
-		s.startInviteTimer(req.Invitation, constant.SignalCallDirectionMissed)
+		s.startInviteTimer(req.Invitation)
 
 		log.ZDebug(ctx, "OnReceiveNewInvitation (group)", "invitation", req)
 		listener.OnReceiveNewInvitation(jsonutil.StructToJsonString(req))
@@ -446,7 +456,6 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 		if ok {
 			s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 				constant.SignalCallStatusNotConnected,
-				constant.SignalCallDirectionOutgoing,
 				constant.SignalCallActionReject,
 				inviteMs, connectMs, time.Now().UnixMilli())
 		}
@@ -468,7 +477,7 @@ func (s *Signaling) handleTimeout(ctx context.Context, _ open_im_sdk_callback.On
 		return nil
 	}
 	if datautil.Contain(s.loginUserID, req.Invitation.InviteeUserIDList...) {
-		s.notifyInvitationTimeout(ctx, req.Invitation, constant.SignalCallDirectionMissed)
+		s.notifyInvitationTimeout(ctx, req.Invitation)
 	}
 	return nil
 }
@@ -494,7 +503,6 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 		}
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
-			constant.SignalCallDirectionMissed,
 			constant.SignalCallActionCancel,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
@@ -513,10 +521,6 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		log.ZDebug(ctx, "OnHangUp", "hungUp", req)
 		listener.OnHangUp(jsonutil.StructToJsonString(req))
 
-		direction := constant.SignalCallDirectionIncoming
-		if req.Invitation.InviterUserID == s.loginUserID {
-			direction = constant.SignalCallDirectionOutgoing
-		}
 		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
 		if !ok {
 			return nil
@@ -524,13 +528,9 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		status := constant.SignalCallStatusAnswered
 		if !callWasConnected(connectMs) {
 			status = constant.SignalCallStatusNotConnected
-			if direction == constant.SignalCallDirectionIncoming {
-				direction = constant.SignalCallDirectionMissed
-			}
 		}
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
-			direction,
 			constant.SignalCallActionHungUp,
 			inviteMs, connectMs, time.Now().UnixMilli())
 	}
@@ -566,18 +566,19 @@ func (s *Signaling) handleRoomParticipantDisconnected(ctx context.Context, msg *
 }
 
 // persistLocalCallRecord 异步投递写任务，避免阻塞信令通知路径。
+// direction 由本端角色与 status 在内部统一计算，调用方勿再传入。
 func (s *Signaling) persistLocalCallRecord(
 	ctx context.Context,
 	inv *rtc.InvitationInfo,
 	participant *rtc.ParticipantMetaData,
 	status int32,
-	direction int32,
 	action string,
 	inviteMs, connectMs, endMs int64,
 ) {
 	if s.db == nil || inv == nil || s.recordCh == nil {
 		return
 	}
+	direction := s.resolveCallRecordDirection(inv, status)
 	select {
 	case s.recordCh <- recordTask{
 		inv:         inv,

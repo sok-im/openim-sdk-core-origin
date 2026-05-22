@@ -50,7 +50,7 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 
 	// 邀请发送成功后启动超时定时器（主叫侧）
 	if signalInviteReq.Invitation != nil {
-		s.startInviteTimer(signalInviteReq.Invitation, constant.SignalCallDirectionOutgoing)
+		s.startInviteTimer(signalInviteReq.Invitation)
 	}
 
 	log.ZInfo(ctx, "Invite success", "req", req, "resp", resp)
@@ -87,7 +87,7 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 	}
 
 	if signalInviteInGroupReq.Invitation != nil {
-		s.startInviteTimer(signalInviteInGroupReq.Invitation, constant.SignalCallDirectionOutgoing)
+		s.startInviteTimer(signalInviteInGroupReq.Invitation)
 	}
 
 	log.ZInfo(ctx, "InviteInGroup success", "req", req, "resp", resp)
@@ -129,7 +129,7 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 	return &rtc.SignalAcceptResp{}, nil
 }
 
-// Reject 被叫侧拒接：取消超时定时器，写未拨通记录（missed 方向）。
+// Reject 被叫侧拒接：取消超时定时器，写未拨通记录（direction 由 persist 内按本端角色推导）。
 func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejectReq) error {
 	signalRejectReq.UserID = s.loginUserID
 	signalRejectReq.OpUserPlatformID = s.platformID
@@ -154,7 +154,6 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 				signalRejectReq.Invitation,
 				signalRejectReq.Participant,
 				constant.SignalCallStatusNotConnected,
-				constant.SignalCallDirectionMissed,
 				constant.SignalCallActionReject,
 				inviteMs, connectMs, time.Now().UnixMilli())
 		}
@@ -190,7 +189,6 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 					signalTimeoutReq.Invitation,
 					nil,
 					constant.SignalCallStatusNotConnected,
-					constant.SignalCallDirectionOutgoing,
 					constant.SignalCallActionTimeout,
 					inviteMs, connectMs, time.Now().UnixMilli())
 			}
@@ -228,7 +226,6 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 					signalCancelReq.Invitation,
 					signalCancelReq.Participant,
 					constant.SignalCallStatusNotConnected,
-					constant.SignalCallDirectionOutgoing,
 					constant.SignalCallActionCancel,
 					inviteMs, connectMs, time.Now().UnixMilli())
 			}
@@ -256,24 +253,16 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 
 	if signalHungUpReq.Invitation != nil {
 		s.cancelInviteTimer(signalHungUpReq.Invitation.RoomID)
-		direction := constant.SignalCallDirectionOutgoing
-		if signalHungUpReq.Invitation.InviterUserID != s.loginUserID {
-			direction = constant.SignalCallDirectionIncoming
-		}
 		inviteMs, connectMs, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
 		if ok {
 			status := constant.SignalCallStatusAnswered
 			if !callWasConnected(connectMs) {
 				status = constant.SignalCallStatusNotConnected
-				if direction == constant.SignalCallDirectionIncoming {
-					direction = constant.SignalCallDirectionMissed
-				}
 			}
 			s.persistLocalCallRecord(ctx,
 				signalHungUpReq.Invitation,
 				nil,
 				status,
-				direction,
 				constant.SignalCallActionHungUp,
 				inviteMs, connectMs, time.Now().UnixMilli())
 		}

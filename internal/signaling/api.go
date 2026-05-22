@@ -53,21 +53,17 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 		return nil, err
 	}
 
-	// 用服务端返回的 roomID 覆盖 invitation，保证后续所有操作（Accept/HungUp 通知、
-	// 定时器、roomTimings）使用同一个 key。
-	if signalInviteReq.Invitation != nil {
-		if inviteResp := resp.GetInvite(); inviteResp != nil && inviteResp.RoomID != "" {
-			signalInviteReq.Invitation.RoomID = inviteResp.RoomID
-		}
-		if signalInviteReq.Invitation.RoomID != "" {
-			s.storeInviteTime(signalInviteReq.Invitation.RoomID, inviteMs)
-		}
+	inviteResp := resp.GetInvite()
+	// 仅使用 resp 中的 roomID，不使用 req 里客户端生成的 roomID。
+	if signalInviteReq.Invitation != nil && inviteResp != nil && inviteResp.RoomID != "" {
+		signalInviteReq.Invitation.RoomID = inviteResp.RoomID
+		s.storeInviteTime(inviteResp.RoomID, inviteMs)
 		s.startInviteTimer(signalInviteReq.Invitation)
 	}
 
 	log.ZInfo(ctx, "Invite success", "req", req, "resp", resp)
 
-	if inviteResp := resp.GetInvite(); inviteResp != nil {
+	if inviteResp != nil {
 		log.ZInfo(ctx, "Invite success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
 		return inviteResp, nil
 	}
@@ -99,21 +95,19 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 		return nil, err
 	}
 
-	if signalInviteInGroupReq.Invitation != nil {
-		if inviteResp := resp.GetInviteInGroup(); inviteResp != nil && inviteResp.RoomID != "" {
-			signalInviteInGroupReq.Invitation.RoomID = inviteResp.RoomID
-		}
-		if signalInviteInGroupReq.Invitation.RoomID != "" {
-			s.storeInviteTime(signalInviteInGroupReq.Invitation.RoomID, inviteMs)
-		}
+	inviteInGroupResp := resp.GetInviteInGroup()
+	// 仅使用 resp 中的 roomID，不使用 req 里客户端生成的 roomID。
+	if signalInviteInGroupReq.Invitation != nil && inviteInGroupResp != nil && inviteInGroupResp.RoomID != "" {
+		signalInviteInGroupReq.Invitation.RoomID = inviteInGroupResp.RoomID
+		s.storeInviteTime(inviteInGroupResp.RoomID, inviteMs)
 		s.startInviteTimer(signalInviteInGroupReq.Invitation)
 	}
 
 	log.ZInfo(ctx, "InviteInGroup success", "req", req, "resp", resp)
 
-	if inviteResp := resp.GetInviteInGroup(); inviteResp != nil {
-		log.ZInfo(ctx, "InviteInGroup success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
-		return inviteResp, nil
+	if inviteInGroupResp != nil {
+		log.ZInfo(ctx, "InviteInGroup success", "liveURL", inviteInGroupResp.LiveURL, "roomID", inviteInGroupResp.RoomID)
+		return inviteInGroupResp, nil
 	}
 	return &rtc.SignalInviteInGroupResp{}, nil
 }
@@ -612,6 +606,7 @@ func (s *Signaling) fillInviteDefaults(invitation *rtc.InvitationInfo) {
 	if invitation.Timeout == 0 {
 		invitation.Timeout = defaultTimeout
 	}
+	invitation.RoomID = ""
 }
 
 func InviteReqToJson(req *rtc.SignalInviteReq) string {

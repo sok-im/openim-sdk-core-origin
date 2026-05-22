@@ -59,12 +59,13 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 		signalInviteReq.Invitation.RoomID = inviteResp.RoomID
 		s.storeInviteTime(inviteResp.RoomID, inviteMs)
 		s.startInviteTimer(signalInviteReq.Invitation)
+		log.ZInfo(ctx, "lintao startInviteTimer", "roomID", signalInviteReq.Invitation.RoomID)
 	}
 
-	log.ZInfo(ctx, "Invite success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "lintao Invite success", "req", req, "resp", resp)
 
 	if inviteResp != nil {
-		log.ZInfo(ctx, "Invite success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
+		log.ZInfo(ctx, "lintao Invite success", "liveURL", inviteResp.LiveURL, "roomID", inviteResp.RoomID)
 		return inviteResp, nil
 	}
 	return &rtc.SignalInviteResp{}, nil
@@ -103,10 +104,10 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 		s.startInviteTimer(signalInviteInGroupReq.Invitation)
 	}
 
-	log.ZInfo(ctx, "InviteInGroup success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "lintao InviteInGroup success", "req", req, "resp", resp)
 
 	if inviteInGroupResp != nil {
-		log.ZInfo(ctx, "InviteInGroup success", "liveURL", inviteInGroupResp.LiveURL, "roomID", inviteInGroupResp.RoomID)
+		log.ZInfo(ctx, "lintao InviteInGroup success", "liveURL", inviteInGroupResp.LiveURL, "roomID", inviteInGroupResp.RoomID)
 		return inviteInGroupResp, nil
 	}
 	return &rtc.SignalInviteInGroupResp{}, nil
@@ -132,7 +133,7 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 		return nil, err
 	}
 
-	log.ZInfo(ctx, "Accept success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "lintao Accept success", "req", req, "resp", resp)
 
 	// 接听阶段仅记录接通时间，不落库；通话结束时由 HungUp / 对端 HungUp 通知写入唯一一条记录。
 
@@ -157,7 +158,7 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 		return err
 	}
 
-	log.ZInfo(ctx, "Reject success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "lintao Reject success", "req", req, "resp", resp)
 
 	if signalRejectReq.Invitation != nil {
 		s.cancelInviteTimer(signalRejectReq.Invitation.RoomID)
@@ -169,7 +170,7 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
 				inviteMs, connectMs, time.Now().UnixMilli())
-			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalRejectReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
+			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalRejectReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 	}
 	return nil
@@ -205,7 +206,7 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 					constant.SignalCallStatusNotConnected,
 					constant.SignalCallActionTimeout,
 					inviteMs, connectMs, time.Now().UnixMilli())
-				log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalTimeoutReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
+				log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalTimeoutReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
 			}
 		}
 
@@ -230,7 +231,7 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 		return err
 	}
 
-	log.ZInfo(ctx, "Cancel success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "lintao Cancel success", "req", req, "resp", resp)
 
 	if signalCancelReq.Invitation != nil {
 		s.cancelInviteTimer(signalCancelReq.Invitation.RoomID)
@@ -243,7 +244,7 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 					constant.SignalCallStatusNotConnected,
 					constant.SignalCallActionCancel,
 					inviteMs, connectMs, time.Now().UnixMilli())
-				log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalCancelReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
+				log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalCancelReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 			}
 		}
 	}
@@ -265,7 +266,7 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 		return err
 	}
 
-	log.ZInfo(ctx, "HungUp success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "lintao HungUp success", "req", req, "resp", resp)
 
 	if signalHungUpReq.Invitation != nil {
 		s.cancelInviteTimer(signalHungUpReq.Invitation.RoomID)
@@ -281,7 +282,7 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 				status,
 				constant.SignalCallActionHungUp,
 				inviteMs, connectMs, time.Now().UnixMilli())
-			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
+			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
 
 		}
 	}

@@ -621,8 +621,11 @@ func (s *Signaling) resolve1v1UserDisplayName(ctx context.Context, userID string
 	return nicknameFromParticipant(userID, p)
 }
 
-// resolveInviteeNickname 被叫展示名：好友 remark > firstName+lastName > nickname；非好友用信令 participant nickname。
+// resolveInviteeNickname 被叫展示名：群通话为群名；单聊为好友 remark > firstName+lastName > nickname。
 func (s *Signaling) resolveInviteeNickname(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if isGroupChatCall(inv) {
+		return s.resolveGroupName(ctx, inv, p)
+	}
 	uid := extractPrimaryInviteeUID(inv)
 	if uid == "" {
 		return ""
@@ -661,6 +664,9 @@ func (s *Signaling) resolveInviterFaceURL(ctx context.Context, inv *rtc.Invitati
 }
 
 func (s *Signaling) resolveInviteeFaceURL(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if isGroupChatCall(inv) {
+		return s.resolveGroupFaceURL(ctx, inv, p)
+	}
 	if faceURL := extractInviteeFaceURL(inv, p); faceURL != "" {
 		return faceURL
 	}
@@ -687,4 +693,18 @@ func (s *Signaling) resolveGroupName(ctx context.Context, inv *rtc.InvitationInf
 		return ""
 	}
 	return g.GroupName
+}
+
+func (s *Signaling) resolveGroupFaceURL(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if faceURL := extractGroupFaceURL(p); faceURL != "" {
+		return faceURL
+	}
+	if s.db == nil || inv == nil || inv.GroupID == "" {
+		return ""
+	}
+	g, err := s.db.GetGroupInfoByGroupID(ctx, inv.GroupID)
+	if err != nil || g == nil {
+		return ""
+	}
+	return g.FaceURL
 }

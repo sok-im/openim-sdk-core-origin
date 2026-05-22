@@ -190,6 +190,17 @@ func extractGroupName(p *rtc.ParticipantMetaData) string {
 	return ""
 }
 
+func extractGroupFaceURL(p *rtc.ParticipantMetaData) string {
+	if p != nil && p.GroupInfo != nil && p.GroupInfo.FaceURL != "" {
+		return p.GroupInfo.FaceURL
+	}
+	return ""
+}
+
+func isGroupChatCall(inv *rtc.InvitationInfo) bool {
+	return inv != nil && strings.TrimSpace(inv.GroupID) != ""
+}
+
 func callRecordRole(l *model_struct.LocalSignalCallRecord) int32 {
 	if l == nil {
 		return constant.SignalCallRoleUnknown

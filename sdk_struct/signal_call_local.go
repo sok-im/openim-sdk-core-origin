@@ -112,6 +112,8 @@ type SignalCallRecordWithDialStatus struct {
 	Role        int32 `json:"role"`
 	ConnectTime int64 `json:"connectTime"`
 	InviteeUserNickname string `json:"inviteeUserNickname"`
+	InviteeUID          string `json:"inviteeUID"`
+	InviteeUserFaceURL  string `json:"inviteeUserFaceURL"`
 	// Action 信令动作：accept / reject / cancel / hungup / timeout
 	Action string `json:"action"`
 }

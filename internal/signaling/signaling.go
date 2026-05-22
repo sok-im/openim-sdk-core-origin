@@ -111,6 +111,8 @@ func (s *Signaling) recordWorker() {
 
 		calleeText := s.composeCalleeMatchText(ctx, task.inv, task.participant)
 		inviteeNickname := s.resolveInviteeNickname(ctx, task.inv, task.participant)
+		inviteeUID := extractPrimaryInviteeUID(task.inv)
+		inviteeFaceURL := s.resolveInviteeFaceURL(ctx, task.inv, task.participant)
 		inviterNickname := s.resolveInviterNickname(ctx, task.inv, task.participant)
 		inviterFaceURL := s.resolveInviterFaceURL(ctx, task.inv, task.participant)
 		groupName := s.resolveGroupName(ctx, task.inv, task.participant)
@@ -126,6 +128,8 @@ func (s *Signaling) recordWorker() {
 			endMs:           task.endMs,
 			calleeMatchText: calleeText,
 			inviteeNickname: inviteeNickname,
+			inviteeUID:      inviteeUID,
+			inviteeFaceURL:  inviteeFaceURL,
 			inviteeIDsJSON:  inviteeIDsJSON,
 			inviterNickname: inviterNickname,
 			inviterFaceURL:  inviterFaceURL,
@@ -617,18 +621,16 @@ func (s *Signaling) resolve1v1UserDisplayName(ctx context.Context, userID string
 	return nicknameFromParticipant(userID, p)
 }
 
+// resolveInviteeNickname 被叫展示名：好友 remark > firstName+lastName > nickname；非好友用信令 participant nickname。
 func (s *Signaling) resolveInviteeNickname(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
-	if inv == nil || len(inv.InviteeUserIDList) == 0 {
+	uid := extractPrimaryInviteeUID(inv)
+	if uid == "" {
 		return ""
 	}
-	firstUID := inv.InviteeUserIDList[0]
-	if isSingleChatCall(inv) {
-		return s.resolve1v1UserDisplayName(ctx, firstUID, p)
+	if name := s.resolve1v1UserDisplayName(ctx, uid, p); name != "" {
+		return name
 	}
-	if nick := extractInviteeNickname(inv, p); nick != "" {
-		return nick
-	}
-	return s.resolve1v1UserDisplayName(ctx, firstUID, p)
+	return extractInviteeNickname(inv, p)
 }
 
 func (s *Signaling) resolveInviterNickname(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
@@ -652,6 +654,21 @@ func (s *Signaling) resolveInviterFaceURL(ctx context.Context, inv *rtc.Invitati
 		return ""
 	}
 	friends, err := s.db.GetFriendInfoList(ctx, []string{inv.InviterUserID})
+	if err != nil || len(friends) == 0 {
+		return ""
+	}
+	return friends[0].FaceURL
+}
+
+func (s *Signaling) resolveInviteeFaceURL(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if faceURL := extractInviteeFaceURL(inv, p); faceURL != "" {
+		return faceURL
+	}
+	uid := extractPrimaryInviteeUID(inv)
+	if s.db == nil || uid == "" {
+		return ""
+	}
+	friends, err := s.db.GetFriendInfoList(ctx, []string{uid})
 	if err != nil || len(friends) == 0 {
 		return ""
 	}

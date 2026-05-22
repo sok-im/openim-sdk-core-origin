@@ -402,6 +402,8 @@ type LocalSignalCallRecord struct {
 	// CalleeMatchText 被叫侧模糊查询用：由邀请时 inviteeUserIDList 等拼接（仅用于检索）
 	CalleeMatchText     string `gorm:"column:callee_match_text;type:text;index:idx_signal_callee_txt" json:"-"`
 	InviteeUserNickname string `gorm:"column:invitee_user_nickname;type:varchar(255)" json:"inviteeUserNickname"`
+	InviteeUID          string `gorm:"column:invitee_uid;type:varchar(64);index:idx_signal_invitee_uid" json:"inviteeUID"`
+	InviteeUserFaceURL  string `gorm:"column:invitee_user_face_url;type:varchar(512)" json:"inviteeUserFaceURL"`
 	InviteeUserIDsJSON  string `gorm:"column:invitee_user_ids;type:text" json:"-"`
 	// Direction 见 constant.SignalCallDirection*：1=主叫 2=被叫(已接) 3=被叫(未接/错过)
 	Direction int32 `gorm:"column:direction;index:idx_signal_dir" json:"direction"`

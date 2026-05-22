@@ -22,6 +22,8 @@ type callRecordConfig struct {
 	endMs            int64
 	calleeMatchText  string
 	inviteeNickname  string
+	inviteeUID       string
+	inviteeFaceURL   string
 	inviteeIDsJSON   string
 	inviterNickname  string
 	inviterFaceURL   string
@@ -80,6 +82,8 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		DialDuration:        dialDuration,
 		CallDuration:        callDuration,
 		InviteeUserNickname: cfg.inviteeNickname,
+		InviteeUID:          cfg.inviteeUID,
+		InviteeUserFaceURL:  cfg.inviteeFaceURL,
 		InviteeUserIDsJSON:  cfg.inviteeIDsJSON,
 		CalleeMatchText:     strings.TrimSpace(cfg.calleeMatchText),
 		Direction:           cfg.direction,
@@ -112,6 +116,39 @@ func buildCalleeMatchTextFromProto(inv *rtc.InvitationInfo, p *rtc.ParticipantMe
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
 
+func extractPrimaryInviteeUID(inv *rtc.InvitationInfo) string {
+	if inv == nil {
+		return ""
+	}
+	for _, uid := range inv.InviteeUserIDList {
+		if uid = strings.TrimSpace(uid); uid != "" {
+			return uid
+		}
+	}
+	return ""
+}
+
+func faceURLFromParticipant(userID string, p *rtc.ParticipantMetaData) string {
+	if p == nil || userID == "" {
+		return ""
+	}
+	if p.UserInfo != nil && p.UserInfo.UserID == userID && p.UserInfo.FaceURL != "" {
+		return p.UserInfo.FaceURL
+	}
+	if p.GroupMemberInfo != nil && p.GroupMemberInfo.UserID == userID && p.GroupMemberInfo.FaceURL != "" {
+		return p.GroupMemberInfo.FaceURL
+	}
+	return ""
+}
+
+func extractInviteeFaceURL(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	uid := extractPrimaryInviteeUID(inv)
+	if uid == "" {
+		return ""
+	}
+	return faceURLFromParticipant(uid, p)
+}
+
 func nicknameFromParticipant(userID string, p *rtc.ParticipantMetaData) string {
 	if p == nil || userID == "" {
 		return ""
@@ -140,16 +177,10 @@ func extractInviterNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData)
 }
 
 func extractInviterFaceURL(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
-	if inv == nil || p == nil {
+	if inv == nil {
 		return ""
 	}
-	if p.UserInfo != nil && p.UserInfo.UserID == inv.InviterUserID && p.UserInfo.FaceURL != "" {
-		return p.UserInfo.FaceURL
-	}
-	if p.GroupMemberInfo != nil && p.GroupMemberInfo.UserID == inv.InviterUserID && p.GroupMemberInfo.FaceURL != "" {
-		return p.GroupMemberInfo.FaceURL
-	}
-	return ""
+	return faceURLFromParticipant(inv.InviterUserID, p)
 }
 
 func extractGroupName(p *rtc.ParticipantMetaData) string {
@@ -191,6 +222,8 @@ func localRecordToSDK(l *model_struct.LocalSignalCallRecord) *sdk_struct.SignalC
 		Role:                callRecordRole(l),
 		ConnectTime:         l.ConnectTime,
 		InviteeUserNickname: l.InviteeUserNickname,
+		InviteeUID:          l.InviteeUID,
+		InviteeUserFaceURL:  l.InviteeUserFaceURL,
 		Action:              l.Action,
 	}
 }

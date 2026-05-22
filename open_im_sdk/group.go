@@ -57,7 +57,7 @@ func SetSendMessageSetting(callback open_im_sdk_callback.Base, operationID strin
 	call(callback, operationID, UserForSDK.Group().SetSendMessageSetting, groupID, allowSendMsg)
 }
 
-// GetGroupSetting 查询群权限相关设置。成功回调 JSON：groupID、allowSendMsg、allowAddMember、allowPinMsg、allowEditGroupInfo、allowMemberBurn。对应 HTTP POST /group/get_group_setting。
+// GetGroupSetting 查询群权限相关设置。成功回调 JSON：groupID、allowSendMsg、allowAddMember、allowPinMsg、allowEditGroupInfo、allowMemberBurn、enableInviteLink。对应 HTTP POST /group/get_group_setting。
 func GetGroupSetting(callback open_im_sdk_callback.Base, operationID string, groupID string) {
 	call(callback, operationID, UserForSDK.Group().GetGroupSetting, groupID)
 }
@@ -125,6 +125,36 @@ func SetGroupAnnouncement(callback open_im_sdk_callback.Base, operationID string
 // GetGroupAnnouncement 查询群公告。成功回调 JSON：groupID、notification、notificationUpdateTime、notificationUserID。对应 HTTP POST /group/get_group_announcement。
 func GetGroupAnnouncement(callback open_im_sdk_callback.Base, operationID string, groupID string) {
 	call(callback, operationID, UserForSDK.Group().GetGroupAnnouncement, groupID)
+}
+
+// SetInviteLinkSetting 开启/关闭群邀请链接（enableInviteLink：0=关闭 1=开启）。对应 HTTP POST /group/set_invite_link_setting。
+func SetInviteLinkSetting(callback open_im_sdk_callback.Base, operationID string, groupID string, enableInviteLink int32) {
+	call(callback, operationID, UserForSDK.Group().SetInviteLinkSetting, groupID, enableInviteLink)
+}
+
+// CreateGroupInviteLink 生成群邀请链接。成功回调 JSON 含 link（linkID 等）。对应 HTTP POST /group/create_invite_link。
+func CreateGroupInviteLink(callback open_im_sdk_callback.Base, operationID string, groupID string, expireSeconds int64, maxUseCount int32) {
+	call(callback, operationID, UserForSDK.Group().CreateGroupInviteLink, groupID, expireSeconds, maxUseCount)
+}
+
+// GetGroupInviteLink 查询邀请链接及群预览（无需登录）。成功回调 JSON 含 link、groupInfo、valid。对应 HTTP POST /group/get_invite_link。
+func GetGroupInviteLink(callback open_im_sdk_callback.Base, operationID string, linkID string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupInviteLink, linkID)
+}
+
+// JoinGroupByInviteLink 通过邀请链接申请入群。对应 HTTP POST /group/join_by_invite_link。
+func JoinGroupByInviteLink(callback open_im_sdk_callback.Base, operationID string, linkID string, reqMessage string) {
+	call(callback, operationID, UserForSDK.Group().JoinGroupByInviteLink, linkID, reqMessage)
+}
+
+// RevokeGroupInviteLink 吊销群邀请链接。对应 HTTP POST /group/revoke_invite_link。
+func RevokeGroupInviteLink(callback open_im_sdk_callback.Base, operationID string, linkID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().RevokeGroupInviteLink, linkID, groupID)
+}
+
+// ListGroupInviteLinks 分页查询群内邀请链接。对应 HTTP POST /group/list_invite_links。
+func ListGroupInviteLinks(callback open_im_sdk_callback.Base, operationID string, groupID string, pageNumber, showNumber int32) {
+	call(callback, operationID, UserForSDK.Group().ListGroupInviteLinks, groupID, pageNumber, showNumber)
 }
 
 func SetGroupMemberInfo(callback open_im_sdk_callback.Base, operationID string, groupMemberInfo string) {

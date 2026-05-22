@@ -183,6 +183,67 @@ func (g *Group) GetSendMessageSetting(ctx context.Context, groupID string) (*api
 	return g.getSendMessageSetting(ctx, groupID)
 }
 
+// SetInviteLinkSetting 开启/关闭群邀请链接（HTTP POST /group/set_invite_link_setting）：
+//
+//	enableInviteLink 0 = 关闭，1 = 开启
+func (g *Group) SetInviteLinkSetting(ctx context.Context, groupID string, enableInviteLink int32) error {
+	if err := g.setInviteLinkSetting(ctx, &api.SetInviteLinkSettingReq{
+		GroupID:          groupID,
+		EnableInviteLink: enableInviteLink,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// CreateGroupInviteLink 生成群邀请链接（HTTP POST /group/create_invite_link）。
+func (g *Group) CreateGroupInviteLink(ctx context.Context, groupID string, expireSeconds int64, maxUseCount int32) (*group.CreateGroupInviteLinkResp, error) {
+	return g.createGroupInviteLink(ctx, &group.CreateGroupInviteLinkReq{
+		GroupID:       groupID,
+		ExpireSeconds: expireSeconds,
+		MaxUseCount:   maxUseCount,
+	})
+}
+
+// GetGroupInviteLink 查询邀请链接详情及群预览（HTTP POST /group/get_invite_link，无需登录）。
+func (g *Group) GetGroupInviteLink(ctx context.Context, linkID string) (*group.GetGroupInviteLinkResp, error) {
+	return g.getGroupInviteLink(ctx, &group.GetGroupInviteLinkReq{LinkID: linkID})
+}
+
+// JoinGroupByInviteLink 通过邀请链接申请入群（HTTP POST /group/join_by_invite_link）。
+func (g *Group) JoinGroupByInviteLink(ctx context.Context, linkID, reqMessage string) error {
+	if err := g.joinGroupByInviteLink(ctx, &group.JoinGroupByInviteLinkReq{
+		LinkID:     linkID,
+		ReqMessage: reqMessage,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// RevokeGroupInviteLink 吊销群邀请链接（HTTP POST /group/revoke_invite_link）。
+func (g *Group) RevokeGroupInviteLink(ctx context.Context, linkID, groupID string) error {
+	return g.revokeGroupInviteLink(ctx, &group.RevokeGroupInviteLinkReq{
+		LinkID:  linkID,
+		GroupID: groupID,
+	})
+}
+
+// ListGroupInviteLinks 分页查询群内邀请链接列表（HTTP POST /group/list_invite_links）。
+func (g *Group) ListGroupInviteLinks(ctx context.Context, groupID string, pageNumber, showNumber int32) (*group.ListGroupInviteLinksResp, error) {
+	return g.listGroupInviteLinks(ctx, &group.ListGroupInviteLinksReq{
+		GroupID: groupID,
+		Pagination: &sdkws.RequestPagination{
+			PageNumber: pageNumber,
+			ShowNumber: showNumber,
+		},
+	})
+}
+
 // SetInviteSetting 设置群成员邀请他人入群权限（HTTP POST /group/set_invite_setting）：
 //
 //	allowAddMember 0 = 全员可邀请，1 = 仅群主/管理员可邀请

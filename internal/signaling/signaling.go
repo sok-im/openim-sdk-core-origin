@@ -568,36 +568,49 @@ func (s *Signaling) persistLocalCallRecord(
 
 func (s *Signaling) composeCalleeMatchText(ctx context.Context, inv *rtc.InvitationInfo, participant *rtc.ParticipantMetaData) string {
 	base := buildCalleeMatchTextFromProto(inv, participant)
-	return s.appendCalleeNicknamesFromFriends(ctx, inv, base)
+	return s.appendParticipantSearchTokens(ctx, inv, base)
 }
 
-func (s *Signaling) appendCalleeNicknamesFromFriends(ctx context.Context, inv *rtc.InvitationInfo, base string) string {
-	if s.db == nil || inv == nil || len(inv.InviteeUserIDList) == 0 {
+// appendParticipantSearchTokens 将主叫/被叫在好友表、用户表中的展示名写入 callee_match_text，便于按姓名检索。
+func (s *Signaling) appendParticipantSearchTokens(ctx context.Context, inv *rtc.InvitationInfo, base string) string {
+	if s.db == nil || inv == nil {
 		return base
 	}
-	friends, err := s.db.GetFriendInfoList(ctx, inv.InviteeUserIDList)
-	if err != nil || len(friends) == 0 {
-		return base
+	userIDs := make([]string, 0, len(inv.InviteeUserIDList)+1)
+	if uid := strings.TrimSpace(inv.InviterUserID); uid != "" {
+		userIDs = append(userIDs, uid)
 	}
-	var extras []string
-	for _, f := range friends {
-		name := f.ConversationShowName()
-		if name != "" {
-			extras = append(extras, name)
-		}
-		if !isSingleChatCall(inv) {
-			if f.Nickname != "" {
-				extras = append(extras, f.Nickname)
-			}
-			if f.Remark != "" {
-				extras = append(extras, f.Remark)
-			}
+	for _, uid := range inv.InviteeUserIDList {
+		if uid = strings.TrimSpace(uid); uid != "" {
+			userIDs = append(userIDs, uid)
 		}
 	}
-	if len(extras) == 0 {
+	if len(userIDs) == 0 {
 		return base
 	}
-	return strings.TrimSpace(base + " " + strings.Join(extras, " "))
+
+	friendByID := make(map[string]*model_struct.LocalFriend)
+	friends, err := s.db.GetFriendInfoList(ctx, userIDs)
+	if err == nil {
+		for _, f := range friends {
+			if f != nil && f.FriendUserID != "" {
+				friendByID[f.FriendUserID] = f
+			}
+		}
+	}
+
+	var tokens []string
+	for _, uid := range userIDs {
+		if f := friendByID[uid]; f != nil {
+			tokens = append(tokens, searchableFriendTokens(f)...)
+			continue
+		}
+		user, err := s.db.GetLoginUser(ctx, uid)
+		if err == nil && user != nil {
+			tokens = append(tokens, searchableUserTokens(user)...)
+		}
+	}
+	return appendUniqueSearchTokens(base, tokens)
 }
 
 func isSingleChatCall(inv *rtc.InvitationInfo) bool {
@@ -614,6 +627,12 @@ func (s *Signaling) resolve1v1UserDisplayName(ctx context.Context, userID string
 		friends, err := s.db.GetFriendInfoList(ctx, []string{userID})
 		if err == nil && len(friends) > 0 {
 			if name := friends[0].ConversationShowName(); name != "" {
+				return name
+			}
+		}
+		user, err := s.db.GetLoginUser(ctx, userID)
+		if err == nil && user != nil {
+			if name := user.DisplayName(); name != "" {
 				return name
 			}
 		}

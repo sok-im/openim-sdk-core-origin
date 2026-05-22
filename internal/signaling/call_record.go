@@ -92,6 +92,83 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 	}
 }
 
+// searchableFriendTokens 返回好友侧可用于通话记录模糊检索的展示名片段（含 first/last 单独字段）。
+func searchableFriendTokens(f *model_struct.LocalFriend) []string {
+	if f == nil {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	var out []string
+	add := func(s string) {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			return
+		}
+		if _, ok := seen[s]; ok {
+			return
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	add(f.Remark)
+	add(f.FirstName)
+	add(f.LastName)
+	add(model_struct.UserDisplayName(f.FirstName, f.LastName, f.Nickname))
+	add(f.Nickname)
+	return out
+}
+
+// searchableUserTokens 返回本地用户表可用于通话记录模糊检索的展示名片段。
+func searchableUserTokens(u *model_struct.LocalUser) []string {
+	if u == nil {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	var out []string
+	add := func(s string) {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			return
+		}
+		if _, ok := seen[s]; ok {
+			return
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	add(u.FirstName)
+	add(u.LastName)
+	add(u.DisplayName())
+	add(u.Nickname)
+	return out
+}
+
+func appendUniqueSearchTokens(base string, tokens []string) string {
+	if len(tokens) == 0 {
+		return strings.TrimSpace(base)
+	}
+	seen := make(map[string]struct{})
+	var extras []string
+	for _, t := range tokens {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			continue
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		extras = append(extras, t)
+	}
+	if len(extras) == 0 {
+		return strings.TrimSpace(base)
+	}
+	if base == "" {
+		return strings.Join(extras, " ")
+	}
+	return strings.TrimSpace(base + " " + strings.Join(extras, " "))
+}
+
 func buildCalleeMatchTextFromProto(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
 	if inv == nil {
 		return ""

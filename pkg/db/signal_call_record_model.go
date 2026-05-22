@@ -82,16 +82,31 @@ func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direct
 		tx = tx.Where("room_id LIKE ? OR group_name LIKE ? OR inviter_user_nickname LIKE ? OR invitee_user_nickname LIKE ? OR group_id LIKE ? OR inviter_user_id LIKE ? OR inviter_user_face_url LIKE ?",
 			pattern, pattern, pattern, pattern, pattern, pattern, pattern)
 	}
-	un := strings.TrimSpace(userName)
-	if un != "" {
-		p := "%" + un + "%"
-		tx = tx.Where("inviter_user_nickname LIKE ? OR invitee_user_nickname LIKE ? OR callee_match_text LIKE ?",
-			p, p, p)
-	}
+	tx = applySignalCallUserNameFilter(tx, userName)
 	in := strings.TrimSpace(inviteeNickname)
 	if in != "" {
 		p := "%" + in + "%"
 		tx = tx.Where("invitee_user_nickname LIKE ?", p)
+	}
+	return tx
+}
+
+// applySignalCallUserNameFilter 按用户名模糊匹配；多词（如 firstName + lastName）时要求每个词均命中。
+func applySignalCallUserNameFilter(tx *gorm.DB, userName string) *gorm.DB {
+	un := strings.TrimSpace(userName)
+	if un == "" {
+		return tx
+	}
+	tokens := strings.Fields(un)
+	if len(tokens) == 0 {
+		return tx
+	}
+	for _, token := range tokens {
+		p := "%" + token + "%"
+		tx = tx.Where(
+			"inviter_user_nickname LIKE ? OR invitee_user_nickname LIKE ? OR callee_match_text LIKE ?",
+			p, p, p,
+		)
 	}
 	return tx
 }

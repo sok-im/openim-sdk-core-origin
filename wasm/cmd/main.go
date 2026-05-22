@@ -149,6 +149,8 @@ func registerFunc() {
 	js.Global().Set("getBurnSetting", js.FuncOf(wrapperGroup.GetBurnSetting))
 	js.Global().Set("setMsgBurnDuration", js.FuncOf(wrapperGroup.SetMsgBurnDuration))
 	js.Global().Set("getMsgBurnDuration", js.FuncOf(wrapperGroup.GetMsgBurnDuration))
+	js.Global().Set("setGroupAnnouncement", js.FuncOf(wrapperGroup.SetGroupAnnouncement))
+	js.Global().Set("getGroupAnnouncement", js.FuncOf(wrapperGroup.GetGroupAnnouncement))
 	js.Global().Set("getGroupMemberList", js.FuncOf(wrapperGroup.GetGroupMemberList))
 	js.Global().Set("getGroupMemberOwnerAndAdmin", js.FuncOf(wrapperGroup.GetGroupMemberOwnerAndAdmin))
 	js.Global().Set("getGroupMemberListByJoinTimeFilter", js.FuncOf(wrapperGroup.GetGroupMemberListByJoinTimeFilter))

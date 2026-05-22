@@ -283,6 +283,24 @@ func (g *Group) GetMsgBurnDuration(ctx context.Context, groupID string) (*api.Ge
 	return g.getMsgBurnDuration(ctx, groupID)
 }
 
+// SetGroupAnnouncement 设置群公告（HTTP POST /group/set_group_announcement）。
+func (g *Group) SetGroupAnnouncement(ctx context.Context, groupID string, notification string) error {
+	if err := g.setGroupAnnouncement(ctx, &api.SetGroupAnnouncementReq{
+		GroupID:      groupID,
+		Notification: notification,
+	}); err != nil {
+		return err
+	}
+	g.groupSyncMutex.Lock()
+	defer g.groupSyncMutex.Unlock()
+	return g.IncrSyncJoinGroup(ctx)
+}
+
+// GetGroupAnnouncement 查询群公告（HTTP POST /group/get_group_announcement）。
+func (g *Group) GetGroupAnnouncement(ctx context.Context, groupID string) (*api.GetGroupAnnouncementResp, error) {
+	return g.getGroupAnnouncement(ctx, groupID)
+}
+
 func (g *Group) SetGroupMemberInfo(ctx context.Context, groupMemberInfo *group.SetGroupMemberInfo) error {
 	req := &group.SetGroupMemberInfoReq{Members: []*group.SetGroupMemberInfo{groupMemberInfo}}
 	if err := g.setGroupMemberInfo(ctx, req); err != nil {

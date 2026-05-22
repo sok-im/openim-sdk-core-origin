@@ -132,6 +132,14 @@ func (g *Group) getMsgBurnDuration(ctx context.Context, groupID string) (*api.Ge
 	return api.GetMsgBurnDuration.Invoke(ctx, &api.GetMsgBurnDurationReq{GroupID: groupID})
 }
 
+func (g *Group) setGroupAnnouncement(ctx context.Context, req *api.SetGroupAnnouncementReq) error {
+	return api.SetGroupAnnouncement.Execute(ctx, req)
+}
+
+func (g *Group) getGroupAnnouncement(ctx context.Context, groupID string) (*api.GetGroupAnnouncementResp, error) {
+	return api.GetGroupAnnouncement.Invoke(ctx, &api.GetGroupAnnouncementReq{GroupID: groupID})
+}
+
 func (g *Group) setGroupMemberInfo(ctx context.Context, req *group.SetGroupMemberInfoReq) error {
 	return api.SetGroupMemberInfo.Execute(ctx, req)
 }

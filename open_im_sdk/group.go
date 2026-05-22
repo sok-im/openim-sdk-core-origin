@@ -117,6 +117,16 @@ func GetMsgBurnDuration(callback open_im_sdk_callback.Base, operationID string, 
 	call(callback, operationID, UserForSDK.Group().GetMsgBurnDuration, groupID)
 }
 
+// SetGroupAnnouncement 设置群公告。对应 HTTP POST /group/set_group_announcement。
+func SetGroupAnnouncement(callback open_im_sdk_callback.Base, operationID string, groupID string, notification string) {
+	call(callback, operationID, UserForSDK.Group().SetGroupAnnouncement, groupID, notification)
+}
+
+// GetGroupAnnouncement 查询群公告。成功回调 JSON：groupID、notification、notificationUpdateTime、notificationUserID。对应 HTTP POST /group/get_group_announcement。
+func GetGroupAnnouncement(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupAnnouncement, groupID)
+}
+
 func SetGroupMemberInfo(callback open_im_sdk_callback.Base, operationID string, groupMemberInfo string) {
 	call(callback, operationID, UserForSDK.Group().SetGroupMemberInfo, groupMemberInfo)
 }

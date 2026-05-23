@@ -154,6 +154,46 @@ func (w *WrapperGroup) GetMsgBurnDuration(_ js.Value, args []js.Value) interface
 	return event_listener.NewCaller(open_im_sdk.GetMsgBurnDuration, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperGroup) SetGroupAnnouncement(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetGroupAnnouncement, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetGroupAnnouncement(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetGroupAnnouncement, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) SetInviteLinkSetting(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetInviteLinkSetting, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) CreateGroupInviteLink(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.CreateGroupInviteLink, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetGroupInviteLink(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetGroupInviteLink, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) JoinGroupByInviteLink(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.JoinGroupByInviteLink, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) RevokeGroupInviteLink(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.RevokeGroupInviteLink, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) ListGroupInviteLinks(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.ListGroupInviteLinks, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperGroup) GetGroupMemberList(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetGroupMemberList, callback, &args).AsyncCallWithCallback()

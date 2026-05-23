@@ -132,6 +132,14 @@ func (g *Group) getMsgBurnDuration(ctx context.Context, groupID string) (*api.Ge
 	return api.GetMsgBurnDuration.Invoke(ctx, &api.GetMsgBurnDurationReq{GroupID: groupID})
 }
 
+func (g *Group) setGroupAnnouncement(ctx context.Context, req *api.SetGroupAnnouncementReq) error {
+	return api.SetGroupAnnouncement.Execute(ctx, req)
+}
+
+func (g *Group) getGroupAnnouncement(ctx context.Context, groupID string) (*api.GetGroupAnnouncementResp, error) {
+	return api.GetGroupAnnouncement.Invoke(ctx, &api.GetGroupAnnouncementReq{GroupID: groupID})
+}
+
 func (g *Group) setGroupMemberInfo(ctx context.Context, req *group.SetGroupMemberInfoReq) error {
 	return api.SetGroupMemberInfo.Execute(ctx, req)
 }
@@ -250,4 +258,28 @@ func (g *Group) pinGroup(ctx context.Context, req *group.PinGroupReq) error {
 
 func (g *Group) unpinGroup(ctx context.Context, req *group.UnpinGroupReq) error {
 	return api.UnpinGroup.Execute(ctx, req)
+}
+
+func (g *Group) setInviteLinkSetting(ctx context.Context, req *api.SetInviteLinkSettingReq) error {
+	return api.SetInviteLinkSetting.Execute(ctx, req)
+}
+
+func (g *Group) createGroupInviteLink(ctx context.Context, req *group.CreateGroupInviteLinkReq) (*group.CreateGroupInviteLinkResp, error) {
+	return api.CreateGroupInviteLink.Invoke(ctx, req)
+}
+
+func (g *Group) getGroupInviteLink(ctx context.Context, req *group.GetGroupInviteLinkReq) (*group.GetGroupInviteLinkResp, error) {
+	return api.GetGroupInviteLink.Invoke(ctx, req)
+}
+
+func (g *Group) joinGroupByInviteLink(ctx context.Context, req *group.JoinGroupByInviteLinkReq) error {
+	return api.JoinGroupByInviteLink.Execute(ctx, req)
+}
+
+func (g *Group) revokeGroupInviteLink(ctx context.Context, req *group.RevokeGroupInviteLinkReq) error {
+	return api.RevokeGroupInviteLink.Execute(ctx, req)
+}
+
+func (g *Group) listGroupInviteLinks(ctx context.Context, req *group.ListGroupInviteLinksReq) (*group.ListGroupInviteLinksResp, error) {
+	return api.ListGroupInviteLinks.Invoke(ctx, req)
 }

@@ -14,7 +14,11 @@ import (
 	"github.com/openimsdk/tools/utils/jsonutil"
 )
 
-const defaultTimeout = 30
+const (
+	defaultTimeout = 30
+	// localCallListSessionType 通话记录列表查询固定为 0（不按 session_type 精确匹配，DB 层排除群通话）。
+	localCallListSessionType int32 = 0
+)
 
 func (s *Signaling) signalingRequest(ctx context.Context, req *rtc.SignalReq) (*rtc.SignalResp, error) {
 	var resp rtc.SignalResp
@@ -347,7 +351,45 @@ func (s *Signaling) GetLocalCallRecords(ctx context.Context, params *sdk_struct.
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }
 
-// SearchLocalSignalCallRecords 查询本地通话记录列表。
+// GetLocalCallRecordsWithUser 查询与指定用户的全部本地单聊通话记录（排除群通话）。
+func (s *Signaling) GetLocalCallRecordsWithUser(ctx context.Context, params *sdk_struct.GetLocalCallRecordsWithUserParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalCallRecordsWithUserParams{}
+	}
+	if strings.TrimSpace(params.UserID) == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("userID is empty")
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		localCallListSessionType,
+		0, 0,
+		params.StartTime, params.EndTime,
+		"", "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		localCallListSessionType,
+		0, 0,
+		params.StartTime, params.EndTime,
+		"", "", "", "", params.UserID)
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
+}
+
+// SearchLocalSignalCallRecords 查询本地通话记录列表（不含群通话）。
 func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sdk_struct.SearchLocalSignalCallRecordsParams) ([]*sdk_struct.SignalCallRecordWithDialStatus, error) {
 	if s.db == nil {
 		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
@@ -360,7 +402,7 @@ func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sd
 	}
 	list, err := s.db.SearchSignalCallRecords(ctx,
 		params.Offset, params.Count,
-		params.SessionType,
+		localCallListSessionType,
 		params.Status,
 		params.Direction,
 		params.StartTime, params.EndTime,
@@ -387,7 +429,7 @@ func (s *Signaling) GetLocalMissedCallRecords(ctx context.Context, params *sdk_s
 		params.Count = 20
 	}
 	total, err := s.db.CountSignalCallRecords(ctx,
-		params.SessionType,
+		localCallListSessionType,
 		constant.SignalCallStatusNotConnected,
 		constant.SignalCallDirectionMissed,
 		params.StartTime, params.EndTime,
@@ -397,7 +439,7 @@ func (s *Signaling) GetLocalMissedCallRecords(ctx context.Context, params *sdk_s
 	}
 	list, err := s.db.SearchSignalCallRecords(ctx,
 		params.Offset, params.Count,
-		params.SessionType,
+		localCallListSessionType,
 		constant.SignalCallStatusNotConnected,
 		constant.SignalCallDirectionMissed,
 		params.StartTime, params.EndTime,
@@ -424,7 +466,7 @@ func (s *Signaling) GetLocalAnsweredCallRecords(ctx context.Context, params *sdk
 		params.Count = 20
 	}
 	total, err := s.db.CountSignalCallRecords(ctx,
-		params.SessionType,
+		localCallListSessionType,
 		constant.SignalCallStatusAnswered,
 		0,
 		params.StartTime, params.EndTime,
@@ -434,7 +476,7 @@ func (s *Signaling) GetLocalAnsweredCallRecords(ctx context.Context, params *sdk
 	}
 	list, err := s.db.SearchSignalCallRecords(ctx,
 		params.Offset, params.Count,
-		params.SessionType,
+		localCallListSessionType,
 		constant.SignalCallStatusAnswered,
 		0,
 		params.StartTime, params.EndTime,
@@ -461,7 +503,7 @@ func (s *Signaling) GetLocalAllCallRecords(ctx context.Context, params *sdk_stru
 		params.Count = 20
 	}
 	total, err := s.db.CountSignalCallRecords(ctx,
-		params.SessionType,
+		localCallListSessionType,
 		0, 0,
 		params.StartTime, params.EndTime,
 		params.Keyword, "", "", "", params.UserID)
@@ -470,7 +512,7 @@ func (s *Signaling) GetLocalAllCallRecords(ctx context.Context, params *sdk_stru
 	}
 	list, err := s.db.SearchSignalCallRecords(ctx,
 		params.Offset, params.Count,
-		params.SessionType,
+		localCallListSessionType,
 		0, 0,
 		params.StartTime, params.EndTime,
 		params.Keyword, "", "", "", params.UserID)
@@ -499,7 +541,7 @@ func (s *Signaling) GetLocalCallRecordsByUserName(ctx context.Context, params *s
 		params.Count = 20
 	}
 	total, err := s.db.CountSignalCallRecords(ctx,
-		params.SessionType,
+		localCallListSessionType,
 		params.Status,
 		params.Direction,
 		params.StartTime, params.EndTime,
@@ -509,7 +551,7 @@ func (s *Signaling) GetLocalCallRecordsByUserName(ctx context.Context, params *s
 	}
 	list, err := s.db.SearchSignalCallRecords(ctx,
 		params.Offset, params.Count,
-		params.SessionType,
+		localCallListSessionType,
 		params.Status,
 		params.Direction,
 		params.StartTime, params.EndTime,

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/tools/errs"
 
@@ -56,6 +57,8 @@ func (d *DataBase) CountSignalCallRecords(ctx context.Context, sessionType int32
 func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) *gorm.DB {
 	if sessionType != 0 {
 		tx = tx.Where("session_type = ?", sessionType)
+	} else {
+		tx = applyExcludeGroupCallFilter(tx)
 	}
 	if status != 0 {
 		tx = tx.Where("status = ?", status)
@@ -89,6 +92,14 @@ func applySignalCallFilters(tx *gorm.DB, sessionType int32, status int32, direct
 		tx = tx.Where("invitee_user_nickname LIKE ?", p)
 	}
 	return tx
+}
+
+// applyExcludeGroupCallFilter 排除群通话（与 signaling.isGroupChatCall 对齐：group_id 非空或群聊 session_type）。
+func applyExcludeGroupCallFilter(tx *gorm.DB) *gorm.DB {
+	return tx.Where(
+		"(group_id = '' OR group_id IS NULL) AND session_type NOT IN (?, ?)",
+		constant.WriteGroupChatType, constant.ReadGroupChatType,
+	)
 }
 
 // applySignalCallUserNameFilter 按用户名模糊匹配；多词（如 firstName + lastName）时要求每个词均命中。
@@ -132,6 +143,7 @@ func (d *DataBase) CountSignalCallRecordsByUser(ctx context.Context, userID stri
 }
 
 func applySignalCallUserFilters(tx *gorm.DB, userID string, status int32, startTime, endTime int64) *gorm.DB {
+	tx = applyExcludeGroupCallFilter(tx)
 	uid := strings.TrimSpace(userID)
 	if uid != "" {
 		pattern := "%\"" + uid + "\"%"

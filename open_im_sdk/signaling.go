@@ -50,6 +50,10 @@ func SignalingGetLocalCallRecords(callback open_im_sdk_callback.Base, operationI
 	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecords, req)
 }
 
+func SignalingGetLocalCallRecordsWithUser(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsWithUser, req)
+}
+
 func SignalingGetLocalMissedCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().GetLocalMissedCallRecords, req)
 }

@@ -233,6 +233,7 @@ func registerFunc() {
 	js.Global().Set("signalingGetTokenByRoomID", js.FuncOf(wrapperSignaling.SignalingGetTokenByRoomID))
 	js.Global().Set("signalingGetInvitationRecords", js.FuncOf(wrapperSignaling.SignalingGetInvitationRecords))
 	js.Global().Set("signalingGetLocalCallRecords", js.FuncOf(wrapperSignaling.SignalingGetLocalCallRecords))
+	js.Global().Set("signalingGetLocalCallRecordsWithUser", js.FuncOf(wrapperSignaling.SignalingGetLocalCallRecordsWithUser))
 	js.Global().Set("signalingGetLocalMissedCallRecords", js.FuncOf(wrapperSignaling.SignalingGetLocalMissedCallRecords))
 	js.Global().Set("signalingGetLocalAnsweredCallRecords", js.FuncOf(wrapperSignaling.SignalingGetLocalAnsweredCallRecords))
 	js.Global().Set("signalingGetLocalAllCallRecords", js.FuncOf(wrapperSignaling.SignalingGetLocalAllCallRecords))

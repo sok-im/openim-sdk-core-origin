@@ -201,17 +201,15 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 	*/
 
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
-		if _, connectMs := s.peekTiming(signalTimeoutReq.Invitation.RoomID); !callWasConnected(connectMs) {
-			inviteMs, connectMs, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)
-			if ok {
-				s.persistLocalCallRecord(ctx,
-					signalTimeoutReq.Invitation,
-					nil,
-					constant.SignalCallStatusNotConnected,
-					constant.SignalCallActionTimeout,
-					inviteMs, connectMs, time.Now().UnixMilli())
-				log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalTimeoutReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
-			}
+		inviteMs, _, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)
+		if ok {
+			s.persistLocalCallRecord(ctx,
+				signalTimeoutReq.Invitation,
+				nil,
+				constant.SignalCallStatusNotConnected,
+				constant.SignalCallActionTimeout,
+				inviteMs, 0, time.Now().UnixMilli())
+			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalTimeoutReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
 		}
 
 		if listener := s.listener(); listener != nil {
@@ -239,17 +237,15 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 
 	if signalCancelReq.Invitation != nil {
 		s.cancelInviteTimer(signalCancelReq.Invitation.RoomID)
-		if _, connectMs := s.peekTiming(signalCancelReq.Invitation.RoomID); !callWasConnected(connectMs) {
-			inviteMs, connectMs, ok := s.popTimingForRecord(signalCancelReq.Invitation.RoomID)
-			if ok {
-				s.persistLocalCallRecord(ctx,
-					signalCancelReq.Invitation,
-					signalCancelReq.Participant,
-					constant.SignalCallStatusNotConnected,
-					constant.SignalCallActionCancel,
-					inviteMs, connectMs, time.Now().UnixMilli())
-				log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalCancelReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
-			}
+		inviteMs, _, ok := s.popTimingForRecord(signalCancelReq.Invitation.RoomID)
+		if ok {
+			s.persistLocalCallRecord(ctx,
+				signalCancelReq.Invitation,
+				signalCancelReq.Participant,
+				constant.SignalCallStatusNotConnected,
+				constant.SignalCallActionCancel,
+				inviteMs, 0, time.Now().UnixMilli())
+			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalCancelReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 		}
 	}
 	return nil

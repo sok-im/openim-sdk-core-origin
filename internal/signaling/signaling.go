@@ -311,17 +311,14 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 		listener.OnInvitationTimeout(jsonutil.StructToJsonString(inv))
 	}
 
-	if _, connectMs := s.peekTiming(inv.RoomID); callWasConnected(connectMs) {
-		return
-	}
-	inviteMs, connectMs, ok := s.popTimingForRecord(inv.RoomID)
+	inviteMs, _, ok := s.popTimingForRecord(inv.RoomID)
 	if !ok {
 		return
 	}
 	s.persistLocalCallRecord(ctx, inv, nil,
 		constant.SignalCallStatusNotConnected,
 		constant.SignalCallActionTimeout,
-		inviteMs, connectMs, time.Now().UnixMilli())
+		inviteMs, 0, time.Now().UnixMilli())
 	log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", inv, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
 
 }

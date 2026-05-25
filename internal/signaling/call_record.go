@@ -37,6 +37,11 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		return nil
 	}
 
+	// 未接通记录不应携带接通时间，避免误算 callDuration（如超时却被展示成通话时长）。
+	if cfg.status == constant.SignalCallStatusNotConnected {
+		cfg.connectMs = 0
+	}
+
 	inviteMs := cfg.inviteMs
 	if inviteMs <= 0 {
 		inviteMs = inv.InitiateTime

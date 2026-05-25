@@ -202,6 +202,14 @@ func extractPrimaryInviteeUID(inv *rtc.InvitationInfo) string {
 	if inv == nil {
 		return ""
 	}
+	inviterID := strings.TrimSpace(inv.InviterUserID)
+	for _, uid := range inv.InviteeUserIDList {
+		if uid = strings.TrimSpace(uid); uid == "" || uid == inviterID {
+			continue
+		}
+		return uid
+	}
+	// 兼容仅含主叫自身的异常列表，避免落库时 peer 为空。
 	for _, uid := range inv.InviteeUserIDList {
 		if uid = strings.TrimSpace(uid); uid != "" {
 			return uid
@@ -245,10 +253,11 @@ func nicknameFromParticipant(userID string, p *rtc.ParticipantMetaData) string {
 }
 
 func extractInviteeNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
-	if inv == nil || len(inv.InviteeUserIDList) == 0 {
+	uid := extractPrimaryInviteeUID(inv)
+	if uid == "" {
 		return ""
 	}
-	return nicknameFromParticipant(inv.InviteeUserIDList[0], p)
+	return nicknameFromParticipant(uid, p)
 }
 
 func extractInviterNickname(inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {

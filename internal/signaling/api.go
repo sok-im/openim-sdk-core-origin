@@ -166,14 +166,14 @@ func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejec
 
 	if signalRejectReq.Invitation != nil {
 		s.cancelInviteTimer(signalRejectReq.Invitation.RoomID)
-		inviteMs, connectMs, ok := s.popTimingForRecord(signalRejectReq.Invitation.RoomID)
+		inviteMs, _, _, ok := s.popTimingForRecord(signalRejectReq.Invitation.RoomID)
 		if ok {
 			s.persistLocalCallRecord(ctx,
 				signalRejectReq.Invitation,
 				signalRejectReq.Participant,
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
-				inviteMs, connectMs, time.Now().UnixMilli())
+				inviteMs, 0, time.Now().UnixMilli())
 			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", signalRejectReq.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 	}
@@ -201,7 +201,7 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 	*/
 
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
-		inviteMs, _, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)
+		inviteMs, _, _, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)
 		if ok {
 			s.persistLocalCallRecord(ctx,
 				signalTimeoutReq.Invitation,
@@ -237,7 +237,7 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 
 	if signalCancelReq.Invitation != nil {
 		s.cancelInviteTimer(signalCancelReq.Invitation.RoomID)
-		inviteMs, _, ok := s.popTimingForRecord(signalCancelReq.Invitation.RoomID)
+		inviteMs, _, _, ok := s.popTimingForRecord(signalCancelReq.Invitation.RoomID)
 		if ok {
 			s.persistLocalCallRecord(ctx,
 				signalCancelReq.Invitation,
@@ -270,12 +270,9 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 
 	if signalHungUpReq.Invitation != nil {
 		s.cancelInviteTimer(signalHungUpReq.Invitation.RoomID)
-		inviteMs, connectMs, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
+		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
 		if ok {
-			status := constant.SignalCallStatusAnswered
-			if !callWasConnected(connectMs) {
-				status = constant.SignalCallStatusNotConnected
-			}
+			status := callRecordStatusFromTiming(connectMs, accepted)
 			s.persistLocalCallRecord(ctx,
 				signalHungUpReq.Invitation,
 				nil,

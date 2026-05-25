@@ -24,11 +24,12 @@ import (
 const roomTimingMaxAge = 10 * time.Minute
 
 // roomTiming 追踪单次通话的关键时间戳（本端视角），以 roomID 为键存于 sync.Map。
-// mu 保护 connectMs 的并发写入（inviteMs/createdAt 写入后只读，无需保护）。
+// mu 保护 connectMs/accepted 的并发写入（inviteMs/createdAt 写入后只读，无需保护）。
 type roomTiming struct {
 	mu        sync.Mutex
 	inviteMs  int64     // 本端发起或收到邀请的毫秒时间戳（写入后只读）
 	connectMs int64     // 接通时的毫秒时间戳（0 = 尚未接通）
+	accepted  bool      // 本端已执行 Accept 或对端接听通知已到达（主叫侧）
 	createdAt time.Time // 条目创建时间，用于定期清理（写入后只读）
 }
 
@@ -203,9 +204,10 @@ func (s *Signaling) storeConnectTime(roomID string, ms int64) {
 		t := v.(*roomTiming)
 		t.mu.Lock()
 		t.connectMs = ms
+		t.accepted = true
 		t.mu.Unlock()
 	} else {
-		s.roomTimings.Store(roomID, &roomTiming{connectMs: ms, createdAt: time.Now()})
+		s.roomTimings.Store(roomID, &roomTiming{connectMs: ms, accepted: true, createdAt: time.Now()})
 	}
 }
 
@@ -220,27 +222,47 @@ func (s *Signaling) peekTiming(roomID string) (inviteMs, connectMs int64) {
 	return
 }
 
+// peekTimingForRecord 读取 roomID 对应时间戳（不删除），供 Cancel 等事件判断是否已接听。
+func (s *Signaling) peekTimingForRecord(roomID string) (inviteMs, connectMs int64, accepted bool, ok bool) {
+	if v, ok2 := s.roomTimings.Load(roomID); ok2 {
+		t := v.(*roomTiming)
+		t.mu.Lock()
+		inviteMs, connectMs, accepted = t.inviteMs, t.connectMs, t.accepted
+		t.mu.Unlock()
+		ok = inviteMs > 0 || connectMs > 0
+	}
+	return
+}
+
 // popTiming 读取并删除 roomID 对应的时间戳记录；若不存在则返回零值。
-func (s *Signaling) popTiming(roomID string) (inviteMs, connectMs int64) {
+func (s *Signaling) popTiming(roomID string) (inviteMs, connectMs int64, accepted bool) {
 	if v, ok := s.roomTimings.LoadAndDelete(roomID); ok {
 		t := v.(*roomTiming)
 		t.mu.Lock()
-		inviteMs, connectMs = t.inviteMs, t.connectMs
+		inviteMs, connectMs, accepted = t.inviteMs, t.connectMs, t.accepted
 		t.mu.Unlock()
 		return
 	}
-	return 0, 0
+	return 0, 0, false
 }
 
 // popTimingForRecord 消费时间戳并判断是否可以落库；已被其它终结事件消费时返回 ok=false。
-func (s *Signaling) popTimingForRecord(roomID string) (inviteMs, connectMs int64, ok bool) {
-	inviteMs, connectMs = s.popTiming(roomID)
+func (s *Signaling) popTimingForRecord(roomID string) (inviteMs, connectMs int64, accepted bool, ok bool) {
+	inviteMs, connectMs, accepted = s.popTiming(roomID)
 	ok = inviteMs > 0 || connectMs > 0
 	return
 }
 
 func callWasConnected(connectMs int64) bool {
 	return connectMs > 0
+}
+
+// callRecordStatusFromTiming 仅在本端已接听且存在接通时间时记为已接听，避免超时/取消后 HungUp 误记为已接。
+func callRecordStatusFromTiming(connectMs int64, accepted bool) int32 {
+	if accepted && callWasConnected(connectMs) {
+		return constant.SignalCallStatusAnswered
+	}
+	return constant.SignalCallStatusNotConnected
 }
 
 // resolveCallRecordDirection 根据本端在邀请中的角色与通话状态计算 direction。
@@ -311,7 +333,7 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 		listener.OnInvitationTimeout(jsonutil.StructToJsonString(inv))
 	}
 
-	inviteMs, _, ok := s.popTimingForRecord(inv.RoomID)
+	inviteMs, _, _, ok := s.popTimingForRecord(inv.RoomID)
 	if !ok {
 		return
 	}
@@ -451,12 +473,12 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 		log.ZDebug(ctx, "lintao OnInviteeRejected", "reject", req)
 		listener.OnInviteeRejected(jsonutil.StructToJsonString(req))
 
-		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
+		inviteMs, _, _, ok := s.popTimingForRecord(req.Invitation.RoomID)
 		if ok {
 			s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
-				inviteMs, connectMs, time.Now().UnixMilli())
+				inviteMs, 0, time.Now().UnixMilli())
 			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 		return nil
@@ -494,17 +516,17 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 		listener.OnInvitationCancelled(jsonutil.StructToJsonString(req))
 
 		// 主叫挂断时服务端可能同时推送 Cancel + HungUp；已接听则仅由 HungUp 落库，避免两条未接记录。
-		if _, connectMs := s.peekTiming(req.Invitation.RoomID); callWasConnected(connectMs) {
+		if _, connectMs, accepted, _ := s.peekTimingForRecord(req.Invitation.RoomID); callRecordStatusFromTiming(connectMs, accepted) == constant.SignalCallStatusAnswered {
 			return nil
 		}
-		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
+		inviteMs, _, _, ok := s.popTimingForRecord(req.Invitation.RoomID)
 		if !ok {
 			return nil
 		}
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallActionCancel,
-			inviteMs, connectMs, time.Now().UnixMilli())
+			inviteMs, 0, time.Now().UnixMilli())
 		log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 	}
 	return nil
@@ -522,14 +544,11 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		log.ZDebug(ctx, "lintao OnHangUp", "hungUp", req)
 		listener.OnHangUp(jsonutil.StructToJsonString(req))
 
-		inviteMs, connectMs, ok := s.popTimingForRecord(req.Invitation.RoomID)
+		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(req.Invitation.RoomID)
 		if !ok {
 			return nil
 		}
-		status := constant.SignalCallStatusAnswered
-		if !callWasConnected(connectMs) {
-			status = constant.SignalCallStatusNotConnected
-		}
+		status := callRecordStatusFromTiming(connectMs, accepted)
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
 			constant.SignalCallActionHungUp,

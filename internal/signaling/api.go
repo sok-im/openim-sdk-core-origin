@@ -406,6 +406,7 @@ func (s *Signaling) SearchLocalSignalCallRecords(ctx context.Context, params *sd
 	out := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
 	for _, l := range list {
 		out = append(out, localRecordToSDK(l))
+		log.ZInfo(ctx, "lintao SearchLocalSignalCallRecords", "record", localRecordToSDK(l))
 	}
 	return out, nil
 }
@@ -443,6 +444,7 @@ func (s *Signaling) GetLocalMissedCallRecords(ctx context.Context, params *sdk_s
 	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
 	for _, l := range list {
 		records = append(records, localRecordToSDK(l))
+		log.ZInfo(ctx, "lintao GetLocalMissedCallRecords", "record", localRecordToSDK(l))
 	}
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }
@@ -480,6 +482,7 @@ func (s *Signaling) GetLocalAnsweredCallRecords(ctx context.Context, params *sdk
 	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
 	for _, l := range list {
 		records = append(records, localRecordToSDK(l))
+		log.ZInfo(ctx, "lintao GetLocalAnsweredCallRecords", "record", localRecordToSDK(l))
 	}
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }
@@ -515,6 +518,7 @@ func (s *Signaling) GetLocalAllCallRecords(ctx context.Context, params *sdk_stru
 	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
 	for _, l := range list {
 		records = append(records, localRecordToSDK(l))
+		log.ZInfo(ctx, "lintao GetLocalAllCallRecords", "record", localRecordToSDK(l))
 	}
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }

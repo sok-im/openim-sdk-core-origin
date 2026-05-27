@@ -538,7 +538,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 	if req.Invitation == nil {
 		return nil
 	}
-	if req.Invitation.InviterUserID != s.loginUserID {
+	if req.UserID != s.loginUserID {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
 		log.ZInfo(ctx, "lintao OnHangUp", "hungUp", req, "loginUserID", s.loginUserID)

@@ -26,7 +26,7 @@ func (i *SignalCallRecords) BatchUpsertSignalCallRecords(ctx context.Context, re
 	if len(records) == 0 {
 		return nil
 	}
-	_, err := exec.Exec(utils.StructToJsonString(records))
+	_, err := exec.Exec(utils.StructToJsonString(records), i.loginUserID)
 	return err
 }
 
@@ -104,11 +104,11 @@ func (i *SignalCallRecords) DeleteSignalCallRecords(ctx context.Context, sIDs []
 	if len(sIDs) == 0 {
 		return nil
 	}
-	_, err := exec.Exec(utils.StructToJsonString(sIDs))
+	_, err := exec.Exec(utils.StructToJsonString(sIDs), i.loginUserID)
 	return err
 }
 
 func (i *SignalCallRecords) ClearAllSignalCallRecords(ctx context.Context) error {
-	_, err := exec.Exec()
+	_, err := exec.Exec(i.loginUserID)
 	return err
 }

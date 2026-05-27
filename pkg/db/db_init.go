@@ -72,6 +72,7 @@ type DataBase struct {
 	loginUserID  string
 	dbDir        string
 	conn         *gorm.DB
+	signalConn   *gorm.DB
 	tableChecker *TableChecker
 	mRWMutex     sync.RWMutex
 }
@@ -81,18 +82,31 @@ func (d *DataBase) InitDB(ctx context.Context, userID string, dataDir string) er
 }
 
 func (d *DataBase) Close(ctx context.Context) error {
-	dbConn, err := d.conn.WithContext(ctx).DB()
-	if err != nil {
-		return err
-	} else {
-		if dbConn != nil {
-			err := dbConn.Close()
-			if err != nil {
-				return err
+	d.mRWMutex.Lock()
+	defer d.mRWMutex.Unlock()
+	var firstErr error
+	closeGorm := func(db *gorm.DB) {
+		if db == nil {
+			return
+		}
+		sqlDB, err := db.WithContext(ctx).DB()
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			return
+		}
+		if sqlDB != nil {
+			if err := sqlDB.Close(); err != nil && firstErr == nil {
+				firstErr = err
 			}
 		}
 	}
-	return nil
+	closeGorm(d.signalConn)
+	closeGorm(d.conn)
+	d.signalConn = nil
+	d.conn = nil
+	return firstErr
 }
 
 func NewDataBase(ctx context.Context, loginUserID string, dbDir string, logLevel int) (*DataBase, error) {
@@ -163,19 +177,61 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
-	if err = d.conn.WithContext(ctx).AutoMigrate(&model_struct.LocalSignalCallRecord{}); err != nil {
+	if err = d.initSignalDB(ctx, zLogLevel); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DataBase) signalDB() *gorm.DB {
+	if d.signalConn != nil {
+		return d.signalConn
+	}
+	return d.conn
+}
+
+func (d *DataBase) initSignalDB(ctx context.Context, zLogLevel logger.LogLevel) error {
+	signalPath := d.dbDir + "/OpenIM_signal_" + constant.BigVersion + "_" + d.loginUserID + ".db"
+	signalFileName, err := filepath.Abs(signalPath)
+	if err != nil {
+		return err
+	}
+	log.ZInfo(ctx, "sqlite signal call records", "path", signalFileName)
+
+	signalDB, err := gorm.Open(sqlite.Open(signalFileName), &gorm.Config{Logger: log.NewSqlLogger(zLogLevel, false, time.Millisecond*200)})
+	if err != nil {
+		return errs.WrapMsg(err, "open signal db failed "+signalFileName)
+	}
+	signalSQL, err := signalDB.DB()
+	if err != nil {
+		return errs.WrapMsg(err, "get signal sql db failed")
+	}
+	signalSQL.SetConnMaxLifetime(time.Hour * 1)
+	signalSQL.SetMaxOpenConns(3)
+	signalSQL.SetMaxIdleConns(2)
+	signalSQL.SetConnMaxIdleTime(time.Minute * 10)
+	d.signalConn = signalDB
+
+	if err = runSignalCallSchemaMigrations(ctx, d.signalConn, d.loginUserID); err != nil {
+		return err
+	}
+	return migrateSignalCallRecordsFromMainDB(ctx, d.conn, d.signalConn)
+}
+
+func runSignalCallSchemaMigrations(ctx context.Context, db *gorm.DB, loginUserID string) error {
+	if err := db.WithContext(ctx).AutoMigrate(&model_struct.LocalSignalCallRecord{}); err != nil {
 		return err
 	}
 
 	var dialStatusColCount int64
-	if err = d.conn.WithContext(ctx).Raw(
+	if err := db.WithContext(ctx).Raw(
 		`SELECT COUNT(*) FROM pragma_table_info('local_signal_call_records') WHERE name = 'dial_status'`,
 	).Scan(&dialStatusColCount).Error; err != nil {
 		return err
 	}
 	if dialStatusColCount > 0 {
-		// 从旧 dial_status 迁移：旧 1(未拨通)→2(未接通)，旧 2(已拨通)→1(已接听)
-		if err = d.conn.WithContext(ctx).Exec(
+		if err := db.WithContext(ctx).Exec(
 			`UPDATE local_signal_call_records SET status = CASE
 				WHEN dial_status = 1 THEN ?
 				WHEN dial_status = 2 THEN ?
@@ -189,30 +245,27 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		}
 	}
 
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET status = ? WHERE status = 0 OR status IS NULL`,
 		constant.SignalCallStatusAnswered,
 	).Error; err != nil {
 		return err
 	}
 
-	// 为 callee_match_text 增加索引（加速被叫用户名模糊查询）
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`CREATE INDEX IF NOT EXISTS idx_callee_match_text ON local_signal_call_records(callee_match_text)`,
 	).Error; err != nil {
 		return err
 	}
 
-	// 旧数据无 direction 列时根据 inviter_user_id 推断
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET direction = CASE WHEN inviter_user_id = ? THEN ? ELSE ? END WHERE direction = 0 OR direction IS NULL`,
-		d.loginUserID, constant.SignalCallDirectionOutgoing, constant.SignalCallDirectionIncoming,
+		loginUserID, constant.SignalCallDirectionOutgoing, constant.SignalCallDirectionIncoming,
 	).Error; err != nil {
 		return err
 	}
 
-	// 由 direction 补全 role：1=主叫 2/3=被叫
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET role = CASE
 			WHEN direction = ? THEN ?
 			WHEN direction IN (?, ?) THEN ?
@@ -225,24 +278,21 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
-	// 已接听记录补全 connect_time
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET connect_time = create_time WHERE (connect_time = 0 OR connect_time IS NULL) AND status = ?`,
 		constant.SignalCallStatusAnswered,
 	).Error; err != nil {
 		return err
 	}
 
-	// 已接听记录补全 call_duration
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET call_duration = CASE WHEN end_time > connect_time THEN end_time - connect_time ELSE 0 END WHERE (call_duration = 0 OR call_duration IS NULL) AND status = ? AND connect_time > 0`,
 		constant.SignalCallStatusAnswered,
 	).Error; err != nil {
 		return err
 	}
 
-	// 补全 dial_duration：已接听=connect_time-create_time；未接通=end_time-create_time
-	if err = d.conn.WithContext(ctx).Exec(
+	if err := db.WithContext(ctx).Exec(
 		`UPDATE local_signal_call_records SET dial_duration = CASE
 			WHEN connect_time > 0 AND connect_time > create_time THEN connect_time - create_time
 			WHEN end_time > create_time THEN end_time - create_time
@@ -252,6 +302,46 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 		return err
 	}
 
+	return nil
+}
+
+// migrateSignalCallRecordsFromMainDB 将旧版主库中的通话记录一次性迁入独立库（按 loginUserID 隔离）。
+func migrateSignalCallRecordsFromMainDB(ctx context.Context, mainDB, signalDB *gorm.DB) error {
+	if mainDB == nil || signalDB == nil {
+		return nil
+	}
+	var mainTableCount int64
+	if err := mainDB.WithContext(ctx).Raw(
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='local_signal_call_records'`,
+	).Scan(&mainTableCount).Error; err != nil || mainTableCount == 0 {
+		return err
+	}
+
+	var signalCount int64
+	if err := signalDB.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{}).Count(&signalCount).Error; err != nil {
+		return err
+	}
+	if signalCount > 0 {
+		return nil
+	}
+
+	var records []*model_struct.LocalSignalCallRecord
+	if err := mainDB.WithContext(ctx).Find(&records).Error; err != nil {
+		return err
+	}
+	if len(records) == 0 {
+		return nil
+	}
+
+	log.ZInfo(ctx, "migrate signal call records to per-user signal db", "count", len(records))
+	for _, r := range records {
+		if r == nil || r.SID == "" {
+			continue
+		}
+		if err := signalDB.WithContext(ctx).Save(r).Error; err != nil {
+			return errs.WrapMsg(err, "migrateSignalCallRecordsFromMainDB Save failed")
+		}
+	}
 	return nil
 }
 

@@ -27,7 +27,7 @@ func (d *DataBase) BatchUpsertSignalCallRecords(ctx context.Context, records []*
 		if r == nil || r.SID == "" {
 			continue
 		}
-		if err := d.conn.WithContext(ctx).Save(r).Error; err != nil {
+		if err := d.signalDB().WithContext(ctx).Save(r).Error; err != nil {
 			return errs.WrapMsg(err, "BatchUpsertSignalCallRecords Save failed")
 		}
 	}
@@ -37,7 +37,7 @@ func (d *DataBase) BatchUpsertSignalCallRecords(ctx context.Context, records []*
 func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
-	tx := d.conn.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
 	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID)
 	var list []*model_struct.LocalSignalCallRecord
 	err := tx.Order("create_time DESC").Offset(offset).Limit(count).Find(&list).Error
@@ -47,7 +47,7 @@ func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count in
 func (d *DataBase) CountSignalCallRecords(ctx context.Context, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) (int64, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
-	tx := d.conn.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
 	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID)
 	var n int64
 	err := tx.Count(&n).Error
@@ -125,7 +125,7 @@ func applySignalCallUserNameFilter(tx *gorm.DB, userName string) *gorm.DB {
 func (d *DataBase) SearchSignalCallRecordsByUser(ctx context.Context, userID string, status int32, offset, count int, startTime, endTime int64) ([]*model_struct.LocalSignalCallRecord, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
-	tx := d.conn.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
 	tx = applySignalCallUserFilters(tx, userID, status, startTime, endTime)
 	var list []*model_struct.LocalSignalCallRecord
 	err := tx.Order("create_time DESC").Offset(offset).Limit(count).Find(&list).Error
@@ -135,7 +135,7 @@ func (d *DataBase) SearchSignalCallRecordsByUser(ctx context.Context, userID str
 func (d *DataBase) CountSignalCallRecordsByUser(ctx context.Context, userID string, status int32, startTime, endTime int64) (int64, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
-	tx := d.conn.WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
 	tx = applySignalCallUserFilters(tx, userID, status, startTime, endTime)
 	var n int64
 	err := tx.Count(&n).Error
@@ -168,7 +168,7 @@ func (d *DataBase) GetSignalCallRecordBySID(ctx context.Context, sID string) (*m
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	var rec model_struct.LocalSignalCallRecord
-	err := d.conn.WithContext(ctx).Where("s_id = ?", sID).Take(&rec).Error
+	err := d.signalDB().WithContext(ctx).Where("s_id = ?", sID).Take(&rec).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.ErrRecordNotFound.Wrap()
@@ -185,7 +185,7 @@ func (d *DataBase) DeleteSignalCallRecords(ctx context.Context, sIDs []string) e
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	return errs.WrapMsg(
-		d.conn.WithContext(ctx).Where("s_id IN ?", sIDs).Delete(&model_struct.LocalSignalCallRecord{}).Error,
+		d.signalDB().WithContext(ctx).Where("s_id IN ?", sIDs).Delete(&model_struct.LocalSignalCallRecord{}).Error,
 		"DeleteSignalCallRecords failed",
 	)
 }
@@ -194,7 +194,7 @@ func (d *DataBase) ClearAllSignalCallRecords(ctx context.Context) error {
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	return errs.WrapMsg(
-		d.conn.WithContext(ctx).Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model_struct.LocalSignalCallRecord{}).Error,
+		d.signalDB().WithContext(ctx).Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model_struct.LocalSignalCallRecord{}).Error,
 		"ClearAllSignalCallRecords failed",
 	)
 }

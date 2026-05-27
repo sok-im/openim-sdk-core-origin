@@ -541,7 +541,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 	if req.UserID != s.loginUserID {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
-		log.ZDebug(ctx, "lintao OnHangUp", "hungUp", req)
+		log.ZInfo(ctx, "lintao OnHangUp", "hungUp", req, "loginUserID", s.loginUserID)
 		listener.OnHangUp(jsonutil.StructToJsonString(req))
 
 		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(req.Invitation.RoomID)

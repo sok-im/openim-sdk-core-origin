@@ -32,6 +32,16 @@ func (u *LoginMgr) VerifyCaptcha(ctx context.Context, req *pbcaptcha.VerifyCaptc
 	return api.VerifyCaptcha.Invoke(ctx, req)
 }
 
+// GenerateClickCaptcha 请求服务端生成点选验证码（对应 HTTP POST /captcha/click_generate）。
+func (u *LoginMgr) GenerateClickCaptcha(ctx context.Context) (*pbcaptcha.GenerateClickCaptchaResp, error) {
+	return api.GenerateClickCaptcha.Invoke(ctx, &pbcaptcha.GenerateClickCaptchaReq{})
+}
+
+// VerifyClickCaptcha 提交用户点选结果（对应 HTTP POST /captcha/click_verify）。
+func (u *LoginMgr) VerifyClickCaptcha(ctx context.Context, req *pbcaptcha.VerifyClickCaptchaReq) (*pbcaptcha.VerifyClickCaptchaResp, error) {
+	return api.VerifyClickCaptcha.Invoke(ctx, req)
+}
+
 // GenerateCaptcha 在已 InitSDK 后即可调用，无需登录。
 func GenerateCaptcha(callback open_im_sdk_callback.Base, operationID string) {
 	call(callback, operationID, UserForSDK.GenerateCaptcha)
@@ -40,4 +50,14 @@ func GenerateCaptcha(callback open_im_sdk_callback.Base, operationID string) {
 // VerifyCaptcha 参数 req 为 VerifyCaptchaReq 的 JSON，字段 captchaID、x、y。
 func VerifyCaptcha(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.VerifyCaptcha, req)
+}
+
+// GenerateClickCaptcha 在已 InitSDK 后即可调用，无需登录。
+func GenerateClickCaptcha(callback open_im_sdk_callback.Base, operationID string) {
+	call(callback, operationID, UserForSDK.GenerateClickCaptcha)
+}
+
+// VerifyClickCaptcha 参数 req 为 VerifyClickCaptchaReq 的 JSON，字段 captchaID、dots。
+func VerifyClickCaptcha(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.VerifyClickCaptcha, req)
 }

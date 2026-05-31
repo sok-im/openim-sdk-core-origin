@@ -28,9 +28,11 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/internal/third/file"
 
 	icrypto "github.com/openimsdk/openim-sdk-core/v3/internal/crypto"
+	"github.com/openimsdk/openim-sdk-core/v3/internal/openmls"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/redpacket"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/relation"
 	sig "github.com/openimsdk/openim-sdk-core/v3/internal/signaling"
+	ivirgil "github.com/openimsdk/openim-sdk-core/v3/internal/virgilsecurity"
 
 	conv "github.com/openimsdk/openim-sdk-core/v3/internal/conversation_msg"
 	"github.com/openimsdk/openim-sdk-core/v3/internal/group"
@@ -87,6 +89,9 @@ func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if shortFuncName == "GenerateCaptcha-fm" || shortFuncName == "VerifyCaptcha-fm" {
 		return nil
 	}
+	if shortFuncName == "GenerateClickCaptcha-fm" || shortFuncName == "VerifyClickCaptcha-fm" {
+		return nil
+	}
 	if shortFuncName == "PhoneGetSNInfo-fm" {
 		return nil
 	}
@@ -106,8 +111,10 @@ type LoginMgr struct {
 	user         *user.User
 	file         *file.File
 	signaling    *sig.Signaling
-	crypto       *icrypto.Crypto
-	redpacket    *redpacket.RedPacket
+	crypto          *icrypto.Crypto
+	redpacket       *redpacket.RedPacket
+	virgilSecurity  *ivirgil.VirgilSecurity
+	openMLS         *openmls.OpenMLS
 
 	db           db_interface.DataBase
 	longConnMgr  *interaction.LongConnMgr
@@ -232,6 +239,14 @@ func (u *LoginMgr) Crypto() *icrypto.Crypto {
 
 func (u *LoginMgr) RedPacket() *redpacket.RedPacket {
 	return u.redpacket
+}
+
+func (u *LoginMgr) VirgilSecurity() *ivirgil.VirgilSecurity {
+	return u.virgilSecurity
+}
+
+func (u *LoginMgr) OpenMLS() *openmls.OpenMLS {
+	return u.openMLS
 }
 
 func (u *LoginMgr) SetConversationListener(conversationListener open_im_sdk_callback.OnConversationListener) {
@@ -383,6 +398,8 @@ func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
 	u.signaling = sig.NewSignaling(u.longConnMgr, u.loginUserID, u.info.PlatformID, u.db)
 	u.crypto = icrypto.NewCrypto(u.loginUserID)
 	u.redpacket = redpacket.NewRedPacket()
+	u.virgilSecurity = ivirgil.NewVirgilSecurity()
+	u.openMLS = openmls.NewOpenMLS()
 	log.ZDebug(ctx, "forcedSynchronization success...", "login cost time: ", time.Since(t1))
 
 	u.msgSyncer, _ = interaction.NewMsgSyncer(ctx, u.conversationCh, u.msgSyncerCh, u.loginUserID, u.longConnMgr, u.db, 0)

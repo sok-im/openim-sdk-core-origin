@@ -134,8 +134,10 @@ var (
 )
 
 var (
-	GenerateCaptcha = newApi[captcha.GenerateCaptchaReq, captcha.GenerateCaptchaResp]("/captcha/generate")
-	VerifyCaptcha   = newApi[captcha.VerifyCaptchaReq, captcha.VerifyCaptchaResp]("/captcha/verify")
+	GenerateCaptcha      = newApi[captcha.GenerateCaptchaReq, captcha.GenerateCaptchaResp]("/captcha/generate")
+	VerifyCaptcha        = newApi[captcha.VerifyCaptchaReq, captcha.VerifyCaptchaResp]("/captcha/verify")
+	GenerateClickCaptcha = newApi[captcha.GenerateClickCaptchaReq, captcha.GenerateClickCaptchaResp]("/captcha/click_generate")
+	VerifyClickCaptcha   = newApi[captcha.VerifyClickCaptchaReq, captcha.VerifyClickCaptchaResp]("/captcha/click_verify")
 )
 
 var (

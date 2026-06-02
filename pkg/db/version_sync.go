@@ -25,12 +25,14 @@ import (
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/tools/errs"
+	"github.com/openimsdk/tools/log"
 )
 
 func (d *DataBase) GetVersionSync(ctx context.Context, tableName, entityID string) (*model_struct.LocalVersionSync, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	if d.conn == nil {
+		log.ZWarn(ctx, "database is closed")
 		return nil, errs.ErrRecordNotFound.WrapMsg("database is closed")
 	}
 	var res model_struct.LocalVersionSync

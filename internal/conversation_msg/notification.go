@@ -541,6 +541,7 @@ func executeSyncFunction(ctx context.Context, fn func(c context.Context) error, 
 	// they can outlive the DoListener goroutine and run after db.Close() has
 	// set the gorm connection to nil, causing a nil-pointer panic.
 	if ctx.Err() != nil {
+		log.ZWarn(ctx, "executeSyncFunction ctx err", ctx.Err())
 		return
 	}
 

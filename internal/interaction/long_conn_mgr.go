@@ -256,6 +256,13 @@ func (c *LongConnMgr) writePump(ctx context.Context) {
 		close(c.send)
 	}()
 	for {
+		// Logout/cancel should stop write loop immediately to avoid consuming
+		// queued messages and repeatedly retrying writes on a closed connection.
+		if ctx.Err() != nil {
+			c.closedErr = ctx.Err()
+			log.ZInfo(c.ctx, "writePump done, sdk logout.....")
+			return
+		}
 		select {
 		case <-ctx.Done():
 			c.closedErr = ctx.Err()
@@ -284,7 +291,7 @@ func (c *LongConnMgr) writePump(ctx context.Context) {
 				if code, ok := errs.Unwrap(err).(errs.CodeError); ok {
 					resp.ErrCode = code.Code()
 					resp.ErrMsg = code.Msg()
-				} else {
+				} else if !isExpectedCloseError(err, ctx) {
 					log.ZError(c.ctx, "writeBinaryMsgAndRetry failed", err, "wsReq", message.Message)
 				}
 
@@ -372,13 +379,21 @@ func (c *LongConnMgr) sendAndWaitResp(msg *GeneralWsReq) (*GeneralWsResp, error)
 func (c *LongConnMgr) writeBinaryMsgAndRetry(msg *GeneralWsReq) (chan *GeneralWsResp, error) {
 	msgIncr, tempChan := c.Syncer.AddCh(msg.SendID)
 	msg.MsgIncr = msgIncr
+	if c.ctx.Err() != nil {
+		return tempChan, sdkerrs.ErrNetwork.WrapMsg("connection closed,re conning...")
+	}
 	if c.GetConnectionStatus() != Connected && msg.ReqIdentifier == constant.GetNewestSeq {
 		return tempChan, sdkerrs.ErrNetwork.WrapMsg("connection closed,conning...")
 	}
 	for i := 0; i < maxReconnectAttempts; i++ {
+		if c.ctx.Err() != nil {
+			return tempChan, sdkerrs.ErrNetwork.WrapMsg("connection closed,re conning...")
+		}
 		err := c.writeBinaryMsg(*msg)
 		if err != nil {
-			log.ZError(c.ctx, "send binary message error", err, "message", msg)
+			if !isExpectedCloseError(err, c.ctx) {
+				log.ZError(c.ctx, "send binary message error", err, "message", msg)
+			}
 			c.closedErr = err
 			_ = c.close()
 			time.Sleep(time.Second * 1)
@@ -758,4 +773,15 @@ func (c *LongConnMgr) writePongMsg() error {
 	}
 
 	return c.conn.WriteMessage(PongMessage, nil)
+}
+
+func isExpectedCloseError(err error, ctx context.Context) bool {
+	if err == nil {
+		return false
+	}
+	if ctx != nil && ctx.Err() != nil {
+		return true
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "connection closed") || strings.Contains(msg, "conn has closed")
 }

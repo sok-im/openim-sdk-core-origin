@@ -32,7 +32,7 @@ func (d *DataBase) GetVersionSync(ctx context.Context, tableName, entityID strin
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	if d.conn == nil {
-		log.ZWarn(ctx, "database is closed")
+		log.ZWarn(ctx, "database is closed", nil)
 		return nil, errs.ErrRecordNotFound.WrapMsg("database is closed")
 	}
 	var res model_struct.LocalVersionSync

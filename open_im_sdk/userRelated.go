@@ -105,16 +105,16 @@ func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 }
 
 type LoginMgr struct {
-	relation     *relation.Relation
-	group        *group.Group
-	conversation *conv.Conversation
-	user         *user.User
-	file         *file.File
-	signaling    *sig.Signaling
-	crypto          *icrypto.Crypto
-	redpacket       *redpacket.RedPacket
-	virgilSecurity  *ivirgil.VirgilSecurity
-	openMLS         *openmls.OpenMLS
+	relation       *relation.Relation
+	group          *group.Group
+	conversation   *conv.Conversation
+	user           *user.User
+	file           *file.File
+	signaling      *sig.Signaling
+	crypto         *icrypto.Crypto
+	redpacket      *redpacket.RedPacket
+	virgilSecurity *ivirgil.VirgilSecurity
+	openMLS        *openmls.OpenMLS
 
 	db           db_interface.DataBase
 	longConnMgr  *interaction.LongConnMgr
@@ -148,6 +148,10 @@ type LoginMgr struct {
 	cancel    context.CancelFunc
 	info      *ccontext.GlobalConfig
 	id2MinSeq map[string]int64
+
+	// wg tracks goroutines started in run() so logout() can wait for them to
+	// fully exit before closing the database and re-initialising resources.
+	wg sync.WaitGroup
 }
 
 func (u *LoginMgr) GroupListener() open_im_sdk_callback.OnGroupListener {
@@ -433,9 +437,19 @@ func setListener[T any](ctx context.Context, listener *T, getter func() T, setFu
 
 func (u *LoginMgr) run(ctx context.Context) {
 	u.longConnMgr.Run(ctx)
-	go u.msgSyncer.DoListener(ctx)
-	go common.DoListener(u.ctx, u.conversation)
-	go u.logoutListener(ctx)
+	u.wg.Add(3)
+	go func() {
+		defer u.wg.Done()
+		u.msgSyncer.DoListener(ctx)
+	}()
+	go func() {
+		defer u.wg.Done()
+		common.DoListener(u.ctx, u.conversation)
+	}()
+	go func() {
+		defer u.wg.Done()
+		u.logoutListener(ctx)
+	}()
 }
 
 func (u *LoginMgr) InitSDK(config sdk_struct.IMConfig, listener open_im_sdk_callback.OnConnListener) bool {
@@ -485,6 +499,13 @@ func (u *LoginMgr) UnInitSDK() {
 
 // token error recycle recourse, kicked not recycle
 func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Sprintf("panic: %+v\n%s", r, debug.Stack())
+			log.ZWarn(ctx, "logout panic", nil, "panic info", err)
+		}
+	}()
+
 	if ccontext.Info(ctx).OperationID() == LogoutTips {
 		isTokenValid = true
 	}
@@ -499,12 +520,18 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 		}
 	}
 	u.Exit()
+	// Wait for all goroutines started in run() to finish before touching the
+	// database or re-initialising channels.  Without this wait, doConnected
+	// (called synchronously inside handlePushMsgAndEvent) can still be
+	// executing a db call after db.Close() returns, causing a nil-pointer panic.
+	u.wg.Wait()
 	if u.signaling != nil {
 		u.signaling.Close()
 	}
-	err := u.db.Close(u.ctx)
-	if err != nil {
-		log.ZWarn(ctx, "TriggerCmdLogout db recycle resources failed...", err)
+	if u.db != nil {
+		if err := u.db.Close(u.ctx); err != nil {
+			log.ZWarn(ctx, "TriggerCmdLogout db recycle resources failed...", err)
+		}
 	}
 	// user object must be rest  when user logout
 	u.initResources()

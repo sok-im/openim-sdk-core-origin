@@ -30,6 +30,9 @@ import (
 func (d *DataBase) GetVersionSync(ctx context.Context, tableName, entityID string) (*model_struct.LocalVersionSync, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
+	if d.conn == nil {
+		return nil, errs.ErrRecordNotFound.WrapMsg("database is closed")
+	}
 	var res model_struct.LocalVersionSync
 	err := d.conn.WithContext(ctx).Where("`table_name` = ? and `entity_id` = ?", tableName, entityID).Take(&res).Error
 	if err != nil {

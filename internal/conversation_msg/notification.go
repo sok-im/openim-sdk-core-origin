@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -472,6 +473,13 @@ func (c *Conversation) doUpdateMessage(c2v common.Cmd2Value) {
 func (c *Conversation) syncData(c2v common.Cmd2Value) {
 	c.conversationSyncMutex.Lock()
 	defer c.conversationSyncMutex.Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			log.ZWarn(c2v.Ctx, "syncData panic recovered", nil,
+				"panic", fmt.Sprintf("%+v", r),
+				"stack", string(debug.Stack()))
+		}
+	}()
 
 	ctx := c2v.Ctx
 	c.startTime = time.Now()
@@ -520,6 +528,20 @@ func runSyncFunctions(ctx context.Context, funcs []func(c context.Context) error
 func executeSyncFunction(ctx context.Context, fn func(c context.Context) error, wg *sync.WaitGroup) {
 	if wg != nil {
 		defer wg.Done()
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			log.ZWarn(ctx, "executeSyncFunction panic recovered", nil,
+				"panic", fmt.Sprintf("%+v", r),
+				"stack", string(debug.Stack()))
+		}
+	}()
+	// If the session context is already cancelled (e.g. during logout), skip
+	// the sync entirely.  asyncNoWait goroutines are spawned fire-and-forget;
+	// they can outlive the DoListener goroutine and run after db.Close() has
+	// set the gorm connection to nil, causing a nil-pointer panic.
+	if ctx.Err() != nil {
+		return
 	}
 
 	funcName := runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()

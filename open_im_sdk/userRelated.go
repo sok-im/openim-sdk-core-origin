@@ -534,7 +534,7 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 			log.ZWarn(ctx, "TriggerCmdLogout db recycle resources failed...", err)
 		}
 	} else {
-		log.ZWarn(ctx, "TriggerCmdLogout db is nil")
+		log.ZWarn(ctx, "TriggerCmdLogout db is nil", nil)
 	}
 	// user object must be rest  when user logout
 	u.initResources()

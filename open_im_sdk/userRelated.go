@@ -92,6 +92,9 @@ func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if shortFuncName == "GenerateClickCaptcha-fm" || shortFuncName == "VerifyClickCaptcha-fm" {
 		return nil
 	}
+	if shortFuncName == "TotpVerify-fm" {
+		return nil
+	}
 	if shortFuncName == "PhoneGetSNInfo-fm" {
 		return nil
 	}

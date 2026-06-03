@@ -340,3 +340,7 @@ func (e *emptySignalingListener) OnRoomParticipantConnected(onRoomParticipantCon
 func (e *emptySignalingListener) OnRoomParticipantDisconnected(onRoomParticipantDisconnectedCallback string) {
 	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnRoomParticipantDisconnected")
 }
+
+func (e *emptySignalingListener) OnGroupCallStatusChanged(groupCallStatusCallback string) {
+	log.ZWarn(e.ctx, "SignalingListener is not implemented", nil, "callback", "OnGroupCallStatusChanged")
+}

@@ -129,6 +129,10 @@ type OnSignalingListener interface {
 	OnRoomParticipantConnected(onRoomParticipantConnectedCallback string)
 
 	OnRoomParticipantDisconnected(onRoomParticipantDisconnectedCallback string)
+
+	// OnGroupCallStatusChanged is fired for non-invited group members when a group
+	// call starts or ends. Payload JSON: {type,status,groupID,roomID,mediaType,inviterUserID}.
+	OnGroupCallStatusChanged(groupCallStatusCallback string)
 }
 
 type UploadFileCallback interface {

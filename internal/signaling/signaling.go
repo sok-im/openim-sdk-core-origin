@@ -361,13 +361,64 @@ func (s *Signaling) doNotification(ctx context.Context, msg *sdkws.MsgData) erro
 		return s.handleRoomParticipantConnected(ctx, msg)
 	case pConstant.RoomParticipantsDisconnectedNotification:
 		return s.handleRoomParticipantDisconnected(ctx, msg)
-	case pConstant.StreamChangedNotification, pConstant.CustomSignalNotification:
+	case pConstant.CustomSignalNotification:
+		return s.handleCustomSignalNotification(ctx, msg)
+	case pConstant.StreamChangedNotification:
 		log.ZDebug(ctx, "ignoring signaling notification", "contentType", msg.ContentType)
 		return nil
 	default:
 		log.ZWarn(ctx, "unhandled signaling notification", nil, "contentType", msg.ContentType)
 		return nil
 	}
+}
+
+const (
+	groupCallStatusPayloadType = "groupCallStatus"
+	groupCallStatusStarted     = "started"
+	groupCallStatusEnded       = "ended"
+)
+
+// groupCallStatusPayload mirrors the server broadcast in internal/rpc/rtc/signal.go.
+type groupCallStatusPayload struct {
+	Type          string `json:"type"`
+	Status        string `json:"status"`
+	GroupID       string `json:"groupID"`
+	RoomID        string `json:"roomID"`
+	MediaType     string `json:"mediaType"`
+	InviterUserID string `json:"inviterUserID"`
+}
+
+// handleCustomSignalNotification handles CustomSignalNotification (1605).
+// Currently supports group-wide "call in progress" banners for non-invited members.
+func (s *Signaling) handleCustomSignalNotification(ctx context.Context, msg *sdkws.MsgData) error {
+	var payload groupCallStatusPayload
+	if err := jsonutil.JsonUnmarshal(msg.Content, &payload); err != nil {
+		return err
+	}
+	if payload.Type != groupCallStatusPayloadType {
+		log.ZDebug(ctx, "ignore unknown custom signal payload", "type", payload.Type)
+		return nil
+	}
+	if payload.GroupID == "" || payload.RoomID == "" {
+		log.ZWarn(ctx, "invalid groupCallStatus payload", nil, "payload", payload)
+		return nil
+	}
+	switch payload.Status {
+	case groupCallStatusStarted, groupCallStatusEnded:
+	default:
+		log.ZWarn(ctx, "unknown groupCallStatus", nil, "status", payload.Status)
+		return nil
+	}
+
+	listener := s.listener()
+	if listener == nil {
+		log.ZWarn(ctx, "signaling listener is nil, skipping groupCallStatus", nil)
+		return nil
+	}
+
+	log.ZDebug(ctx, "OnGroupCallStatusChanged", "payload", payload)
+	listener.OnGroupCallStatusChanged(jsonutil.StructToJsonString(payload))
+	return nil
 }
 
 func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.MsgData) error {

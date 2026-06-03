@@ -484,6 +484,10 @@ func (s SignalingCallback) OnHangUp(hangUpCallback string) {
 	s.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(hangUpCallback).SendMessage()
 }
 
+func (s SignalingCallback) OnGroupCallStatusChanged(groupCallStatusCallback string) {
+	s.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupCallStatusCallback).SendMessage()
+}
+
 func NewSignalingCallback(callback *js.Value) *SignalingCallback {
 	return &SignalingCallback{CallbackWriter: NewEventData(callback)}
 }

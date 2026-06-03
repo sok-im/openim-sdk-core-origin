@@ -129,10 +129,21 @@ func NewLongConnMgr(ctx context.Context, listener open_im_sdk_callback.OnConnLis
 	l.ctx = ctx
 	return l
 }
-func (c *LongConnMgr) Run(ctx context.Context) {
-	go c.readPump(ctx)
-	go c.writePump(ctx)
-	go c.heartbeat(ctx)
+func (c *LongConnMgr) Run(ctx context.Context, wg *sync.WaitGroup) {
+	startPump := func(fn func(context.Context)) {
+		if wg != nil {
+			wg.Add(1)
+		}
+		go func() {
+			if wg != nil {
+				defer wg.Done()
+			}
+			fn(ctx)
+		}()
+	}
+	startPump(c.readPump)
+	startPump(c.writePump)
+	startPump(c.heartbeat)
 }
 
 func (c *LongConnMgr) SendReqWaitResp(ctx context.Context, m proto.Message, reqIdentifier int, resp proto.Message) error {
@@ -205,7 +216,13 @@ func (c *LongConnMgr) readPump(ctx context.Context) {
 		}
 		if err != nil {
 			log.ZWarn(c.ctx, "reConn", err)
-			time.Sleep(c.reconnectStrategy.GetSleepInterval())
+			select {
+			case <-ctx.Done():
+				c.closedErr = ctx.Err()
+				log.ZInfo(c.ctx, "readPump done, sdk logout.....")
+				return
+			case <-time.After(c.reconnectStrategy.GetSleepInterval()):
+			}
 			continue
 		}
 		c.conn.SetReadLimit(maxMessageSize)
@@ -274,7 +291,7 @@ func (c *LongConnMgr) writePump(ctx context.Context) {
 			}
 			log.ZDebug(c.ctx, "writePump recv message", "reqIdentifier", message.Message.ReqIdentifier,
 				"operationID", message.Message.OperationID, "sendID", message.Message.SendID)
-			resp, err := c.sendAndWaitResp(&message.Message)
+			resp, err := c.sendAndWaitResp(ctx, &message.Message)
 			if err != nil {
 				resp = &GeneralWsResp{
 					ReqIdentifier: message.Message.ReqIdentifier,
@@ -353,39 +370,50 @@ func getGoroutineID() int64 {
 	return id
 }
 
-func (c *LongConnMgr) sendAndWaitResp(msg *GeneralWsReq) (*GeneralWsResp, error) {
-	tempChan, err := c.writeBinaryMsgAndRetry(msg)
+func (c *LongConnMgr) sendAndWaitResp(ctx context.Context, msg *GeneralWsReq) (*GeneralWsResp, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	tempChan, err := c.writeBinaryMsgAndRetry(ctx, msg)
 	defer c.Syncer.DelCh(msg.MsgIncr)
 	if err != nil {
 		return nil, err
-	} else {
-		select {
-		case resp := <-tempChan:
-			return resp, nil
-		case <-time.After(sendAndWaitTime):
-			return nil, sdkerrs.ErrNetworkTimeOut
-		}
-
+	}
+	select {
+	case resp := <-tempChan:
+		return resp, nil
+	case <-time.After(sendAndWaitTime):
+		return nil, sdkerrs.ErrNetworkTimeOut
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 }
 
-func (c *LongConnMgr) writeBinaryMsgAndRetry(msg *GeneralWsReq) (chan *GeneralWsResp, error) {
+func (c *LongConnMgr) writeBinaryMsgAndRetry(ctx context.Context, msg *GeneralWsReq) (chan *GeneralWsResp, error) {
 	msgIncr, tempChan := c.Syncer.AddCh(msg.SendID)
 	msg.MsgIncr = msgIncr
 	if c.GetConnectionStatus() != Connected && msg.ReqIdentifier == constant.GetNewestSeq {
 		return tempChan, sdkerrs.ErrNetwork.WrapMsg("connection closed,conning...")
 	}
 	for i := 0; i < maxReconnectAttempts; i++ {
+		if err := ctx.Err(); err != nil {
+			c.Syncer.DelCh(msgIncr)
+			return nil, err
+		}
 		err := c.writeBinaryMsg(*msg)
 		if err != nil {
 			log.ZError(c.ctx, "send binary message error", err, "message", msg)
 			c.closedErr = err
 			_ = c.close()
-			time.Sleep(time.Second * 1)
+			select {
+			case <-ctx.Done():
+				c.Syncer.DelCh(msgIncr)
+				return nil, ctx.Err()
+			case <-time.After(time.Second):
+			}
 			continue
-		} else {
-			return tempChan, nil
 		}
+		return tempChan, nil
 	}
 	return nil, sdkerrs.ErrNetwork.WrapMsg("send binary message error")
 }

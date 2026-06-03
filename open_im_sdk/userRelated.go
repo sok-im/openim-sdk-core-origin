@@ -149,8 +149,8 @@ type LoginMgr struct {
 	info      *ccontext.GlobalConfig
 	id2MinSeq map[string]int64
 
-	// wg tracks goroutines started in run() so logout() can wait for them to
-	// fully exit before closing the database and re-initialising resources.
+	// wg tracks goroutines started in run() (long-conn pumps, listeners) so
+	// logout() can wait for them to fully exit before closing the database.
 	wg sync.WaitGroup
 }
 
@@ -436,7 +436,7 @@ func setListener[T any](ctx context.Context, listener *T, getter func() T, setFu
 }
 
 func (u *LoginMgr) run(ctx context.Context) {
-	u.longConnMgr.Run(ctx)
+	u.longConnMgr.Run(ctx, &u.wg)
 	u.wg.Add(3)
 	go func() {
 		defer u.wg.Done()

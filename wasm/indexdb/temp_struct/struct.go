@@ -154,8 +154,12 @@ type LocalUser struct {
 	Ex               string `json:"ex,omitempty"`
 	AttachedInfo     string `json:"attachedInfo,omitempty"`
 	GlobalRecvMsgOpt int32  `json:"globalRecvMsgOpt,omitempty"`
-	Phone            string `json:"phone,omitempty"`
-	AreaCode         string `json:"areaCode,omitempty"`
+	Phone              string `json:"phone,omitempty"`
+	AreaCode           string `json:"areaCode,omitempty"`
+	CallRingtoneURL    string `json:"callRingtoneURL,omitempty"`
+	CallRingtoneName   string `json:"callRingtoneName,omitempty"`
+	CallRingtoneCover  string `json:"callRingtoneCover,omitempty"`
+	CallRingtoneAuthor string `json:"callRingtoneAuthor,omitempty"`
 }
 
 type LocalUserCommand struct {

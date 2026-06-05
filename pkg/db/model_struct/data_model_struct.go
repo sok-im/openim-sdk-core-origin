@@ -180,6 +180,11 @@ type LocalUser struct {
 	// Phone 对应服务端 UserInfo.Phone（有权限时下发）；DB 列名保持 phone_name 以兼容已有库。
 	Phone    string `gorm:"column:phone_name;type:varchar(64)" json:"phone"`
 	AreaCode string `gorm:"column:area_code;type:varchar(32)" json:"areaCode"`
+	// CallRingtone* 对应服务端 UserInfo 来电铃声字段。
+	CallRingtoneURL    string `gorm:"column:call_ringtone_url;type:varchar(512)" json:"callRingtoneURL"`
+	CallRingtoneName   string `gorm:"column:call_ringtone_name;type:varchar(255)" json:"callRingtoneName"`
+	CallRingtoneCover  string `gorm:"column:call_ringtone_cover;type:varchar(512)" json:"callRingtoneCover"`
+	CallRingtoneAuthor string `gorm:"column:call_ringtone_author;type:varchar(255)" json:"callRingtoneAuthor"`
 }
 
 type LocalBlack struct {

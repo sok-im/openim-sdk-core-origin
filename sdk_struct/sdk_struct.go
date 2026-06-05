@@ -343,4 +343,9 @@ type PublicUser struct {
 	// Phone 来自服务端 UserInfo.Phone（展示/脱敏手机号，无权限为空）
 	Phone    string `json:"phone"`
 	AreaCode string `json:"areaCode"`
+	// CallRingtone* 来自服务端 UserInfo 来电铃声字段。
+	CallRingtoneURL    string `json:"callRingtoneURL"`
+	CallRingtoneName   string `json:"callRingtoneName"`
+	CallRingtoneCover  string `json:"callRingtoneCover"`
+	CallRingtoneAuthor string `json:"callRingtoneAuthor"`
 }

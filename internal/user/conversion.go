@@ -20,8 +20,12 @@ func ServerUserToLocalUser(user *sdkws.UserInfo) *model_struct.LocalUser {
 		//AppMangerLevel:   user.AppMangerLevel,
 		GlobalRecvMsgOpt: user.GlobalRecvMsgOpt,
 		//AttachedInfo: user.AttachedInfo,
-		Phone:    user.GetPhone(),
-		AreaCode: user.GetAreaCode(),
+		Phone:              user.GetPhone(),
+		AreaCode:           user.GetAreaCode(),
+		CallRingtoneURL:    user.GetCallRingtoneURL(),
+		CallRingtoneName:   user.GetCallRingtoneName(),
+		CallRingtoneCover:  user.GetCallRingtoneCover(),
+		CallRingtoneAuthor: user.GetCallRingtoneAuthor(),
 	}
 }
 func ServerCommandToLocalCommand(data *user.AllCommandInfoResp) *model_struct.LocalUserCommand {
@@ -41,7 +45,11 @@ func LocalUserToPublicUser(user *model_struct.LocalUser) *sdk_struct.PublicUser 
 		FaceURL:    user.FaceURL,
 		Ex:         user.Ex,
 		CreateTime: user.CreateTime,
-		Phone:      user.Phone,
-		AreaCode:   user.AreaCode,
+		Phone:              user.Phone,
+		AreaCode:           user.AreaCode,
+		CallRingtoneURL:    user.CallRingtoneURL,
+		CallRingtoneName:   user.CallRingtoneName,
+		CallRingtoneCover:  user.CallRingtoneCover,
+		CallRingtoneAuthor: user.CallRingtoneAuthor,
 	}
 }

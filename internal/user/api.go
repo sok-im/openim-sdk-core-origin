@@ -194,25 +194,28 @@ func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struc
 		conversation, err := u.GetConversationByUserID(ctx, userInfo.UserID)
 		if err != nil {
 			log.ZWarn(ctx, "GetConversationByUserID failed", err, "userInfo", usersInfo)
+			continue
+		}
+		if conversation.ConversationID == "" {
+			continue
+		}
+		log.ZDebug(ctx, "GetConversationByUserID", "conversation", conversation)
+
+		var showname string
+		if friend, ok := friendMap[userInfo.UserID]; ok && friend.Remark != "" {
+			showname = friend.Remark
+		} else if userInfo.FirstName != "" || userInfo.LastName != "" {
+			showname = userInfo.FirstName + " " + userInfo.LastName
 		} else {
-			log.ZDebug(ctx, "GetConversationByUserID", "conversation", conversation)
+			showname = userInfo.Nickname
+		}
 
-			var showname string
-			if friend, ok := friendMap[userInfo.UserID]; ok && friend.Remark != "" {
-				showname = friend.Remark
-			} else if userInfo.FirstName != "" || userInfo.LastName != "" {
-				showname = userInfo.FirstName + " " + userInfo.LastName
-			} else {
-				showname = userInfo.Nickname
-			}
-
-			if conversation.ShowName != showname || conversation.FaceURL != userInfo.FaceURL {
-				log.ZInfo(ctx, " GetUsersInfo", "conversation", conversation, "userInfo", userInfo, "showname", showname)
-				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,
-					Args: common.SourceIDAndSessionType{SourceID: userInfo.UserID, SessionType: conversation.ConversationType, FaceURL: userInfo.FaceURL, Nickname: showname}}, u.conversationCh)
-				_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{Action: constant.UpdateMsgFaceUrlAndNickName,
-					Args: common.UpdateMessageInfo{SessionType: conversation.ConversationType, UserID: userInfo.UserID, FaceURL: userInfo.FaceURL, Nickname: userInfo.Nickname}}, u.conversationCh)
-			}
+		if conversation.ShowName != showname || conversation.FaceURL != userInfo.FaceURL {
+			log.ZInfo(ctx, " GetUsersInfo", "conversation", conversation, "userInfo", userInfo, "showname", showname)
+			_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.UpdateConFaceUrlAndNickName,
+				Args: common.SourceIDAndSessionType{SourceID: userInfo.UserID, SessionType: constant.SingleChatType, FaceURL: userInfo.FaceURL, Nickname: showname}}, u.conversationCh)
+			_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{Action: constant.UpdateMsgFaceUrlAndNickName,
+				Args: common.UpdateMessageInfo{SessionType: constant.SingleChatType, UserID: userInfo.UserID, FaceURL: userInfo.FaceURL, Nickname: userInfo.Nickname}}, u.conversationCh)
 		}
 	}
 	return res, nil

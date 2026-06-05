@@ -463,7 +463,7 @@ func (c *Conversation) doUpdateMessage(c2v common.Cmd2Value) {
 			}
 		default:
 			// 未支持的会话类型直接返回，防止误更新。
-			log.ZError(ctx, "not support sessionType", nil, "args", args)
+			log.ZError(ctx, "not support sessionType", nil, "args", args, "node", node, "cmd", c2v.Cmd, "caller", c2v.Caller)
 			return
 		}
 	}

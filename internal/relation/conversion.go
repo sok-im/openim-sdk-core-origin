@@ -44,14 +44,21 @@ func ServerFriendToLocalFriend(info *sdkws.FriendInfo) *model_struct.LocalFriend
 }
 
 func ServerBlackToLocalBlack(info *sdkws.BlackInfo) *model_struct.LocalBlack {
-	return &model_struct.LocalBlack{
+	local := &model_struct.LocalBlack{
 		OwnerUserID:    info.OwnerUserID,
-		BlockUserID:    info.BlackUserInfo.UserID,
 		CreateTime:     info.CreateTime,
 		AddSource:      info.AddSource,
 		OperatorUserID: info.OperatorUserID,
-		Nickname:       info.BlackUserInfo.Nickname,
-		FaceURL:        info.BlackUserInfo.FaceURL,
 		Ex:             info.Ex,
 	}
+	if info.BlackUserInfo != nil {
+		local.BlockUserID = info.BlackUserInfo.UserID
+		local.Nickname = info.BlackUserInfo.Nickname
+		local.FaceURL = info.BlackUserInfo.FaceURL
+	}
+	return local
+}
+
+func isValidServerBlack(info *sdkws.BlackInfo) bool {
+	return info != nil && info.BlackUserInfo != nil && info.BlackUserInfo.UserID != ""
 }

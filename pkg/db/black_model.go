@@ -29,7 +29,9 @@ func (d *DataBase) GetBlackListDB(ctx context.Context) ([]*model_struct.LocalBla
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	var blackList []*model_struct.LocalBlack
-	return blackList, errs.Wrap(d.conn.WithContext(ctx).Find(&blackList).Error)
+	return blackList, errs.Wrap(d.conn.WithContext(ctx).
+		Where("owner_user_id = ?", d.loginUserID).
+		Find(&blackList).Error)
 }
 
 func (d *DataBase) GetBlackListUserID(ctx context.Context) (blackListUid []string, err error) {
@@ -50,7 +52,9 @@ func (d *DataBase) GetBlackInfoList(ctx context.Context, blockUserIDList []strin
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	var blackList []*model_struct.LocalBlack
-	if err := d.conn.WithContext(ctx).Where("block_user_id IN ? ", blockUserIDList).Find(&blackList).Error; err != nil {
+	if err := d.conn.WithContext(ctx).
+		Where("owner_user_id = ? AND block_user_id IN ?", d.loginUserID, blockUserIDList).
+		Find(&blackList).Error; err != nil {
 		return nil, errs.WrapMsg(err, "GetBlackInfoList failed")
 	}
 	return blackList, nil

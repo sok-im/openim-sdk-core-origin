@@ -132,7 +132,17 @@ func (c *Conversation) SetConversation(ctx context.Context, conversationID strin
 
 	lc, err := c.db.GetConversation(ctx, conversationID)
 	if err != nil {
-		return err
+		if !errs.ErrRecordNotFound.Is(errs.Unwrap(err)) {
+			return err
+		}
+		sessionType, sourceID, parseErr := c.parseConversationID(conversationID)
+		if parseErr != nil {
+			return err
+		}
+		lc, err = c.GetOneConversation(ctx, sessionType, sourceID)
+		if err != nil {
+			return err
+		}
 	}
 	apiReq := &pbConversation.SetConversationsReq{Conversation: req}
 	err = c.setConversation(ctx, apiReq, lc)
@@ -276,6 +286,35 @@ func (c *Conversation) getConversationIDBySessionType(sourceID string, sessionTy
 		return "sn_" + sourceID + "_" + c.loginUserID // server notification chat
 	}
 	return ""
+}
+
+func (c *Conversation) parseConversationID(conversationID string) (sessionType int32, sourceID string, err error) {
+	switch {
+	case strings.HasPrefix(conversationID, "si_"):
+		ids := strings.Split(strings.TrimPrefix(conversationID, "si_"), "_")
+		if len(ids) != 2 {
+			return 0, "", sdkerrs.ErrArgs.WrapMsg("invalid single chat conversation id")
+		}
+		for _, id := range ids {
+			if id != c.loginUserID {
+				return constant.SingleChatType, id, nil
+			}
+		}
+		return 0, "", sdkerrs.ErrArgs.WrapMsg("invalid single chat conversation id")
+	case strings.HasPrefix(conversationID, "sg_"):
+		return constant.ReadGroupChatType, strings.TrimPrefix(conversationID, "sg_"), nil
+	case strings.HasPrefix(conversationID, "g_"):
+		return constant.WriteGroupChatType, strings.TrimPrefix(conversationID, "g_"), nil
+	case strings.HasPrefix(conversationID, "sn_"):
+		rest := strings.TrimPrefix(conversationID, "sn_")
+		suffix := "_" + c.loginUserID
+		if !strings.HasSuffix(rest, suffix) {
+			return 0, "", sdkerrs.ErrArgs.WrapMsg("invalid notification conversation id")
+		}
+		return constant.NotificationChatType, strings.TrimSuffix(rest, suffix), nil
+	default:
+		return 0, "", sdkerrs.ErrArgs.WrapMsg("unknown conversation id format")
+	}
 }
 
 func (c *Conversation) GetConversationIDBySessionType(_ context.Context, sourceID string, sessionType int) string {

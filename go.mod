@@ -4,8 +4,6 @@ go 1.25.0
 
 replace github.com/openimsdk/protocol => ../protocol
 
-toolchain go1.24.0
-
 require (
 	github.com/coder/websocket v1.8.13
 	github.com/golang/protobuf v1.5.4
@@ -30,7 +28,6 @@ require (
 )
 
 require (
->>>>>>> Stashed changes
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect

@@ -82,6 +82,30 @@ func (e *emptyGroupListener) OnGroupApplicationRejected(groupApplication string)
 	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupApplication", groupApplication)
 }
 
+func (e *emptyGroupListener) OnGroupMessagePinned(groupMessagePinnedTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupMessagePinnedTips", groupMessagePinnedTips)
+}
+
+func (e *emptyGroupListener) OnGroupCallStarted(groupCallStartedTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupCallStartedTips", groupCallStartedTips)
+}
+
+func (e *emptyGroupListener) OnGroupCallEnded(groupCallEndedTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupCallEndedTips", groupCallEndedTips)
+}
+
+func (e *emptyGroupListener) OnGroupBurnDurationSet(groupBurnDurationSetTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupBurnDurationSetTips", groupBurnDurationSetTips)
+}
+
+func (e *emptyGroupListener) OnGroupFaceURLSet(groupFaceURLSetTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupFaceURLSetTips", groupFaceURLSetTips)
+}
+
+func (e *emptyGroupListener) OnGroupNeedVerificationSet(groupNeedVerificationSetTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupNeedVerificationSetTips", groupNeedVerificationSetTips)
+}
+
 type emptyFriendshipListener struct {
 	ctx context.Context
 }

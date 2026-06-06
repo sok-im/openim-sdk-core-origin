@@ -253,6 +253,48 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 			}
 			return g.onlineSyncGroupAndMember(ctx, detail.Group.GroupID, nil, nil,
 				nil, detail.Group, groupSortIDUnchanged, detail.GroupMemberVersion, detail.GroupMemberVersionID)
+		case constant.GroupMessagePinnedNotification: // 1521
+			var detail sdkws.GroupMessagePinnedTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupMessagePinned(utils.StructToJsonString(detail))
+			return nil
+		case constant.GroupCallStartedNotification: // 1522
+			var detail sdkws.GroupCallStartedTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupCallStarted(utils.StructToJsonString(detail))
+			return nil
+		case constant.GroupCallEndedNotification: // 1523
+			var detail sdkws.GroupCallEndedTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupCallEnded(utils.StructToJsonString(detail))
+			return nil
+		case constant.GroupBurnDurationSetNotification: // 1524
+			var detail sdkws.GroupBurnDurationSetTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupBurnDurationSet(utils.StructToJsonString(detail))
+			return nil
+		case constant.GroupFaceURLSetNotification: // 1525
+			var detail sdkws.GroupFaceURLSetTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupFaceURLSet(utils.StructToJsonString(detail))
+			return nil
+		case constant.GroupNeedVerificationSetNotification: // 1526
+			var detail sdkws.GroupNeedVerificationSetTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupNeedVerificationSet(utils.StructToJsonString(detail))
+			return nil
 		default:
 			return errs.New("unknown tips type", "contentType", msg.ContentType).Wrap()
 		}

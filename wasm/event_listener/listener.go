@@ -398,6 +398,24 @@ func (f *GroupCallback) OnGroupApplicationRejected(groupApplication string) {
 func (f *GroupCallback) OnGroupDismissed(groupInfo string) {
 	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupInfo).SendMessage()
 }
+func (f *GroupCallback) OnGroupMessagePinned(groupMessagePinnedTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupMessagePinnedTips).SendMessage()
+}
+func (f *GroupCallback) OnGroupCallStarted(groupCallStartedTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupCallStartedTips).SendMessage()
+}
+func (f *GroupCallback) OnGroupCallEnded(groupCallEndedTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupCallEndedTips).SendMessage()
+}
+func (f *GroupCallback) OnGroupBurnDurationSet(groupBurnDurationSetTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupBurnDurationSetTips).SendMessage()
+}
+func (f *GroupCallback) OnGroupFaceURLSet(groupFaceURLSetTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupFaceURLSetTips).SendMessage()
+}
+func (f *GroupCallback) OnGroupNeedVerificationSet(groupNeedVerificationSetTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupNeedVerificationSetTips).SendMessage()
+}
 
 type UserCallback struct {
 	CallbackWriter

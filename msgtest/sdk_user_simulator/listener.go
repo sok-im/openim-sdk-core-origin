@@ -207,6 +207,30 @@ func (testGroupListener) OnGroupDismissed(callbackInfo string) {
 
 }
 
+func (testGroupListener) OnGroupMessagePinned(callbackInfo string) {
+
+}
+
+func (testGroupListener) OnGroupCallStarted(callbackInfo string) {
+
+}
+
+func (testGroupListener) OnGroupCallEnded(callbackInfo string) {
+
+}
+
+func (testGroupListener) OnGroupBurnDurationSet(callbackInfo string) {
+
+}
+
+func (testGroupListener) OnGroupFaceURLSet(callbackInfo string) {
+
+}
+
+func (testGroupListener) OnGroupNeedVerificationSet(callbackInfo string) {
+
+}
+
 type testConnListener struct {
 }
 

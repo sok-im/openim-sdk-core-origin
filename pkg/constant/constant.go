@@ -97,6 +97,12 @@ const (
 	GroupMemberSetToOrdinaryUserNotification = 1518
 	GroupInfoSetAnnouncementNotification     = 1519
 	GroupInfoSetNameNotification             = 1520
+	GroupMessagePinnedNotification           = 1521
+	GroupCallStartedNotification             = 1522
+	GroupCallEndedNotification               = 1523
+	GroupBurnDurationSetNotification         = 1524
+	GroupFaceURLSetNotification              = 1525
+	GroupNeedVerificationSetNotification     = 1526
 	GroupNotificationEnd                     = 1599
 
 	ConversationPrivateChatNotification = 1701

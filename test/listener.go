@@ -131,6 +131,30 @@ func (o *onGroupListener) OnGroupApplicationRejected(groupApplication string) {
 	log.ZInfo(o.ctx, "OnGroupApplicationRejected", "groupApplication", groupApplication)
 }
 
+func (o *onGroupListener) OnGroupMessagePinned(groupMessagePinnedTips string) {
+	log.ZInfo(o.ctx, "OnGroupMessagePinned", "groupMessagePinnedTips", groupMessagePinnedTips)
+}
+
+func (o *onGroupListener) OnGroupCallStarted(groupCallStartedTips string) {
+	log.ZInfo(o.ctx, "OnGroupCallStarted", "groupCallStartedTips", groupCallStartedTips)
+}
+
+func (o *onGroupListener) OnGroupCallEnded(groupCallEndedTips string) {
+	log.ZInfo(o.ctx, "OnGroupCallEnded", "groupCallEndedTips", groupCallEndedTips)
+}
+
+func (o *onGroupListener) OnGroupBurnDurationSet(groupBurnDurationSetTips string) {
+	log.ZInfo(o.ctx, "OnGroupBurnDurationSet", "groupBurnDurationSetTips", groupBurnDurationSetTips)
+}
+
+func (o *onGroupListener) OnGroupFaceURLSet(groupFaceURLSetTips string) {
+	log.ZInfo(o.ctx, "OnGroupFaceURLSet", "groupFaceURLSetTips", groupFaceURLSetTips)
+}
+
+func (o *onGroupListener) OnGroupNeedVerificationSet(groupNeedVerificationSetTips string) {
+	log.ZInfo(o.ctx, "OnGroupNeedVerificationSet", "groupNeedVerificationSetTips", groupNeedVerificationSetTips)
+}
+
 type onAdvancedMsgListener struct {
 	ctx context.Context
 }

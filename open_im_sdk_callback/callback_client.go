@@ -44,6 +44,18 @@ type OnGroupListener interface {
 	OnGroupMemberInfoChanged(groupMemberInfo string)
 	OnGroupApplicationAccepted(groupApplication string)
 	OnGroupApplicationRejected(groupApplication string)
+	// OnGroupMessagePinned type: 1=pin, 2=unpin
+	OnGroupMessagePinned(groupMessagePinnedTips string)
+	// OnGroupCallStarted mediaType: "audio" | "video" | "audio_video"
+	OnGroupCallStarted(groupCallStartedTips string)
+	// OnGroupCallEnded mediaType: "audio" | "video" | "audio_video"; durationSecs: 0 means cancelled/not answered
+	OnGroupCallEnded(groupCallEndedTips string)
+	// OnGroupBurnDurationSet durationSecs: message disappear duration in seconds; 0 means turned off
+	OnGroupBurnDurationSet(groupBurnDurationSetTips string)
+	// OnGroupFaceURLSet fired when a group avatar is changed
+	OnGroupFaceURLSet(groupFaceURLSetTips string)
+	// OnGroupNeedVerificationSet needVerification: 0/1=approval required, 2=no approval
+	OnGroupNeedVerificationSet(groupNeedVerificationSetTips string)
 }
 type OnFriendshipListener interface {
 	OnFriendApplicationAdded(friendApplication string)

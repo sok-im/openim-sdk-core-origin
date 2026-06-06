@@ -2,6 +2,7 @@ package conversation_msg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -31,6 +32,7 @@ import (
 	"github.com/openimsdk/protocol/sdkws"
 
 	"github.com/jinzhu/copier"
+	"gorm.io/gorm"
 )
 
 func (c *Conversation) GetAllConversationList(ctx context.Context) ([]*model_struct.LocalConversation, error) {
@@ -132,7 +134,7 @@ func (c *Conversation) SetConversation(ctx context.Context, conversationID strin
 
 	lc, err := c.db.GetConversation(ctx, conversationID)
 	if err != nil {
-		if !errs.ErrRecordNotFound.Is(errs.Unwrap(err)) {
+		if !errs.ErrRecordNotFound.Is(errs.Unwrap(err)) && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
 		sessionType, sourceID, parseErr := c.parseConversationID(conversationID)

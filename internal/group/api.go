@@ -110,7 +110,7 @@ func (g *Group) ChangeGroupMute(ctx context.Context, groupID string, isMute bool
 	if err := g.IncrSyncGroupAndMember(ctx, groupID); err != nil {
 		return err
 	}
-	return nil
+	return g.refreshGroupInfoFromServer(ctx, groupID)
 }
 
 func (g *Group) ChangeGroupMemberMute(ctx context.Context, groupID, userID string, mutedSeconds int) error {

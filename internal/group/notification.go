@@ -192,14 +192,28 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
 				return err
 			}
-			return g.onlineSyncGroupAndMember(ctx, detail.Group.GroupID, nil, nil,
+			groupID, err := notificationGroupID(detail.GetGroup(), detail.GetOpUser())
+			if err != nil {
+				return err
+			}
+			if err := g.applyNotificationGroupInfo(ctx, detail.GetGroup(), groupID); err != nil {
+				return err
+			}
+			return g.onlineSyncGroupAndMember(ctx, groupID, nil, nil,
 				nil, detail.Group, groupSortIDUnchanged, detail.GroupMemberVersion, detail.GroupMemberVersionID)
 		case constant.GroupCancelMutedNotification: // 1515
 			var detail sdkws.GroupCancelMutedTips
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
 				return err
 			}
-			return g.onlineSyncGroupAndMember(ctx, detail.Group.GroupID, nil, nil,
+			groupID, err := notificationGroupID(detail.GetGroup(), detail.GetOpUser())
+			if err != nil {
+				return err
+			}
+			if err := g.applyNotificationGroupInfo(ctx, detail.GetGroup(), groupID); err != nil {
+				return err
+			}
+			return g.onlineSyncGroupAndMember(ctx, groupID, nil, nil,
 				nil, detail.Group, groupSortIDUnchanged, detail.GroupMemberVersion, detail.GroupMemberVersionID)
 		case constant.GroupMemberInfoSetNotification: // 1516
 			var detail sdkws.GroupMemberInfoSetTips

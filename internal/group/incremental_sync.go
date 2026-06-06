@@ -30,6 +30,53 @@ func (g *Group) groupTableName() string {
 	return model_struct.LocalGroup{}.TableName()
 }
 
+func notificationGroupID(groupInfo *sdkws.GroupInfo, opUser *sdkws.GroupMemberFullInfo) (string, error) {
+	if groupInfo != nil && groupInfo.GroupID != "" {
+		return groupInfo.GroupID, nil
+	}
+	if opUser != nil && opUser.GroupID != "" {
+		return opUser.GroupID, nil
+	}
+	return "", errs.New("group id not found in notification").Wrap()
+}
+
+func (g *Group) syncNotificationGroupInfo(ctx context.Context, groupInfo *sdkws.GroupInfo) error {
+	if groupInfo == nil {
+		return nil
+	}
+	local, err := g.db.GetJoinedGroupListDB(ctx)
+	if err != nil {
+		return err
+	}
+	log.ZDebug(ctx, "sync notification group info", "groupInfo", groupInfo)
+	changes := datautil.Batch(ServerGroupToLocalGroup, []*sdkws.GroupInfo{groupInfo})
+	kv := datautil.SliceToMapAny(local, func(e *model_struct.LocalGroup) (string, *model_struct.LocalGroup) {
+		return e.GroupID, e
+	})
+	for i, change := range changes {
+		kv[change.GroupID] = changes[i]
+	}
+	return g.groupSyncer.Sync(ctx, datautil.Values(kv), local, nil)
+}
+
+func (g *Group) refreshGroupInfoFromServer(ctx context.Context, groupID string) error {
+	groupInfos, err := g.getGroupsInfoFromServer(ctx, []string{groupID})
+	if err != nil {
+		return err
+	}
+	if len(groupInfos) == 0 {
+		return nil
+	}
+	return g.syncNotificationGroupInfo(ctx, groupInfos[0])
+}
+
+func (g *Group) applyNotificationGroupInfo(ctx context.Context, groupInfo *sdkws.GroupInfo, groupID string) error {
+	if groupInfo != nil {
+		return g.syncNotificationGroupInfo(ctx, groupInfo)
+	}
+	return g.refreshGroupInfoFromServer(ctx, groupID)
+}
+
 func (g *Group) SyncAllJoinedGroupsAndMembersWithLock(ctx context.Context) error {
 	g.groupSyncMutex.Lock()
 	defer g.groupSyncMutex.Unlock()
@@ -145,24 +192,7 @@ func (g *Group) syncGroupAndMember(ctx context.Context, groupID string, resp *gr
 			if !ok {
 				return errs.New("group info type error")
 			}
-			if groupInfo == nil {
-				return nil
-			}
-			local, err := g.db.GetJoinedGroupListDB(ctx)
-			if err != nil {
-				return err
-			}
-			log.ZDebug(ctx, "group info", "groupInfo", groupInfo)
-			changes := datautil.Batch(ServerGroupToLocalGroup, []*sdkws.GroupInfo{groupInfo})
-			kv := datautil.SliceToMapAny(local, func(e *model_struct.LocalGroup) (string, *model_struct.LocalGroup) {
-				return e.GroupID, e
-			})
-			for i, change := range changes {
-				key := change.GroupID
-				kv[key] = changes[i]
-			}
-			server := datautil.Values(kv)
-			return g.groupSyncer.Sync(ctx, server, local, nil)
+			return g.syncNotificationGroupInfo(ctx, groupInfo)
 		},
 		Syncer: func(server, local []*model_struct.LocalGroupMember) error {
 			return g.groupMemberSyncer.Sync(ctx, server, local, nil)
@@ -258,24 +288,7 @@ func (g *Group) onlineSyncGroupAndMember(ctx context.Context, groupID string, de
 			if !ok {
 				return errs.New("group info type error")
 			}
-			if groupInfo == nil {
-				return nil
-			}
-			local, err := g.db.GetJoinedGroupListDB(ctx)
-			if err != nil {
-				return err
-			}
-			log.ZDebug(ctx, "group info", "groupInfo", groupInfo)
-			changes := datautil.Batch(ServerGroupToLocalGroup, []*sdkws.GroupInfo{groupInfo})
-			kv := datautil.SliceToMapAny(local, func(e *model_struct.LocalGroup) (string, *model_struct.LocalGroup) {
-				return e.GroupID, e
-			})
-			for i, change := range changes {
-				key := change.GroupID
-				kv[key] = changes[i]
-			}
-			server := datautil.Values(kv)
-			return g.groupSyncer.Sync(ctx, server, local, nil)
+			return g.syncNotificationGroupInfo(ctx, groupInfo)
 		},
 		Syncer: func(server, local []*model_struct.LocalGroupMember) error {
 			return g.groupMemberSyncer.Sync(ctx, server, local, nil)

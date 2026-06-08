@@ -63,11 +63,12 @@ type Group struct {
 	db                 db_interface.DataBase
 	groupSyncer        *syncer.Syncer[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string]
 	groupMemberSyncer  *syncer.Syncer[*model_struct.LocalGroupMember, group.GetGroupMemberListResp, [2]string]
-	conversationCh     chan common.Cmd2Value
-	groupSyncMutex     sync.Mutex
-	listenerForService open_im_sdk_callback.OnListenerForService
-	groupMemberCache   *cache.Cache[string, *model_struct.LocalGroupMember]
-	filter             *NotificationFilter
+	conversationCh        chan common.Cmd2Value
+	groupSyncMutex        sync.Mutex
+	listenerForService    open_im_sdk_callback.OnListenerForService
+	groupMemberCache      *cache.Cache[string, *model_struct.LocalGroupMember]
+	filter                *NotificationFilter
+	incrSyncConversations func(ctx context.Context) error
 }
 
 func (g *Group) initSyncer() {
@@ -219,6 +220,10 @@ func (g *Group) SetGroupListener(listener func() open_im_sdk_callback.OnGroupLis
 
 func (g *Group) SetListenerForService(listener open_im_sdk_callback.OnListenerForService) {
 	g.listenerForService = listener
+}
+
+func (g *Group) SetIncrSyncConversations(fn func(ctx context.Context) error) {
+	g.incrSyncConversations = fn
 }
 
 func (g *Group) FetchGroupOrError(ctx context.Context, groupID string) (*model_struct.LocalGroup, error) {

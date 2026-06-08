@@ -37,9 +37,10 @@ type Relation struct {
 	user               *user.User
 	friendSyncer       *syncer.Syncer[*model_struct.LocalFriend, relation.GetPaginationFriendsResp, [2]string]
 	blackSyncer        *syncer.Syncer[*model_struct.LocalBlack, syncer.NoResp, [2]string]
-	conversationCh     chan common.Cmd2Value
-	listenerForService open_im_sdk_callback.OnListenerForService
-	relationSyncMutex  sync.Mutex
+	conversationCh        chan common.Cmd2Value
+	listenerForService    open_im_sdk_callback.OnListenerForService
+	relationSyncMutex     sync.Mutex
+	incrSyncConversations func(ctx context.Context) error
 }
 
 func (r *Relation) initSyncer() {
@@ -170,4 +171,8 @@ func (r *Relation) SetListener(listener func() open_im_sdk_callback.OnFriendship
 
 func (r *Relation) SetListenerForService(listener open_im_sdk_callback.OnListenerForService) {
 	r.listenerForService = listener
+}
+
+func (r *Relation) SetIncrSyncConversations(fn func(ctx context.Context) error) {
+	r.incrSyncConversations = fn
 }

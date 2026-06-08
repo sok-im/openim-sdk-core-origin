@@ -770,7 +770,13 @@ func (g *Group) PinGroup(ctx context.Context, req *sdk_params_callback.PinGroupR
 	}
 	g.groupSyncMutex.Lock()
 	defer g.groupSyncMutex.Unlock()
-	return g.IncrSyncJoinGroup(ctx)
+	if err := g.IncrSyncJoinGroup(ctx); err != nil {
+		return err
+	}
+	if g.incrSyncConversations != nil {
+		return g.incrSyncConversations(ctx)
+	}
+	return nil
 }
 
 func (g *Group) UnpinGroup(ctx context.Context, req *sdk_params_callback.UnpinGroupReq) error {
@@ -779,5 +785,11 @@ func (g *Group) UnpinGroup(ctx context.Context, req *sdk_params_callback.UnpinGr
 	}
 	g.groupSyncMutex.Lock()
 	defer g.groupSyncMutex.Unlock()
-	return g.IncrSyncJoinGroup(ctx)
+	if err := g.IncrSyncJoinGroup(ctx); err != nil {
+		return err
+	}
+	if g.incrSyncConversations != nil {
+		return g.incrSyncConversations(ctx)
+	}
+	return nil
 }

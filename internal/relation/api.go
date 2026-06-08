@@ -472,7 +472,13 @@ func (r *Relation) PinFriend(ctx context.Context, req *sdk.PinFriendReq) error {
 	}
 	r.relationSyncMutex.Lock()
 	defer r.relationSyncMutex.Unlock()
-	return r.IncrSyncFriends(ctx)
+	if err := r.IncrSyncFriends(ctx); err != nil {
+		return err
+	}
+	if r.incrSyncConversations != nil {
+		return r.incrSyncConversations(ctx)
+	}
+	return nil
 }
 
 func (r *Relation) UnpinFriend(ctx context.Context, req *sdk.UnpinFriendReq) error {
@@ -484,5 +490,11 @@ func (r *Relation) UnpinFriend(ctx context.Context, req *sdk.UnpinFriendReq) err
 	}
 	r.relationSyncMutex.Lock()
 	defer r.relationSyncMutex.Unlock()
-	return r.IncrSyncFriends(ctx)
+	if err := r.IncrSyncFriends(ctx); err != nil {
+		return err
+	}
+	if r.incrSyncConversations != nil {
+		return r.incrSyncConversations(ctx)
+	}
+	return nil
 }

@@ -2,7 +2,7 @@ module github.com/openimsdk/openim-sdk-core/v3
 
 go 1.25.0
 
-replace github.com/openimsdk/protocol => ../protocol
+replace github.com/openimsdk/protocol => ./protocol
 
 require (
 	github.com/coder/websocket v1.8.13

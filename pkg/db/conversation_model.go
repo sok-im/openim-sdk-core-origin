@@ -179,8 +179,14 @@ func (d *DataBase) GetConversation(ctx context.Context, conversationID string) (
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	var c model_struct.LocalConversation
-	return &c, errs.WrapMsg(d.conn.WithContext(ctx).Where("conversation_id = ?",
-		conversationID).Take(&c).Error, "GetConversation failed, conversationID: "+conversationID)
+	err := d.conn.WithContext(ctx).Where("conversation_id = ?", conversationID).Take(&c).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.WrapMsg(errs.ErrRecordNotFound.Wrap(), "GetConversation failed, conversationID: "+conversationID)
+		}
+		return nil, errs.WrapMsg(err, "GetConversation failed, conversationID: "+conversationID)
+	}
+	return &c, nil
 }
 
 func (d *DataBase) UpdateConversation(ctx context.Context, c *model_struct.LocalConversation) error {

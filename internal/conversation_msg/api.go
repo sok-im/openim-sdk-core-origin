@@ -73,6 +73,9 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			}
 			newConversation.ShowName = name
 			newConversation.FaceURL = faceUrl
+			if friendInfo, err := c.relation.Db().GetFriendInfoByFriendUserID(ctx, sourceID); err == nil {
+				newConversation.IsPinned = friendInfo.IsPinned
+			}
 			log.ZInfo(ctx, " GetOneConversation", "conversation", newConversation)
 
 		case constant.WriteGroupChatType, constant.ReadGroupChatType:
@@ -132,11 +135,13 @@ func (c *Conversation) SetConversation(ctx context.Context, conversationID strin
 	c.conversationSyncMutex.Lock()
 	defer c.conversationSyncMutex.Unlock()
 
+	existsInLocal := true
 	lc, err := c.db.GetConversation(ctx, conversationID)
 	if err != nil {
 		if !errs.ErrRecordNotFound.Is(errs.Unwrap(err)) && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
+		existsInLocal = false
 		sessionType, sourceID, parseErr := c.parseConversationID(conversationID)
 		if parseErr != nil {
 			return err
@@ -147,10 +152,20 @@ func (c *Conversation) SetConversation(ctx context.Context, conversationID strin
 		}
 	}
 	apiReq := &pbConversation.SetConversationsReq{Conversation: req}
-	err = c.setConversation(ctx, apiReq, lc)
-	if err != nil {
+	if err = c.setConversation(ctx, apiReq, lc); err != nil {
 		return err
 	}
+	applyConversationReqToLocal(lc, req)
+	if existsInLocal {
+		if updateMap := conversationReqToUpdateMap(req); len(updateMap) > 0 {
+			if err = c.db.UpdateColumnsConversation(ctx, conversationID, updateMap); err != nil {
+				return err
+			}
+		}
+	} else if err = c.db.InsertConversation(ctx, lc); err != nil {
+		return err
+	}
+	_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{Action: constant.ConChange, Args: []string{conversationID}}, c.GetCh())
 	return c.IncrSyncConversations(ctx)
 }
 
@@ -1036,6 +1051,98 @@ func (c *Conversation) getConversationTypeByGroupID(ctx context.Context, groupID
 		return c.getConversationIDBySessionType(groupID, constant.ReadGroupChatType), constant.ReadGroupChatType, nil
 	default:
 		return "", 0, sdkerrs.ErrGroupType
+	}
+}
+
+func conversationReqToUpdateMap(req *pbConversation.ConversationReq) map[string]interface{} {
+	if req == nil {
+		return nil
+	}
+	m := make(map[string]interface{})
+	if req.RecvMsgOpt != nil {
+		m["recv_msg_opt"] = req.RecvMsgOpt.Value
+	}
+	if req.IsPinned != nil {
+		m["is_pinned"] = req.IsPinned.Value
+	}
+	if req.IsPrivateChat != nil {
+		m["is_private_chat"] = req.IsPrivateChat.Value
+	}
+	if req.BurnDuration != nil {
+		m["burn_duration"] = req.BurnDuration.Value
+	}
+	if req.GroupAtType != nil {
+		m["group_at_type"] = req.GroupAtType.Value
+	}
+	if req.AttachedInfo != nil {
+		m["attached_info"] = req.AttachedInfo.Value
+	}
+	if req.Ex != nil {
+		m["ex"] = req.Ex.Value
+	}
+	if req.MsgDestructTime != nil {
+		m["msg_destruct_time"] = req.MsgDestructTime.Value
+	}
+	if req.IsMsgDestruct != nil {
+		m["is_msg_destruct"] = req.IsMsgDestruct.Value
+	}
+	if req.MuteDuration != nil {
+		m["mute_duration"] = req.MuteDuration.Value
+	}
+	if req.MuteEndTime != nil {
+		m["mute_end_time"] = req.MuteEndTime.Value
+	}
+	if req.MinSeq != nil {
+		m["min_seq"] = req.MinSeq.Value
+	}
+	if req.MaxSeq != nil {
+		m["max_seq"] = req.MaxSeq.Value
+	}
+	return m
+}
+
+func applyConversationReqToLocal(lc *model_struct.LocalConversation, req *pbConversation.ConversationReq) {
+	if req == nil || lc == nil {
+		return
+	}
+	if req.RecvMsgOpt != nil {
+		lc.RecvMsgOpt = req.RecvMsgOpt.Value
+	}
+	if req.IsPinned != nil {
+		lc.IsPinned = req.IsPinned.Value
+	}
+	if req.IsPrivateChat != nil {
+		lc.IsPrivateChat = req.IsPrivateChat.Value
+	}
+	if req.BurnDuration != nil {
+		lc.BurnDuration = req.BurnDuration.Value
+	}
+	if req.GroupAtType != nil {
+		lc.GroupAtType = req.GroupAtType.Value
+	}
+	if req.AttachedInfo != nil {
+		lc.AttachedInfo = req.AttachedInfo.Value
+	}
+	if req.Ex != nil {
+		lc.Ex = req.Ex.Value
+	}
+	if req.MsgDestructTime != nil {
+		lc.MsgDestructTime = req.MsgDestructTime.Value
+	}
+	if req.IsMsgDestruct != nil {
+		lc.IsMsgDestruct = req.IsMsgDestruct.Value
+	}
+	if req.MuteDuration != nil {
+		lc.MuteDuration = req.MuteDuration.Value
+	}
+	if req.MuteEndTime != nil {
+		lc.MuteEndTime = req.MuteEndTime.Value
+	}
+	if req.MinSeq != nil {
+		lc.MinSeq = req.MinSeq.Value
+	}
+	if req.MaxSeq != nil {
+		lc.MaxSeq = req.MaxSeq.Value
 	}
 }
 

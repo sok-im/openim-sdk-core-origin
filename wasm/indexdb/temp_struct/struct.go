@@ -98,6 +98,13 @@ type LocalGroup struct {
 	ApplyMemberFriend      int32  `json:"applyMemberFriend,omitempty"`
 	NotificationUpdateTime uint32 `json:"notificationUpdateTime,omitempty"`
 	NotificationUserID     string `json:"notificationUserID,omitempty"`
+	AllowSendMsg           int32  `json:"allowSendMsg,omitempty"`
+	AllowPinMsg            int32  `json:"allowPinMsg,omitempty"`
+	AllowAddMember         int32  `json:"allowAddMember,omitempty"`
+	AllowEditGroupInfo     int32  `json:"allowEditGroupInfo,omitempty"`
+	MsgBurnDuration        int32  `json:"msgBurnDuration,omitempty"`
+	AllowBurn              int32  `json:"allowBurn,omitempty"`
+	EnableInviteLink       int32  `json:"enableInviteLink,omitempty"`
 }
 
 type LocalFriendRequest struct {

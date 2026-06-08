@@ -39,6 +39,13 @@ func ServerGroupToLocalGroup(info *sdkws.GroupInfo) *model_struct.LocalGroup {
 		ApplyMemberFriend:      info.ApplyMemberFriend,
 		NotificationUpdateTime: info.NotificationUpdateTime,
 		NotificationUserID:     info.NotificationUserID,
+		AllowSendMsg:           info.AllowSendMsg,
+		AllowPinMsg:            info.AllowPinMsg,
+		AllowAddMember:         info.AllowAddMember,
+		AllowEditGroupInfo:     info.AllowEditGroupInfo,
+		MsgBurnDuration:        info.MsgBurnDuration,
+		AllowBurn:              info.AllowBurn,
+		EnableInviteLink:       info.EnableInviteLink,
 	}
 }
 

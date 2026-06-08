@@ -111,6 +111,13 @@ type LocalGroup struct {
 	ApplyMemberFriend      int32  `gorm:"column:apply_member_friend" json:"applyMemberFriend"`
 	NotificationUpdateTime int64  `gorm:"column:notification_update_time" json:"notificationUpdateTime"`
 	NotificationUserID     string `gorm:"column:notification_user_id;size:64" json:"notificationUserID"`
+	AllowSendMsg           int32  `gorm:"column:allow_send_msg" json:"allowSendMsg"`
+	AllowPinMsg            int32  `gorm:"column:allow_pin_msg" json:"allowPinMsg"`
+	AllowAddMember         int32  `gorm:"column:allow_add_member" json:"allowAddMember"`
+	AllowEditGroupInfo     int32  `gorm:"column:allow_edit_group_info" json:"allowEditGroupInfo"`
+	MsgBurnDuration        int32  `gorm:"column:msg_burn_duration" json:"msgBurnDuration"`
+	AllowBurn              int32  `gorm:"column:allow_burn" json:"allowBurn"`
+	EnableInviteLink       int32  `gorm:"column:enable_invite_link" json:"enableInviteLink"`
 }
 
 func (LocalGroup) TableName() string {

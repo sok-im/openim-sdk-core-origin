@@ -280,7 +280,11 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 				return err
 			}
 			g.listener().OnGroupBurnDurationSet(utils.StructToJsonString(detail))
-			return nil
+			if detail.Group == nil {
+				return nil
+			}
+			return g.onlineSyncGroupAndMember(ctx, detail.Group.GroupID, nil,
+				nil, nil, detail.Group, groupSortIDUnchanged, 0, "")
 		case constant.GroupFaceURLSetNotification: // 1525
 			var detail sdkws.GroupFaceURLSetTips
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {

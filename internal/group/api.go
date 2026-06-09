@@ -185,7 +185,7 @@ func (g *Group) GetSendMessageSetting(ctx context.Context, groupID string) (*api
 
 // SetInviteLinkSetting 开启/关闭群邀请链接（HTTP POST /group/set_invite_link_setting）：
 //
-//	enableInviteLink 0 = 关闭，1 = 开启
+//	enableInviteLink 0 = 关闭，1 = 开启；首次开启时服务端默认 needVerification=2（分享链接免审）
 func (g *Group) SetInviteLinkSetting(ctx context.Context, groupID string, enableInviteLink int32) error {
 	if err := g.setInviteLinkSetting(ctx, &api.SetInviteLinkSettingReq{
 		GroupID:          groupID,

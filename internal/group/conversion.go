@@ -46,6 +46,7 @@ func ServerGroupToLocalGroup(info *sdkws.GroupInfo) *model_struct.LocalGroup {
 		MsgBurnDuration:        info.MsgBurnDuration,
 		AllowBurn:              info.AllowBurn,
 		EnableInviteLink:       info.EnableInviteLink,
+		InviteLink:             info.InviteLink,
 	}
 }
 

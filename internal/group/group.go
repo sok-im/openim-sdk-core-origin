@@ -58,11 +58,11 @@ func NewGroup(loginUserID string, db db_interface.DataBase,
 }
 
 type Group struct {
-	listener           func() open_im_sdk_callback.OnGroupListener
-	loginUserID        string
-	db                 db_interface.DataBase
-	groupSyncer        *syncer.Syncer[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string]
-	groupMemberSyncer  *syncer.Syncer[*model_struct.LocalGroupMember, group.GetGroupMemberListResp, [2]string]
+	listener              func() open_im_sdk_callback.OnGroupListener
+	loginUserID           string
+	db                    db_interface.DataBase
+	groupSyncer           *syncer.Syncer[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string]
+	groupMemberSyncer     *syncer.Syncer[*model_struct.LocalGroupMember, group.GetGroupMemberListResp, [2]string]
 	conversationCh        chan common.Cmd2Value
 	groupSyncMutex        sync.Mutex
 	listenerForService    open_im_sdk_callback.OnListenerForService
@@ -74,6 +74,7 @@ type Group struct {
 func (g *Group) initSyncer() {
 	g.groupSyncer = syncer.New2[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](
 		syncer.WithInsert[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(ctx context.Context, value *model_struct.LocalGroup) error {
+			g.enrichLocalGroupInviteLinks(ctx, value)
 			return g.db.InsertGroup(ctx, value)
 		}),
 		syncer.WithDelete[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(ctx context.Context, value *model_struct.LocalGroup) error {
@@ -87,6 +88,7 @@ func (g *Group) initSyncer() {
 		}),
 		syncer.WithUpdate[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(ctx context.Context, server, local *model_struct.LocalGroup) error {
 			log.ZInfo(ctx, "groupSyncer trigger update function", "groupID", server.GroupID, "server", server, "local", local)
+			g.enrichLocalGroupInviteLinks(ctx, server)
 			return g.db.UpdateGroup(ctx, server)
 		}),
 		syncer.WithUUID[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(value *model_struct.LocalGroup) string {
@@ -133,6 +135,7 @@ func (g *Group) initSyncer() {
 		}),
 
 		syncer.WithBatchInsert[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(ctx context.Context, values []*model_struct.LocalGroup) error {
+			g.enrichLocalGroupsInviteLinks(ctx, values)
 			return g.db.BatchInsertGroup(ctx, values)
 		}),
 		syncer.WithDeleteAll[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(ctx context.Context, _ string) error {

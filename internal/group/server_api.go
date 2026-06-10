@@ -208,7 +208,12 @@ func (g *Group) getServerAdminGroupApplicationList(ctx context.Context, groupIDs
 
 func (g *Group) getGroupsInfoFromServer(ctx context.Context, groupIDs []string) ([]*sdkws.GroupInfo, error) {
 	req := &group.GetGroupsInfoReq{GroupIDs: groupIDs}
-	return api.ExtractField(ctx, api.GetGroupsInfo.Invoke, req, (*group.GetGroupsInfoResp).GetGroupInfos)
+	infos, err := api.ExtractField(ctx, api.GetGroupsInfo.Invoke, req, (*group.GetGroupsInfoResp).GetGroupInfos)
+	if err != nil {
+		return nil, err
+	}
+	g.enrichServerGroupInviteLinks(ctx, infos)
+	return infos, nil
 }
 
 func (g *Group) inviteUserToGroup(ctx context.Context, req *group.InviteUserToGroupReq) error {

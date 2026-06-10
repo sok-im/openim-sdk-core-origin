@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/openimsdk/protocol/sdkws"
 	"github.com/openimsdk/tools/errs"
 )
 
@@ -116,8 +117,9 @@ type LocalGroup struct {
 	AllowAddMember         int32  `gorm:"column:allow_add_member" json:"allowAddMember"`
 	AllowEditGroupInfo     int32  `gorm:"column:allow_edit_group_info" json:"allowEditGroupInfo"`
 	MsgBurnDuration        int32  `gorm:"column:msg_burn_duration" json:"msgBurnDuration"`
-	AllowBurn              int32  `gorm:"column:allow_burn" json:"allowBurn"`
-	EnableInviteLink       int32  `gorm:"column:enable_invite_link" json:"enableInviteLink"`
+	AllowBurn              int32                         `gorm:"column:allow_burn" json:"allowBurn"`
+	EnableInviteLink       int32                         `gorm:"column:enable_invite_link" json:"enableInviteLink"`
+	InviteLink             []*sdkws.GroupInviteLinkInfo  `gorm:"column:invite_link;serializer:json;type:text" json:"inviteLink"`
 }
 
 func (LocalGroup) TableName() string {
@@ -395,15 +397,15 @@ func (LocalAppSDKVersion) TableName() string {
 
 // LocalSignalCallRecord 音视频通话记录（与 rtc.CallRecordItem 对齐，存于本地 SQLite / IndexDB）。
 type LocalSignalCallRecord struct {
-	SID                 string `gorm:"column:s_id;primaryKey;type:varchar(128)" json:"sID"`
-	RoomID              string `gorm:"column:room_id;type:varchar(128);index:idx_signal_room" json:"roomID"`
+	SID    string `gorm:"column:s_id;primaryKey;type:varchar(128)" json:"sID"`
+	RoomID string `gorm:"column:room_id;type:varchar(128);index:idx_signal_room" json:"roomID"`
 	// Status 见 constant.SignalCallStatus*：1=已接听 2=未接通
 	Status     int32 `gorm:"column:status;index:idx_signal_status" json:"status"`
 	CreateTime int64 `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
 	// DialDuration 拨打时长（毫秒）
 	DialDuration int64 `gorm:"column:dial_duration" json:"dialDuration"`
 	// CallDuration 通话时长（毫秒），未接通为 0
-	CallDuration int64 `gorm:"column:call_duration" json:"callDuration"`
+	CallDuration        int64  `gorm:"column:call_duration" json:"callDuration"`
 	MediaType           string `gorm:"column:media_type;type:varchar(32)" json:"mediaType"`
 	SessionType         int32  `gorm:"column:session_type;index:idx_signal_session" json:"sessionType"`
 	InviterUserID       string `gorm:"column:inviter_user_id;type:varchar(64)" json:"inviterUserID"`

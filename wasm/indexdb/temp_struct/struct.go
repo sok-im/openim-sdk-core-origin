@@ -103,8 +103,21 @@ type LocalGroup struct {
 	AllowAddMember         int32  `json:"allowAddMember,omitempty"`
 	AllowEditGroupInfo     int32  `json:"allowEditGroupInfo,omitempty"`
 	MsgBurnDuration        int32  `json:"msgBurnDuration,omitempty"`
-	AllowBurn              int32  `json:"allowBurn,omitempty"`
-	EnableInviteLink       int32  `json:"enableInviteLink,omitempty"`
+	AllowBurn              int32                  `json:"allowBurn,omitempty"`
+	EnableInviteLink       int32                  `json:"enableInviteLink,omitempty"`
+	InviteLink             []LocalGroupInviteLink `json:"inviteLink,omitempty"`
+}
+
+type LocalGroupInviteLink struct {
+	LinkID      string `json:"linkID,omitempty"`
+	GroupID     string `json:"groupID,omitempty"`
+	CreatorID   string `json:"creatorID,omitempty"`
+	ExpireAt    int64  `json:"expireAt,omitempty"`
+	MaxUseCount int32  `json:"maxUseCount,omitempty"`
+	UsedCount   int32  `json:"usedCount,omitempty"`
+	Revoked     bool   `json:"revoked,omitempty"`
+	CreatedAt   int64  `json:"createdAt,omitempty"`
+	ShareURL    string `json:"shareURL,omitempty"`
 }
 
 type LocalFriendRequest struct {
@@ -153,14 +166,14 @@ type LocalFriend struct {
 }
 
 type LocalUser struct {
-	UserID           string `json:"userID,omitempty"`
-	Nickname         string `json:"nickname,omitempty"`
-	FaceURL          string `json:"faceURL,omitempty"`
-	CreateTime       int64  `json:"createTime,omitempty"`
-	AppMangerLevel   int32  `json:"-"`
-	Ex               string `json:"ex,omitempty"`
-	AttachedInfo     string `json:"attachedInfo,omitempty"`
-	GlobalRecvMsgOpt int32  `json:"globalRecvMsgOpt,omitempty"`
+	UserID             string `json:"userID,omitempty"`
+	Nickname           string `json:"nickname,omitempty"`
+	FaceURL            string `json:"faceURL,omitempty"`
+	CreateTime         int64  `json:"createTime,omitempty"`
+	AppMangerLevel     int32  `json:"-"`
+	Ex                 string `json:"ex,omitempty"`
+	AttachedInfo       string `json:"attachedInfo,omitempty"`
+	GlobalRecvMsgOpt   int32  `json:"globalRecvMsgOpt,omitempty"`
 	Phone              string `json:"phone,omitempty"`
 	AreaCode           string `json:"areaCode,omitempty"`
 	CallRingtoneURL    string `json:"callRingtoneURL,omitempty"`

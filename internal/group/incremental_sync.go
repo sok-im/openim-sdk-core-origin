@@ -50,6 +50,7 @@ func (g *Group) syncNotificationGroupInfo(ctx context.Context, groupInfo *sdkws.
 	}
 	log.ZDebug(ctx, "sync notification group info", "groupInfo", groupInfo)
 	changes := datautil.Batch(ServerGroupToLocalGroup, []*sdkws.GroupInfo{groupInfo})
+	g.enrichLocalGroupsInviteLinks(ctx, changes)
 	kv := datautil.SliceToMapAny(local, func(e *model_struct.LocalGroup) (string, *model_struct.LocalGroup) {
 		return e.GroupID, e
 	})

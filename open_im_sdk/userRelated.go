@@ -481,6 +481,15 @@ func (u *LoginMgr) Context() context.Context {
 	return u.ctx
 }
 
+// preLoginCtx returns a context for APIs used before login (captcha, etc.).
+// It is detached from SDK logout cancellation and API error callbacks.
+func (u *LoginMgr) preLoginCtx() context.Context {
+	if u.info == nil {
+		return context.Background()
+	}
+	return ccontext.WithInfo(context.Background(), u.info)
+}
+
 func (u *LoginMgr) initResources() {
 	ctx := ccontext.WithInfo(context.Background(), u.info)
 	u.ctx, u.cancel = context.WithCancel(ctx)
@@ -550,6 +559,13 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 	} else {
 		log.ZWarn(ctx, "TriggerCmdLogout db is nil", nil)
 	}
+	// Clear session credentials so pre-login APIs (captcha) do not send a stale token.
+	if u.info != nil {
+		u.info.UserID = ""
+		u.info.Token = ""
+	}
+	u.token = ""
+	u.loginUserID = ""
 	// user object must be rest  when user logout
 	u.initResources()
 	log.ZDebug(ctx, "TriggerCmdLogout client success...",

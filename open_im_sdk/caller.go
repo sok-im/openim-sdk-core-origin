@@ -99,9 +99,9 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 		return nil, sdkerrs.ErrResourceLoad.WrapMsg("not load resource")
 	}
 	baseCtx := UserForSDK.Context()
-	// Captcha is used on the login page and may run while logout cancels the SDK context.
+	// Captcha runs on the login page and may overlap with logout context cancellation.
 	if isCaptchaFunc(shortFuncName(funcName)) {
-		baseCtx = context.WithoutCancel(baseCtx)
+		baseCtx = UserForSDK.preLoginCtx()
 	}
 	ctx := ccontext.WithOperationID(baseCtx, operationID)
 

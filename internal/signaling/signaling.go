@@ -341,7 +341,7 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 		constant.SignalCallStatusNotConnected,
 		constant.SignalCallActionTimeout,
 		inviteMs, 0, time.Now().UnixMilli())
-	log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", inv, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
+	log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", inv, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
 
 }
 
@@ -467,8 +467,8 @@ func (s *Signaling) handleInvite(ctx context.Context, listener open_im_sdk_callb
 		}
 		s.storeInviteTime(req.Invitation.RoomID, inviteMs)
 		s.startInviteTimer(req.Invitation)
-		log.ZInfo(ctx, "handleInvite startInviteTimer", "roomID", req.Invitation.RoomID)
-		log.ZDebug(ctx, "OnReceiveNewInvitation", "invitation", req)
+		log.ZInfo(ctx, "lintao handleInvite startInviteTimer", "roomID", req.Invitation.RoomID)
+		log.ZDebug(ctx, "lintao OnReceiveNewInvitation", "invitation", req)
 		listener.OnReceiveNewInvitation(jsonutil.StructToJsonString(req))
 	}
 	return nil
@@ -487,7 +487,7 @@ func (s *Signaling) handleInviteInGroup(ctx context.Context, listener open_im_sd
 		s.storeInviteTime(req.Invitation.RoomID, inviteMs)
 		s.startInviteTimer(req.Invitation)
 
-		log.ZDebug(ctx, "OnReceiveNewInvitation (group)", "invitation", req)
+		log.ZDebug(ctx, "lintao OnReceiveNewInvitation (group)", "invitation", req)
 		listener.OnReceiveNewInvitation(jsonutil.StructToJsonString(req))
 	}
 	return nil
@@ -502,12 +502,12 @@ func (s *Signaling) handleAccept(ctx context.Context, listener open_im_sdk_callb
 		s.cancelInviteTimer(req.Invitation.RoomID)
 		s.storeConnectTime(req.Invitation.RoomID, time.Now().UnixMilli())
 
-		log.ZDebug(ctx, "OnInviteeAccepted", "accept", req)
+		log.ZDebug(ctx, "lintao OnInviteeAccepted", "accept", req)
 		listener.OnInviteeAccepted(jsonutil.StructToJsonString(req))
 		return nil
 	}
 	if req.UserID == s.loginUserID && req.OpUserPlatformID != s.platformID {
-		log.ZDebug(ctx, "OnInviteeAcceptedByOtherDevice", "accept", req)
+		log.ZDebug(ctx, "lintao OnInviteeAcceptedByOtherDevice", "accept", req)
 		listener.OnInviteeAcceptedByOtherDevice(jsonutil.StructToJsonString(req))
 	}
 	return nil
@@ -521,7 +521,7 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 	if req.Invitation.InviterUserID == s.loginUserID {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
-		log.ZDebug(ctx, "OnInviteeRejected", "reject", req)
+		log.ZDebug(ctx, "lintao OnInviteeRejected", "reject", req)
 		listener.OnInviteeRejected(jsonutil.StructToJsonString(req))
 
 		inviteMs, _, _, ok := s.popTimingForRecord(req.Invitation.RoomID)
@@ -530,12 +530,12 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
 				inviteMs, 0, time.Now().UnixMilli())
-			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
+			log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 		return nil
 	}
 	if req.UserID == s.loginUserID && req.OpUserPlatformID != s.platformID {
-		log.ZDebug(ctx, "OnInviteeRejectedByOtherDevice", "reject", req)
+		log.ZDebug(ctx, "lintao OnInviteeRejectedByOtherDevice", "reject", req)
 		listener.OnInviteeRejectedByOtherDevice(jsonutil.StructToJsonString(req))
 	}
 	return nil
@@ -563,7 +563,7 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 	if datautil.Contain(s.loginUserID, req.Invitation.InviteeUserIDList...) {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
-		log.ZDebug(ctx, "OnInvitationCancelled", "cancel", req)
+		log.ZDebug(ctx, "lintao OnInvitationCancelled", "cancel", req)
 		listener.OnInvitationCancelled(jsonutil.StructToJsonString(req))
 
 		// 主叫挂断时服务端可能同时推送 Cancel + HungUp；已接听则仅由 HungUp 落库，避免两条未接记录。
@@ -578,7 +578,7 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallActionCancel,
 			inviteMs, 0, time.Now().UnixMilli())
-		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
+		log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 	}
 	return nil
 }
@@ -592,7 +592,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 	if req.UserID != s.loginUserID {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
-		log.ZInfo(ctx, "OnHangUp", "hungUp", req, "loginUserID", s.loginUserID)
+		log.ZInfo(ctx, "lintao OnHangUp", "hungUp", req, "loginUserID", s.loginUserID)
 		listener.OnHangUp(jsonutil.StructToJsonString(req))
 
 		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(req.Invitation.RoomID)
@@ -604,7 +604,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			status,
 			constant.SignalCallActionHungUp,
 			inviteMs, connectMs, time.Now().UnixMilli())
-		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
+		log.ZInfo(ctx, "lintao persistLocalCallRecord", "Invitation", req.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
 	}
 	return nil
 }

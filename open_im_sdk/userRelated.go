@@ -70,6 +70,22 @@ var (
 	UserForSDK *LoginMgr
 )
 
+func shortFuncName(funcName string) string {
+	parts := strings.Split(funcName, ".")
+	return parts[len(parts)-1]
+}
+
+// isCaptchaFunc reports pre-login captcha APIs that must survive SDK logout context cancellation.
+func isCaptchaFunc(shortFuncName string) bool {
+	switch shortFuncName {
+	case "GenerateCaptcha-fm", "VerifyCaptcha-fm",
+		"GenerateClickCaptcha-fm", "VerifyClickCaptcha-fm":
+		return true
+	default:
+		return false
+	}
+}
+
 // CheckResourceLoad checks the SDK is resource load status.
 func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if uSDK == nil {
@@ -81,18 +97,14 @@ func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 		return nil
 	}
 
-	parts := strings.Split(funcName, ".")
-	shortFuncName := parts[len(parts)-1]
-	if shortFuncName == "Login-fm" || shortFuncName == "Log-fm" {
+	short := shortFuncName(funcName)
+	if short == "Login-fm" || short == "Log-fm" {
 		return nil
 	}
-	if shortFuncName == "GenerateCaptcha-fm" || shortFuncName == "VerifyCaptcha-fm" {
+	if isCaptchaFunc(short) {
 		return nil
 	}
-	if shortFuncName == "GenerateClickCaptcha-fm" || shortFuncName == "VerifyClickCaptcha-fm" {
-		return nil
-	}
-	if shortFuncName == "PhoneGetSNInfo-fm" {
+	if short == "PhoneGetSNInfo-fm" {
 		return nil
 	}
 

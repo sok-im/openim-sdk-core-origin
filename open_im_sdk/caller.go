@@ -98,7 +98,12 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 		log.ZError(context.Background(), "CheckResourceLoad", err, "funcName", funcName, "uSDK", UserForSDK)
 		return nil, sdkerrs.ErrResourceLoad.WrapMsg("not load resource")
 	}
-	ctx := ccontext.WithOperationID(UserForSDK.Context(), operationID)
+	baseCtx := UserForSDK.Context()
+	// Captcha is used on the login page and may run while logout cancels the SDK context.
+	if isCaptchaFunc(shortFuncName(funcName)) {
+		baseCtx = context.WithoutCancel(baseCtx)
+	}
+	ctx := ccontext.WithOperationID(baseCtx, operationID)
 
 	defer func(start time.Time) {
 		if r := recover(); r != nil {

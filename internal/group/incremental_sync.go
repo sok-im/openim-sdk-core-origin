@@ -49,8 +49,7 @@ func (g *Group) syncNotificationGroupInfo(ctx context.Context, groupInfo *sdkws.
 		return err
 	}
 	log.ZDebug(ctx, "sync notification group info", "groupInfo", groupInfo)
-	changes := datautil.Batch(ServerGroupToLocalGroup, []*sdkws.GroupInfo{groupInfo})
-	g.enrichLocalGroupsInviteLinks(ctx, changes)
+	changes := g.serverGroupInfosToLocalGroups(ctx, []*sdkws.GroupInfo{groupInfo})
 	kv := datautil.SliceToMapAny(local, func(e *model_struct.LocalGroup) (string, *model_struct.LocalGroup) {
 		return e.GroupID, e
 	})
@@ -345,10 +344,10 @@ func (g *Group) IncrSyncJoinGroup(ctx context.Context) error {
 			return resp.Delete
 		},
 		Update: func(resp *group.GetIncrementalJoinGroupResp) []*model_struct.LocalGroup {
-			return datautil.Batch(ServerGroupToLocalGroup, resp.Update)
+			return g.serverGroupInfosToLocalGroups(ctx, resp.Update)
 		},
 		Insert: func(resp *group.GetIncrementalJoinGroupResp) []*model_struct.LocalGroup {
-			return datautil.Batch(ServerGroupToLocalGroup, resp.Insert)
+			return g.serverGroupInfosToLocalGroups(ctx, resp.Insert)
 		},
 		Syncer: func(server, local []*model_struct.LocalGroup) error {
 			return g.groupSyncer.Sync(ctx, server, local, nil)

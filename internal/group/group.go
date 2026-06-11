@@ -94,6 +94,7 @@ func (g *Group) initSyncer() {
 		syncer.WithUUID[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(value *model_struct.LocalGroup) string {
 			return value.GroupID
 		}),
+		syncer.WithEqual[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](localGroupEqual),
 		syncer.WithNotice[*model_struct.LocalGroup, group.GetJoinedGroupListResp, string](func(ctx context.Context, state int, server, local *model_struct.LocalGroup) error {
 			switch state {
 			case syncer.Insert:

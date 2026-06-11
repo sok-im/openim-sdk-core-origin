@@ -119,7 +119,7 @@ type LocalGroup struct {
 	MsgBurnDuration        int32  `gorm:"column:msg_burn_duration" json:"msgBurnDuration"`
 	AllowBurn              int32                         `gorm:"column:allow_burn" json:"allowBurn"`
 	EnableInviteLink       int32                         `gorm:"column:enable_invite_link" json:"enableInviteLink"`
-	InviteLink             []*sdkws.GroupInviteLinkInfo  `gorm:"column:invite_link;serializer:json;type:text" json:"inviteLink"`
+	InviteLink             *sdkws.GroupInviteLinkInfo  `gorm:"column:invite_link;serializer:json;type:text" json:"inviteLink"`
 }
 
 func (LocalGroup) TableName() string {

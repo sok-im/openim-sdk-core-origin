@@ -200,11 +200,18 @@ func (g *Group) SetInviteLinkSetting(ctx context.Context, groupID string, enable
 
 // CreateGroupInviteLink 生成群邀请链接（HTTP POST /group/create_invite_link）。
 func (g *Group) CreateGroupInviteLink(ctx context.Context, groupID string, expireSeconds int64, maxUseCount int32) (*group.CreateGroupInviteLinkResp, error) {
-	return g.createGroupInviteLink(ctx, &group.CreateGroupInviteLinkReq{
+	resp, err := g.createGroupInviteLink(ctx, &group.CreateGroupInviteLinkReq{
 		GroupID:       groupID,
 		ExpireSeconds: expireSeconds,
 		MaxUseCount:   maxUseCount,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if err := g.updateLocalGroupInviteLink(ctx, groupID, groupInviteLinkInfoToSDKWS(resp.GetLink())); err != nil {
+		_ = g.refreshLocalGroupInviteLink(ctx, groupID)
+	}
+	return resp, nil
 }
 
 // GetGroupInviteLink 查询邀请链接详情及群预览（HTTP POST /group/get_invite_link，无需登录）。
@@ -227,10 +234,13 @@ func (g *Group) JoinGroupByInviteLink(ctx context.Context, linkID, reqMessage st
 
 // RevokeGroupInviteLink 吊销群邀请链接（HTTP POST /group/revoke_invite_link）。
 func (g *Group) RevokeGroupInviteLink(ctx context.Context, linkID, groupID string) error {
-	return g.revokeGroupInviteLink(ctx, &group.RevokeGroupInviteLinkReq{
+	if err := g.revokeGroupInviteLink(ctx, &group.RevokeGroupInviteLinkReq{
 		LinkID:  linkID,
 		GroupID: groupID,
-	})
+	}); err != nil {
+		return err
+	}
+	return g.refreshLocalGroupInviteLink(ctx, groupID)
 }
 
 // ListGroupInviteLinks 分页查询群内邀请链接列表（HTTP POST /group/list_invite_links）。

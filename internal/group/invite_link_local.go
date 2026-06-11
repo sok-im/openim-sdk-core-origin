@@ -3,10 +3,11 @@ package group
 import (
 	"context"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/protocol/group"
 	"github.com/openimsdk/protocol/sdkws"
-	"github.com/openimsdk/tools/utils/datautil"
 )
 
 func groupInviteLinkInfoToSDKWS(link *group.GroupInviteLinkInfo) *sdkws.GroupInviteLinkInfo {
@@ -26,6 +27,39 @@ func groupInviteLinkInfoToSDKWS(link *group.GroupInviteLinkInfo) *sdkws.GroupInv
 	}
 }
 
+func localGroupEqual(a, b *model_struct.LocalGroup) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	aCopy, bCopy := *a, *b
+	aCopy.InviteLink, bCopy.InviteLink = nil, nil
+	if !cmp.Equal(&aCopy, &bCopy) {
+		return false
+	}
+	return inviteLinkEqual(a.InviteLink, b.InviteLink)
+}
+
+func inviteLinkEqual(a, b *sdkws.GroupInviteLinkInfo) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return a.LinkID == b.LinkID &&
+		a.GroupID == b.GroupID &&
+		a.CreatorID == b.CreatorID &&
+		a.ExpireAt == b.ExpireAt &&
+		a.MaxUseCount == b.MaxUseCount &&
+		a.UsedCount == b.UsedCount &&
+		a.Revoked == b.Revoked &&
+		a.CreatedAt == b.CreatedAt &&
+		a.ShareURL == b.ShareURL
+}
+
 func (g *Group) enrichServerGroupInviteLinks(ctx context.Context, groups []*sdkws.GroupInfo) {
 	for _, info := range groups {
 		if info == nil {
@@ -35,20 +69,16 @@ func (g *Group) enrichServerGroupInviteLinks(ctx context.Context, groups []*sdkw
 			info.InviteLink = nil
 			continue
 		}
-		if len(info.InviteLink) > 0 {
+		if info.InviteLink != nil {
 			continue
 		}
-		resp, err := g.listGroupInviteLinks(ctx, &group.ListGroupInviteLinksReq{
+		resp, err := g.getGroupInviteLinkByGroupID(ctx, &group.GetGroupInviteLinkByGroupIDReq{
 			GroupID: info.GroupID,
-			Pagination: &sdkws.RequestPagination{
-				PageNumber: 1,
-				ShowNumber: 100,
-			},
 		})
 		if err != nil {
 			continue
 		}
-		info.InviteLink = datautil.Batch(groupInviteLinkInfoToSDKWS, resp.GetLinks())
+		info.InviteLink = groupInviteLinkInfoToSDKWS(resp.GetLink())
 	}
 }
 
@@ -60,20 +90,16 @@ func (g *Group) enrichLocalGroupInviteLinks(ctx context.Context, local *model_st
 		local.InviteLink = nil
 		return
 	}
-	if len(local.InviteLink) > 0 {
+	if local.InviteLink != nil {
 		return
 	}
-	resp, err := g.listGroupInviteLinks(ctx, &group.ListGroupInviteLinksReq{
+	resp, err := g.getGroupInviteLinkByGroupID(ctx, &group.GetGroupInviteLinkByGroupIDReq{
 		GroupID: local.GroupID,
-		Pagination: &sdkws.RequestPagination{
-			PageNumber: 1,
-			ShowNumber: 100,
-		},
 	})
 	if err != nil {
 		return
 	}
-	local.InviteLink = datautil.Batch(groupInviteLinkInfoToSDKWS, resp.GetLinks())
+	local.InviteLink = groupInviteLinkInfoToSDKWS(resp.GetLink())
 }
 
 func (g *Group) enrichLocalGroupsInviteLinks(ctx context.Context, groups []*model_struct.LocalGroup) {

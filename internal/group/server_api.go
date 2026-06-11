@@ -285,6 +285,6 @@ func (g *Group) revokeGroupInviteLink(ctx context.Context, req *group.RevokeGrou
 	return api.RevokeGroupInviteLink.Execute(ctx, req)
 }
 
-func (g *Group) listGroupInviteLinks(ctx context.Context, req *group.ListGroupInviteLinksReq) (*group.ListGroupInviteLinksResp, error) {
-	return api.ListGroupInviteLinks.Invoke(ctx, req)
+func (g *Group) getGroupInviteLinkByGroupID(ctx context.Context, req *group.GetGroupInviteLinkByGroupIDReq) (*group.GetGroupInviteLinkByGroupIDResp, error) {
+	return api.GetGroupInviteLinkByGroupID.Invoke(ctx, req)
 }

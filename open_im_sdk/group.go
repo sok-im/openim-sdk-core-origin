@@ -152,9 +152,9 @@ func RevokeGroupInviteLink(callback open_im_sdk_callback.Base, operationID strin
 	call(callback, operationID, UserForSDK.Group().RevokeGroupInviteLink, linkID, groupID)
 }
 
-// ListGroupInviteLinks 分页查询群内邀请链接。对应 HTTP POST /group/list_invite_links。
-func ListGroupInviteLinks(callback open_im_sdk_callback.Base, operationID string, groupID string, pageNumber, showNumber int32) {
-	call(callback, operationID, UserForSDK.Group().ListGroupInviteLinks, groupID, pageNumber, showNumber)
+// GetGroupInviteLinkByGroupID 查询群内唯一邀请链接。对应 HTTP POST /group/get_group_invite_link_by_group。
+func GetGroupInviteLinkByGroupID(callback open_im_sdk_callback.Base, operationID string, groupID string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupInviteLinkByGroupID, groupID)
 }
 
 func SetGroupMemberInfo(callback open_im_sdk_callback.Base, operationID string, groupMemberInfo string) {

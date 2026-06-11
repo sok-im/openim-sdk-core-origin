@@ -189,9 +189,9 @@ func (w *WrapperGroup) RevokeGroupInviteLink(_ js.Value, args []js.Value) interf
 	return event_listener.NewCaller(open_im_sdk.RevokeGroupInviteLink, callback, &args).AsyncCallWithCallback()
 }
 
-func (w *WrapperGroup) ListGroupInviteLinks(_ js.Value, args []js.Value) interface{} {
+func (w *WrapperGroup) GetGroupInviteLinkByGroupID(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
-	return event_listener.NewCaller(open_im_sdk.ListGroupInviteLinks, callback, &args).AsyncCallWithCallback()
+	return event_listener.NewCaller(open_im_sdk.GetGroupInviteLinkByGroupID, callback, &args).AsyncCallWithCallback()
 }
 
 func (w *WrapperGroup) GetGroupMemberList(_ js.Value, args []js.Value) interface{} {

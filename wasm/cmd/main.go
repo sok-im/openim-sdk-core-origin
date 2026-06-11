@@ -156,7 +156,7 @@ func registerFunc() {
 	js.Global().Set("getGroupInviteLink", js.FuncOf(wrapperGroup.GetGroupInviteLink))
 	js.Global().Set("joinGroupByInviteLink", js.FuncOf(wrapperGroup.JoinGroupByInviteLink))
 	js.Global().Set("revokeGroupInviteLink", js.FuncOf(wrapperGroup.RevokeGroupInviteLink))
-	js.Global().Set("listGroupInviteLinks", js.FuncOf(wrapperGroup.ListGroupInviteLinks))
+	js.Global().Set("getGroupInviteLinkByGroupID", js.FuncOf(wrapperGroup.GetGroupInviteLinkByGroupID))
 	js.Global().Set("getGroupMemberList", js.FuncOf(wrapperGroup.GetGroupMemberList))
 	js.Global().Set("getGroupMemberOwnerAndAdmin", js.FuncOf(wrapperGroup.GetGroupMemberOwnerAndAdmin))
 	js.Global().Set("getGroupMemberListByJoinTimeFilter", js.FuncOf(wrapperGroup.GetGroupMemberListByJoinTimeFilter))

@@ -94,7 +94,7 @@ type GetGroupSettingResp struct {
 	AllowEditGroupInfo int32                       `json:"allowEditGroupInfo"`
 	AllowMemberBurn    int32                       `json:"allowMemberBurn"`
 	EnableInviteLink   int32                       `json:"enableInviteLink"`
-	InviteLink         []*group.GroupInviteLinkInfo `json:"inviteLink"`
+	InviteLink         *group.GroupInviteLinkInfo `json:"inviteLink"`
 }
 
 // SetMsgBurnDurationReq matches HTTP POST /group/set_msg_burn_duration (burnDuration in seconds; 0 = off).

@@ -105,7 +105,7 @@ type LocalGroup struct {
 	MsgBurnDuration        int32  `json:"msgBurnDuration,omitempty"`
 	AllowBurn              int32                  `json:"allowBurn,omitempty"`
 	EnableInviteLink       int32                  `json:"enableInviteLink,omitempty"`
-	InviteLink             []LocalGroupInviteLink `json:"inviteLink,omitempty"`
+	InviteLink             *LocalGroupInviteLink `json:"inviteLink,omitempty"`
 }
 
 type LocalGroupInviteLink struct {

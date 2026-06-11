@@ -233,14 +233,10 @@ func (g *Group) RevokeGroupInviteLink(ctx context.Context, linkID, groupID strin
 	})
 }
 
-// ListGroupInviteLinks 分页查询群内邀请链接列表（HTTP POST /group/list_invite_links）。
-func (g *Group) ListGroupInviteLinks(ctx context.Context, groupID string, pageNumber, showNumber int32) (*group.ListGroupInviteLinksResp, error) {
-	return g.listGroupInviteLinks(ctx, &group.ListGroupInviteLinksReq{
+// GetGroupInviteLinkByGroupID 查询群内唯一邀请链接（HTTP POST /group/get_group_invite_link_by_group）。
+func (g *Group) GetGroupInviteLinkByGroupID(ctx context.Context, groupID string) (*group.GetGroupInviteLinkByGroupIDResp, error) {
+	return g.getGroupInviteLinkByGroupID(ctx, &group.GetGroupInviteLinkByGroupIDReq{
 		GroupID: groupID,
-		Pagination: &sdkws.RequestPagination{
-			PageNumber: pageNumber,
-			ShowNumber: showNumber,
-		},
 	})
 }
 

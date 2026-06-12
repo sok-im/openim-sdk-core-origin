@@ -14,7 +14,7 @@ require (
 	gorm.io/driver/sqlite v1.5.5
 )
 
-require golang.org/x/net v0.54.0 // indirect
+require golang.org/x/net v0.56.0 // indirect
 
 require (
 	github.com/google/go-cmp v0.6.0
@@ -22,8 +22,8 @@ require (
 	github.com/openimsdk/protocol v0.0.73-alpha.12
 	github.com/openimsdk/tools v0.0.50-alpha.80
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	golang.org/x/image v0.40.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/image v0.42.0
+	golang.org/x/sync v0.21.0
 	gorm.io/gorm v1.25.10
 )
 
@@ -35,11 +35,11 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/mobile v0.0.0-20260602190626-68735029466e // indirect
-	golang.org/x/mod v0.36.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
-	golang.org/x/tools v0.45.0 // indirect
+	golang.org/x/mobile v0.0.0-20260611195102-4dd8f1dbf5d2 // indirect
+	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
+	golang.org/x/tools v0.46.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.68.0 // indirect
 )

@@ -59,6 +59,7 @@ const (
 	LogoutStatus = iota + 1
 	Logging
 	Logged
+	LoggingOut
 )
 
 const (
@@ -386,7 +387,26 @@ func (u *LoginMgr) handlerSendingMsg(ctx context.Context, sendingMsg *model_stru
 	return nil
 }
 
+func (u *LoginMgr) waitLogoutComplete(ctx context.Context) error {
+	const maxWait = 30 * time.Second
+	deadline := time.Now().Add(maxWait)
+	for u.getLoginStatus(ctx) == LoggingOut {
+		if time.Now().After(deadline) {
+			return sdkerrs.ErrSdkInternal.WrapMsg("wait logout complete timeout")
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	return nil
+}
+
 func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
+	if err := u.waitLogoutComplete(ctx); err != nil {
+		return err
+	}
 	if u.getLoginStatus(ctx) == Logged {
 		return sdkerrs.ErrLoginRepeat
 	}
@@ -528,6 +548,10 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 			log.ZWarn(ctx, "logout panic", nil, "panic info", err)
 		}
 	}()
+
+	// Mark logging out before canceling the session context so new API calls are
+	// rejected while in-flight requests are drained.
+	u.setLoginStatus(LoggingOut)
 
 	if ccontext.Info(ctx).OperationID() == LogoutTips {
 		isTokenValid = true

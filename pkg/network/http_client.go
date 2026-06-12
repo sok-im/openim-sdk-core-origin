@@ -19,6 +19,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -103,6 +104,14 @@ func ApiPost(ctx context.Context, api string, req, resp any) (err error) {
 	// Send the request and receive the response.
 	response, err := apiClient.Do(request)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			log.ZWarn(ctx, "ApiRequest", err, "type", "context canceled")
+			return sdkerrs.ErrLoginOut.WrapMsg("ApiPost request canceled")
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.ZError(ctx, "ApiRequest", err, "type", "network timeout")
+			return sdkerrs.ErrNetworkTimeOut.WrapMsg("ApiPost http.Client.Do timeout " + err.Error())
+		}
 		log.ZError(ctx, "ApiRequest", err, "type", "network error")
 		return sdkerrs.ErrNetwork.WrapMsg("ApiPost http.Client.Do failed " + err.Error())
 	}

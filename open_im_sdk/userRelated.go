@@ -66,6 +66,21 @@ const (
 	LogoutTips = "js sdk socket close"
 )
 
+func loginStatusString(status int) string {
+	switch status {
+	case LogoutStatus:
+		return "LogoutStatus"
+	case Logging:
+		return "Logging"
+	case Logged:
+		return "Logged"
+	case LoggingOut:
+		return "LoggingOut"
+	default:
+		return fmt.Sprintf("Unknown(%d)", status)
+	}
+}
+
 var (
 	// UserForSDK Client-independent user class
 	UserForSDK *LoginMgr
@@ -325,8 +340,11 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 
 	for {
 		select {
-		case <-u.loginMgrCh:
-			log.ZDebug(ctx, "logoutListener exit")
+		case cmd := <-u.loginMgrCh:
+			log.ZInfo(ctx, "lintao logoutListener triggered",
+				"cmd", cmd.Cmd,
+				"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+				"loginUserID", u.loginUserID)
 			err := u.logout(ctx, true)
 			if err != nil {
 				log.ZError(ctx, "logout error", err)
@@ -351,8 +369,15 @@ func (u *LoginMgr) getLoginStatus(_ context.Context) int {
 }
 func (u *LoginMgr) setLoginStatus(status int) {
 	u.w.Lock()
-	defer u.w.Unlock()
+	prev := u.loginStatus
 	u.loginStatus = status
+	u.w.Unlock()
+	if prev != status {
+		log.ZInfo(context.Background(), "lintao login status changed",
+			"from", loginStatusString(prev),
+			"to", loginStatusString(status),
+			"loginUserID", u.loginUserID)
+	}
 }
 func (u *LoginMgr) checkSendingMessage(ctx context.Context) {
 	sendingMessages, err := u.db.GetAllSendingMessages(ctx)
@@ -400,21 +425,50 @@ func (u *LoginMgr) handlerSendingMsg(ctx context.Context, sendingMsg *model_stru
 func (u *LoginMgr) waitLogoutComplete() error {
 	const maxWait = 10 * time.Second
 	deadline := time.Now().Add(maxWait)
-	for u.getLoginStatus(context.Background()) == LoggingOut {
+	status := u.getLoginStatus(context.Background())
+	if status == LoggingOut {
+		log.ZInfo(context.Background(), "lintao login wait for logout complete",
+			"loginStatus", loginStatusString(status),
+			"loginUserID", u.loginUserID,
+			"maxWait", maxWait.String())
+	}
+	for status == LoggingOut {
 		if time.Now().After(deadline) {
+			log.ZError(context.Background(), "lintao login wait logout complete timeout", nil,
+				"loginStatus", loginStatusString(u.getLoginStatus(context.Background())),
+				"loginUserID", u.loginUserID,
+				"maxWait", maxWait.String())
 			return sdkerrs.ErrSdkInternal.WrapMsg("wait logout complete timeout")
 		}
 		time.Sleep(time.Millisecond * 100)
+		status = u.getLoginStatus(context.Background())
+	}
+	if status != LogoutStatus {
+		log.ZInfo(context.Background(), "lintao login proceed after waitLogoutComplete",
+			"loginStatus", loginStatusString(status),
+			"loginUserID", u.loginUserID)
 	}
 	return nil
 }
 
 func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
+	operationID := ccontext.Info(ctx).OperationID()
+	log.ZInfo(ctx, "login enter",
+		"userID", userID,
+		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+		"prevLoginUserID", u.loginUserID,
+		"ctxErr", ctx.Err())
 	if err := u.waitLogoutComplete(); err != nil {
 		return err
 	}
-	operationID := ccontext.Info(ctx).OperationID()
-	ctx = ccontext.WithOperationID(u.Context(), operationID)
+	sessionCtx := u.Context()
+	if sessionCtx.Err() != nil {
+		log.ZError(ctx, "login session ctx canceled after waitLogoutComplete", sessionCtx.Err(),
+			"userID", userID,
+			"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+			"prevLoginUserID", u.loginUserID)
+	}
+	ctx = ccontext.WithOperationID(sessionCtx, operationID)
 	if u.getLoginStatus(ctx) == Logged {
 		return sdkerrs.ErrLoginRepeat
 	}
@@ -519,6 +573,9 @@ func (u *LoginMgr) preLoginCtx() context.Context {
 }
 
 func (u *LoginMgr) initResources() {
+	log.ZInfo(context.Background(), "initResources",
+		"prevLoginStatus", loginStatusString(u.getLoginStatus(context.Background())),
+		"prevLoginUserID", u.loginUserID)
 	ctx := ccontext.WithInfo(context.Background(), u.info)
 	u.ctx, u.cancel = context.WithCancel(ctx)
 	var convChanLen int
@@ -559,6 +616,11 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 
 	// Mark logging out before canceling the session context so new API calls are
 	// rejected while in-flight requests are drained.
+	log.ZInfo(ctx, "logout start",
+		"isTokenValid", isTokenValid,
+		"loginUserID", u.loginUserID,
+		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+		"operationID", ccontext.Info(ctx).OperationID())
 	u.setLoginStatus(LoggingOut)
 
 	if ccontext.Info(ctx).OperationID() == LogoutTips {
@@ -574,12 +636,14 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 			log.ZDebug(ctx, "TriggerCmdLogout server recycle resources success...")
 		}
 	}
+	log.ZInfo(ctx, "lintao logout cancel session ctx", "loginUserID", u.loginUserID)
 	u.Exit()
 	// Wait for all goroutines started in run() to finish before touching the
 	// database or re-initialising channels.  Without this wait, doConnected
 	// (called synchronously inside handlePushMsgAndEvent) can still be
 	// executing a db call after db.Close() returns, causing a nil-pointer panic.
 	u.wg.Wait()
+	log.ZInfo(ctx, "lintao logout goroutines exited", "loginUserID", u.loginUserID)
 	if u.signaling != nil {
 		u.signaling.Close()
 	}
@@ -600,8 +664,10 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 	u.loginUserID = ""
 	// user object must be rest  when user logout
 	u.initResources()
-	log.ZDebug(ctx, "TriggerCmdLogout client success...",
-		"isTokenValid", isTokenValid)
+	log.ZInfo(ctx, "lintao logout complete, resources reinitialized",
+		"isTokenValid", isTokenValid,
+		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+		"sessionCtxErr", u.Context().Err())
 	return nil
 }
 

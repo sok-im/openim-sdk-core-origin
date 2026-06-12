@@ -100,11 +100,26 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 	}
 	baseCtx := UserForSDK.Context()
 	short := shortFuncName(funcName)
+	usePreLoginCtx := isCaptchaFunc(short) || isSessionLifecycleFunc(short)
 	// Captcha and login/logout may overlap logout context cancellation.
-	if isCaptchaFunc(short) || isSessionLifecycleFunc(short) {
+	if usePreLoginCtx {
 		baseCtx = UserForSDK.preLoginCtx()
 	} else if baseCtx.Err() != nil {
+		log.ZError(baseCtx, "lintao sdk session context canceled, reject api call",
+			baseCtx.Err(),
+			"funcName", funcName,
+			"shortFunc", short,
+			"loginStatus", loginStatusString(UserForSDK.getLoginStatus(context.Background())),
+			"loginUserID", UserForSDK.loginUserID,
+			"usePreLoginCtx", usePreLoginCtx)
 		return nil, sdkerrs.ErrLoginOut.WrapMsg("sdk session context canceled")
+	}
+	if usePreLoginCtx {
+		log.ZInfo(baseCtx, "lintao api call use preLoginCtx",
+			"funcName", funcName,
+			"shortFunc", short,
+			"loginStatus", loginStatusString(UserForSDK.getLoginStatus(context.Background())),
+			"sessionCtxErr", UserForSDK.Context().Err())
 	}
 	ctx := ccontext.WithOperationID(baseCtx, operationID)
 

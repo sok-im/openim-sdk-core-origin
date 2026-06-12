@@ -204,7 +204,7 @@ func (c *LongConnMgr) readPump(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			c.closedErr = ctx.Err()
-			log.ZInfo(c.ctx, "readPump done, sdk logout.....")
+			log.ZInfo(c.ctx, "lintao readPump done, sdk logout.....")
 			return
 		default:
 		}
@@ -219,7 +219,7 @@ func (c *LongConnMgr) readPump(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				c.closedErr = ctx.Err()
-				log.ZInfo(c.ctx, "readPump done, sdk logout.....")
+				log.ZInfo(c.ctx, "lintao readPump done, sdk logout.....")
 				return
 			case <-time.After(c.reconnectStrategy.GetSleepInterval()):
 			}
@@ -239,6 +239,8 @@ func (c *LongConnMgr) readPump(ctx context.Context) {
 			err := c.handleMessage(message)
 			if err != nil {
 				c.closedErr = err
+				log.ZError(c.ctx, "lintao readPump exit on handleMessage error", err,
+					"goroutine ID", getGoroutineID())
 				return
 			}
 		case MessageText:
@@ -519,6 +521,7 @@ func (c *LongConnMgr) handleMessage(message []byte) error {
 		if err := c.Syncer.NotifyResp(ctx, wsResp); err != nil {
 			log.ZError(ctx, "notifyResp failed", err, "wsResp", wsResp)
 		}
+		log.ZInfo(ctx, "lintao long conn mgr logout", "wsResp", wsResp, "err", sdkerrs.ErrLoginOut)
 		return sdkerrs.ErrLoginOut
 	case constant.KickOnlineMsg:
 		log.ZDebug(ctx, "socket receive client kicked offline")

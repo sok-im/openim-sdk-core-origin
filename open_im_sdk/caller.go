@@ -99,8 +99,9 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 		return nil, sdkerrs.ErrResourceLoad.WrapMsg("not load resource")
 	}
 	baseCtx := UserForSDK.Context()
-	// Captcha runs on the login page and may overlap with logout context cancellation.
-	if isCaptchaFunc(shortFuncName(funcName)) {
+	short := shortFuncName(funcName)
+	// Captcha and login/logout may overlap logout context cancellation.
+	if isCaptchaFunc(short) || isSessionLifecycleFunc(short) {
 		baseCtx = UserForSDK.preLoginCtx()
 	} else if baseCtx.Err() != nil {
 		return nil, sdkerrs.ErrLoginOut.WrapMsg("sdk session context canceled")

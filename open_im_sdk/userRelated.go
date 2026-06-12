@@ -87,6 +87,16 @@ func isCaptchaFunc(shortFuncName string) bool {
 	}
 }
 
+// isSessionLifecycleFunc reports Login/Logout which may overlap logout context cancellation.
+func isSessionLifecycleFunc(shortFuncName string) bool {
+	switch shortFuncName {
+	case "Login-fm", "Logout-fm":
+		return true
+	default:
+		return false
+	}
+}
+
 // CheckResourceLoad checks the SDK is resource load status.
 func CheckResourceLoad(uSDK *LoginMgr, funcName string) error {
 	if uSDK == nil {
@@ -387,26 +397,24 @@ func (u *LoginMgr) handlerSendingMsg(ctx context.Context, sendingMsg *model_stru
 	return nil
 }
 
-func (u *LoginMgr) waitLogoutComplete(ctx context.Context) error {
-	const maxWait = 30 * time.Second
+func (u *LoginMgr) waitLogoutComplete() error {
+	const maxWait = 10 * time.Second
 	deadline := time.Now().Add(maxWait)
-	for u.getLoginStatus(ctx) == LoggingOut {
+	for u.getLoginStatus(context.Background()) == LoggingOut {
 		if time.Now().After(deadline) {
 			return sdkerrs.ErrSdkInternal.WrapMsg("wait logout complete timeout")
 		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(50 * time.Millisecond):
-		}
+		time.Sleep(time.Millisecond * 100)
 	}
 	return nil
 }
 
 func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
-	if err := u.waitLogoutComplete(ctx); err != nil {
+	if err := u.waitLogoutComplete(); err != nil {
 		return err
 	}
+	operationID := ccontext.Info(ctx).OperationID()
+	ctx = ccontext.WithOperationID(u.Context(), operationID)
 	if u.getLoginStatus(ctx) == Logged {
 		return sdkerrs.ErrLoginRepeat
 	}

@@ -345,10 +345,21 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 				"cmd", cmd.Cmd,
 				"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
 				"loginUserID", u.loginUserID)
-			err := u.logout(ctx, true)
-			if err != nil {
-				log.ZError(ctx, "logout error", err)
+			// Run logout asynchronously: logout() waits on u.wg which includes
+			// this goroutine; a synchronous call deadlocks in LoggingOut forever.
+			logoutCtx := ctx
+			if cmd.Ctx != nil {
+				logoutCtx = cmd.Ctx
 			}
+			go func() {
+				log.ZInfo(logoutCtx, "lintao logoutListener triggered asynchronously",
+					"cmd", cmd.Cmd,
+					"loginStatus", loginStatusString(u.getLoginStatus(logoutCtx)),
+					"loginUserID", u.loginUserID)
+				if err := u.logout(logoutCtx, true); err != nil {
+					log.ZError(logoutCtx, "logout error", err)
+				}
+			}()
 		case <-ctx.Done():
 			log.ZInfo(ctx, "logoutListener done sdk logout.....")
 			return

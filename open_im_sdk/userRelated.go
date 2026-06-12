@@ -341,10 +341,21 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 	for {
 		select {
 		case cmd := <-u.loginMgrCh:
+			currentStatus := u.getLoginStatus(ctx)
 			log.ZInfo(ctx, "lintao logoutListener triggered",
 				"cmd", cmd.Cmd,
-				"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+				"loginStatus", loginStatusString(currentStatus),
 				"loginUserID", u.loginUserID)
+			// Skip if already logging out or already logged out to prevent
+			// concurrent logout goroutines from corrupting shared state.
+			if currentStatus != Logged {
+				log.ZWarn(ctx, "logoutListener: skip duplicate logout trigger",
+					nil, "loginStatus", loginStatusString(currentStatus))
+				continue
+			}
+			// Advance status immediately so any subsequent message in loginMgrCh
+			// is discarded by the guard above before the goroutine runs.
+			u.setLoginStatus(LoggingOut)
 			// Run logout asynchronously: logout() waits on u.wg which includes
 			// this goroutine; a synchronous call deadlocks in LoggingOut forever.
 			logoutCtx := ctx
@@ -354,7 +365,6 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 			go func() {
 				log.ZInfo(logoutCtx, "lintao logoutListener triggered asynchronously",
 					"cmd", cmd.Cmd,
-					"loginStatus", loginStatusString(u.getLoginStatus(logoutCtx)),
 					"loginUserID", u.loginUserID)
 				if err := u.logout(logoutCtx, true); err != nil {
 					log.ZError(logoutCtx, "logout error", err)

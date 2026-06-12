@@ -160,7 +160,11 @@ func (c *LongConnMgr) SendReqWaitResp(ctx context.Context, m proto.Message, reqI
 		},
 		Resp: make(chan *GeneralWsResp, 1),
 	}
-	c.send <- msg
+	select {
+	case c.send <- msg:
+	case <-ctx.Done():
+		return sdkerrs.ErrCtxDeadline
+	}
 	log.ZDebug(ctx, "send message to send channel success", "msg", m, "reqIdentifier", reqIdentifier)
 	select {
 	case <-ctx.Done():
@@ -216,12 +220,14 @@ func (c *LongConnMgr) readPump(ctx context.Context) {
 		}
 		if err != nil {
 			log.ZWarn(c.ctx, "reConn", err)
+			sleepTimer := time.NewTimer(c.reconnectStrategy.GetSleepInterval())
 			select {
 			case <-ctx.Done():
+				sleepTimer.Stop()
 				c.closedErr = ctx.Err()
 				log.ZInfo(c.ctx, "lintao readPump done, sdk logout.....")
 				return
-			case <-time.After(c.reconnectStrategy.GetSleepInterval()):
+			case <-sleepTimer.C:
 			}
 			continue
 		}
@@ -381,10 +387,12 @@ func (c *LongConnMgr) sendAndWaitResp(ctx context.Context, msg *GeneralWsReq) (*
 	if err != nil {
 		return nil, err
 	}
+	waitTimer := time.NewTimer(sendAndWaitTime)
+	defer waitTimer.Stop()
 	select {
 	case resp := <-tempChan:
 		return resp, nil
-	case <-time.After(sendAndWaitTime):
+	case <-waitTimer.C:
 		return nil, sdkerrs.ErrNetworkTimeOut
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -407,11 +415,13 @@ func (c *LongConnMgr) writeBinaryMsgAndRetry(ctx context.Context, msg *GeneralWs
 			log.ZError(c.ctx, "send binary message error", err, "message", msg)
 			c.closedErr = err
 			_ = c.close()
+			retryTimer := time.NewTimer(time.Second)
 			select {
 			case <-ctx.Done():
+				retryTimer.Stop()
 				c.Syncer.DelCh(msgIncr)
 				return nil, ctx.Err()
-			case <-time.After(time.Second):
+			case <-retryTimer.C:
 			}
 			continue
 		}
@@ -676,6 +686,7 @@ func (c *LongConnMgr) reConn(ctx context.Context, num *int) (needRecon bool, err
 	if err != nil {
 		c.SetConnectionStatus(Closed)
 		if resp != nil {
+			defer resp.Body.Close()
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return true, err

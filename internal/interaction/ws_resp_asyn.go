@@ -17,11 +17,12 @@ package interaction
 import (
 	"context"
 	"errors"
-	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
-	"github.com/openimsdk/tools/errs"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/utils"
+	"github.com/openimsdk/tools/errs"
 	"github.com/openimsdk/tools/log"
 )
 
@@ -101,19 +102,17 @@ func (u *WsRespAsyn) DelCh(msgIncr string) {
 }
 
 func (u *WsRespAsyn) notifyCh(ch chan *GeneralWsResp, value *GeneralWsResp, timeout int64) error {
-	var flag = 0
+	t := time.NewTimer(time.Second * time.Duration(timeout))
+	defer t.Stop()
 	select {
 	case ch <- value:
-		flag = 1
-	case <-time.After(time.Second * time.Duration(timeout)):
-		flag = 2
-	}
-	if flag == 1 {
 		return nil
-	} else {
+	case <-t.C:
 		return errors.New("send cmd timeout")
 	}
 }
+
+const maxNotifyRetries = 3
 
 // write a unit test for this function
 func (u *WsRespAsyn) NotifyResp(ctx context.Context, wsResp GeneralWsResp) error {
@@ -124,15 +123,14 @@ func (u *WsRespAsyn) NotifyResp(ctx context.Context, wsResp GeneralWsResp) error
 	if ch == nil {
 		return errs.WrapMsg(errors.New("no ch"), "GetCh failed "+wsResp.MsgIncr)
 	}
-	for {
+	for i := 0; i < maxNotifyRetries; i++ {
 		err := u.notifyCh(ch, &wsResp, 1)
-		if err != nil {
-			log.ZWarn(ctx, "TriggerCmdNewMsgCome failed ", err, "ch", ch, "wsResp", wsResp)
-			continue
-
+		if err == nil {
+			return nil
 		}
-		return nil
+		log.ZWarn(ctx, "TriggerCmdNewMsgCome failed", err, "attempt", i+1, "ch", ch, "wsResp", wsResp)
 	}
+	return fmt.Errorf("notifyResp failed after %d retries for msgIncr %s", maxNotifyRetries, wsResp.MsgIncr)
 }
 func (u *WsRespAsyn) WaitResp(ctx context.Context, ch chan *GeneralWsResp, timeout int) (*GeneralWsResp, error) {
 	select {

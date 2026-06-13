@@ -141,6 +141,10 @@ func (c *Conversation) handleEndSeq(ctx context.Context, req sdk.GetAdvancedHist
 func (c *Conversation) fetchMessagesWithGapCheck(ctx context.Context, conversationID string,
 	count int, startTime, startSeq int64, startClientMsgID string, isReverse bool, viewType int, messageListCallback *sdk.GetAdvancedHistoryMessageListCallback) ([]*model_struct.LocalChatLog, error) {
 
+	if c.DisableHistoryPull {
+		return c.fetchLocalMessagesOnly(ctx, conversationID, count, startTime, startSeq, startClientMsgID, isReverse, messageListCallback)
+	}
+
 	var list, validMessages []*model_struct.LocalChatLog
 
 	// Get the number of invalid messages in this batch to recursive fetching from earlier points.
@@ -244,6 +248,26 @@ func (c *Conversation) fetchMessagesWithGapCheck(ctx context.Context, conversati
 		return append(validMessages, missingMessages...), nil
 	}
 
+	return validMessages, nil
+}
+
+func (c *Conversation) fetchLocalMessagesOnly(ctx context.Context, conversationID string,
+	count int, startTime, startSeq int64, startClientMsgID string, isReverse bool,
+	messageListCallback *sdk.GetAdvancedHistoryMessageListCallback) ([]*model_struct.LocalChatLog, error) {
+
+	list, err := c.db.GetMessageList(ctx, conversationID, count, startTime, startSeq, startClientMsgID, isReverse)
+	if err != nil {
+		return nil, err
+	}
+
+	validMessages := make([]*model_struct.LocalChatLog, 0, len(list))
+	for _, msg := range list {
+		if msg.Status >= constant.MsgStatusHasDeleted {
+			continue
+		}
+		validMessages = append(validMessages, msg)
+	}
+	messageListCallback.IsEnd = len(list) < count
 	return validMessages, nil
 }
 

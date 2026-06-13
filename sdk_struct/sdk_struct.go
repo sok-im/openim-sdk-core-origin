@@ -315,6 +315,16 @@ type IMConfig struct {
 	IsLogStandardOutput  bool   `json:"isLogStandardOutput"`
 	LogFilePath          string `json:"logFilePath"`
 	IsExternalExtensions bool   `json:"isExternalExtensions"`
+	// DisableHistoryPull skips pulling historical messages from the server when true.
+	// Omitted or nil defaults to true (no history pull). Set to false to enable history pull.
+	DisableHistoryPull *bool `json:"disableHistoryPull,omitempty"`
+}
+
+func (c IMConfig) HistoryPullDisabled() bool {
+	if c.DisableHistoryPull == nil {
+		return true
+	}
+	return *c.DisableHistoryPull
 }
 
 type CmdNewMsgComeToConversation struct {

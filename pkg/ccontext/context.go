@@ -44,6 +44,7 @@ type ContextInfo interface {
 	LogLevel() uint32
 	OperationID() string
 	IsExternalExtensions() bool
+	DisableHistoryPull() bool
 }
 
 func Info(ctx context.Context) ContextInfo {
@@ -118,6 +119,10 @@ func (i *info) OperationID() string {
 
 func (i *info) IsExternalExtensions() bool {
 	return i.conf.IsExternalExtensions
+}
+
+func (i *info) DisableHistoryPull() bool {
+	return i.conf.HistoryPullDisabled()
 }
 
 type apiErrCode struct{}

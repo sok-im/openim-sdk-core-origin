@@ -72,6 +72,7 @@ type Conversation struct {
 	messagePullForwardEndSeqMap *cache.ConversationSeqContextCache
 	messagePullReverseEndSeqMap *cache.ConversationSeqContextCache
 	IsExternalExtensions        bool
+	DisableHistoryPull          bool
 	msgOffset                   int
 	progress                    int
 	conversationSyncMutex       sync.Mutex
@@ -114,6 +115,7 @@ func NewConversation(ctx context.Context, longConnMgr *interaction.LongConnMgr, 
 		file:                        file,
 		signaling:                   sig,
 		IsExternalExtensions:        info.IsExternalExtensions(),
+		DisableHistoryPull:          info.DisableHistoryPull(),
 		maxSeqRecorder:              NewMaxSeqRecorder(),
 		messagePullForwardEndSeqMap: cache.NewConversationSeqContextCache(),
 		messagePullReverseEndSeqMap: cache.NewConversationSeqContextCache(),

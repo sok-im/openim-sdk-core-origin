@@ -207,6 +207,9 @@ func getLostSeqListWithLimitLength(minSeq, maxSeq int64, haveSeqList []int64, is
 func (c *Conversation) fetchAndMergeMissingMessages(ctx context.Context, conversationID string, seqList []int64,
 	isReverse bool, count int, startTime int64, list *[]*model_struct.LocalChatLog,
 	messageListCallback *sdk.GetAdvancedHistoryMessageListCallback) {
+	if c.DisableHistoryPull {
+		return
+	}
 
 	var getSeqMessageResp msg.GetSeqMessageResp
 	var getSeqMessageReq msg.GetSeqMessageReq

@@ -248,6 +248,7 @@ func (u *LoginMgr) ImConfig() sdk_struct.IMConfig {
 		DataDir:              u.info.DataDir,
 		LogLevel:             u.info.LogLevel,
 		IsExternalExtensions: u.info.IsExternalExtensions,
+		DisableHistoryPull:   u.info.IMConfig.DisableHistoryPull,
 	}
 }
 

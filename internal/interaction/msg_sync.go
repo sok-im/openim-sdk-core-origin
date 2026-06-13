@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/ccontext"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/common"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/db_interface"
@@ -58,6 +59,7 @@ type MsgSyncer struct {
 	reinstalled       bool                  //true if the app was uninstalled and reinstalled
 	isSyncing         bool                  // indicates whether data is being synced
 	isSyncingLock     sync.Mutex            // lock for syncing state
+	disableHistoryPull bool                 // skip pulling historical messages from server
 
 }
 
@@ -65,14 +67,15 @@ type MsgSyncer struct {
 func NewMsgSyncer(ctx context.Context, conversationCh, recvCh chan common.Cmd2Value,
 	loginUserID string, longConnMgr *LongConnMgr, db db_interface.DataBase, syncTimes int) (*MsgSyncer, error) {
 	m := &MsgSyncer{
-		loginUserID:    loginUserID,
-		longConnMgr:    longConnMgr,
-		recvCh:         recvCh,
-		conversationCh: conversationCh,
-		ctx:            ctx,
-		syncedMaxSeqs:  make(map[string]int64),
-		db:             db,
-		syncTimes:      syncTimes,
+		loginUserID:        loginUserID,
+		longConnMgr:        longConnMgr,
+		recvCh:             recvCh,
+		conversationCh:     conversationCh,
+		ctx:                ctx,
+		syncedMaxSeqs:      make(map[string]int64),
+		db:                 db,
+		syncTimes:          syncTimes,
+		disableHistoryPull: ccontext.Info(ctx).DisableHistoryPull(),
 	}
 	if err := m.loadSeq(ctx); err != nil {
 		log.ZError(ctx, "loadSeq err", err)
@@ -444,6 +447,11 @@ func (m *MsgSyncer) syncAndTriggerMsgs(ctx context.Context, seqMap map[string][2
 		log.ZDebug(ctx, "nothing to sync", "syncMsgNum", syncMsgNum)
 		return nil
 	}
+	if m.disableHistoryPull {
+		m.advanceSyncedMaxSeqs(seqMap)
+		log.ZDebug(ctx, "skip historical message pull", "seqMap", seqMap)
+		return nil
+	}
 
 	log.ZDebug(ctx, "current sync seqMap", "seqMap", seqMap)
 	var (
@@ -503,58 +511,70 @@ func (m *MsgSyncer) syncAndTriggerMsgs(ctx context.Context, seqMap map[string][2
 	return nil
 }
 
+func (m *MsgSyncer) advanceSyncedMaxSeqs(seqMap map[string][2]int64) {
+	for conversationID, seqs := range seqMap {
+		m.syncedMaxSeqs[conversationID] = seqs[1]
+	}
+}
+
 // Fragment synchronization message, seq refresh after successful trigger
 func (m *MsgSyncer) syncAndTriggerReinstallMsgs(ctx context.Context, seqMap map[string][2]int64, syncMsgNum int64) error {
-	if len(seqMap) > 0 {
-		log.ZDebug(ctx, "current sync seqMap", "seqMap", seqMap)
-		var (
-			tempSeqMap = make(map[string][2]int64, 50)
-			msgNum     = 0
-			total      = len(seqMap)
-		)
+	if len(seqMap) == 0 {
+		log.ZDebug(ctx, "noting conversation to sync", "syncMsgNum", syncMsgNum)
+		return nil
+	}
+	if m.disableHistoryPull {
+		m.advanceSyncedMaxSeqs(seqMap)
+		log.ZDebug(ctx, "skip reinstall historical message pull", "seqMap", seqMap)
+		return nil
+	}
 
-		for k, v := range seqMap {
-			oneConversationSyncNum := min(v[1]-v[0]+1, syncMsgNum)
-			tempSeqMap[k] = v
-			if oneConversationSyncNum > 0 {
-				// For regular conversations, ensure msgNum is the minimum of oneConversationSyncNum and syncMsgNum
-				msgNum += int(min(oneConversationSyncNum, syncMsgNum))
-			}
-			if msgNum >= SplitPullMsgNum {
-				resp, err := m.pullMsgBySeqRange(ctx, tempSeqMap, syncMsgNum)
-				if err != nil {
-					log.ZError(ctx, "syncMsgFromServer err", err, "tempSeqMap", tempSeqMap)
-					return err
-				}
-				m.checkMessagesAndGetLastMessage(ctx, resp.Msgs)
-				_ = m.triggerReinstallConversation(ctx, resp.Msgs, total)
-				_ = m.triggerNotification(ctx, resp.NotificationMsgs)
-				for conversationID, seqs := range tempSeqMap {
-					m.syncedMaxSeqs[conversationID] = seqs[1]
-				}
+	log.ZDebug(ctx, "current sync seqMap", "seqMap", seqMap)
+	var (
+		tempSeqMap = make(map[string][2]int64, 50)
+		msgNum     = 0
+		total      = len(seqMap)
+	)
 
-				// renew
-				tempSeqMap = make(map[string][2]int64, 50)
-				msgNum = 0
-			}
+	for k, v := range seqMap {
+		oneConversationSyncNum := min(v[1]-v[0]+1, syncMsgNum)
+		tempSeqMap[k] = v
+		if oneConversationSyncNum > 0 {
+			// For regular conversations, ensure msgNum is the minimum of oneConversationSyncNum and syncMsgNum
+			msgNum += int(min(oneConversationSyncNum, syncMsgNum))
 		}
-
-		if len(tempSeqMap) > 0 && msgNum > 0 {
+		if msgNum >= SplitPullMsgNum {
 			resp, err := m.pullMsgBySeqRange(ctx, tempSeqMap, syncMsgNum)
 			if err != nil {
-				log.ZError(ctx, "syncMsgFromServer err", err, "seqMap", seqMap)
+				log.ZError(ctx, "syncMsgFromServer err", err, "tempSeqMap", tempSeqMap)
 				return err
 			}
-
 			m.checkMessagesAndGetLastMessage(ctx, resp.Msgs)
 			_ = m.triggerReinstallConversation(ctx, resp.Msgs, total)
 			_ = m.triggerNotification(ctx, resp.NotificationMsgs)
 			for conversationID, seqs := range tempSeqMap {
 				m.syncedMaxSeqs[conversationID] = seqs[1]
 			}
+
+			// renew
+			tempSeqMap = make(map[string][2]int64, 50)
+			msgNum = 0
 		}
-	} else {
-		log.ZDebug(ctx, "noting conversation to sync", "syncMsgNum", syncMsgNum)
+	}
+
+	if len(tempSeqMap) > 0 && msgNum > 0 {
+		resp, err := m.pullMsgBySeqRange(ctx, tempSeqMap, syncMsgNum)
+		if err != nil {
+			log.ZError(ctx, "syncMsgFromServer err", err, "seqMap", seqMap)
+			return err
+		}
+
+		m.checkMessagesAndGetLastMessage(ctx, resp.Msgs)
+		_ = m.triggerReinstallConversation(ctx, resp.Msgs, total)
+		_ = m.triggerNotification(ctx, resp.NotificationMsgs)
+		for conversationID, seqs := range tempSeqMap {
+			m.syncedMaxSeqs[conversationID] = seqs[1]
+		}
 	}
 
 	return nil

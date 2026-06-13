@@ -308,7 +308,11 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 			if !isHistory {
 				onlineMap[onlineMsgKey{ClientMsgID: v.ClientMsgID, ServerMsgID: v.ServerMsgID}] = struct{}{}
 				newMessages = append(newMessages, msg)
-
+				// 1522/1523 由 RTC 写入 sg_ 群聊时间线（IsNotNotification=true），不会走 notification 通道。
+				// 在此补发 group 通知，触发 OnGroupCallStarted / OnGroupCallEnded。
+				if v.ContentType == constant.GroupCallStartedNotification || v.ContentType == constant.GroupCallEndedNotification {
+					c.group.DoNotification(ctx, v)
+				}
 			}
 			log.ZDebug(ctx, "decode message", "msg", msg)
 			if v.SendID == c.loginUserID { //seq

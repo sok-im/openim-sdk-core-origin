@@ -466,6 +466,11 @@ func (c *Conversation) doUpdateMessage(c2v common.Cmd2Value) {
 			log.ZError(ctx, "not support sessionType", nil, "args", args, "node", node, "cmd", c2v.Cmd, "caller", c2v.Caller)
 			return
 		}
+		if c.signaling != nil {
+			if err := c.signaling.UpdateCallRecordsUserProfile(ctx, args.UserID, args.Nickname, args.FaceURL); err != nil {
+				log.ZError(ctx, "UpdateCallRecordsUserProfile err", err, "userID", args.UserID)
+			}
+		}
 	}
 
 }

@@ -196,6 +196,11 @@ type SignalCallRecordModel interface {
 	GetSignalCallRecordBySID(ctx context.Context, sID string) (*model_struct.LocalSignalCallRecord, error)
 	DeleteSignalCallRecords(ctx context.Context, sIDs []string) error
 	ClearAllSignalCallRecords(ctx context.Context) error
+	// UpdateSignalCallRecordUserProfile 更新指定用户作为主叫/被叫时的展示昵称与头像。
+	UpdateSignalCallRecordUserProfile(ctx context.Context, userID, nickname, faceURL string) error
+	// ListSignalCallRecordsByParticipant 列出该用户参与的全部本地通话记录（含主叫、被叫）。
+	ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error)
+	UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sID, calleeMatchText string) error
 }
 
 type DataBase interface {

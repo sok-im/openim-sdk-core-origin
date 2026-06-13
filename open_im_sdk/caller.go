@@ -99,9 +99,27 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 		return nil, sdkerrs.ErrResourceLoad.WrapMsg("not load resource")
 	}
 	baseCtx := UserForSDK.Context()
-	// Captcha runs on the login page and may overlap with logout context cancellation.
-	if isCaptchaFunc(shortFuncName(funcName)) {
+	short := shortFuncName(funcName)
+	usePreLoginCtx := isCaptchaFunc(short) || isSessionLifecycleFunc(short)
+	// Captcha and login/logout may overlap logout context cancellation.
+	if usePreLoginCtx {
 		baseCtx = UserForSDK.preLoginCtx()
+	} else if baseCtx.Err() != nil {
+		log.ZError(baseCtx, "lintao sdk session context canceled, reject api call",
+			baseCtx.Err(),
+			"funcName", funcName,
+			"shortFunc", short,
+			"loginStatus", loginStatusString(UserForSDK.getLoginStatus(context.Background())),
+			"loginUserID", UserForSDK.loginUserID,
+			"usePreLoginCtx", usePreLoginCtx)
+		return nil, sdkerrs.ErrLoginOut.WrapMsg("sdk session context canceled")
+	}
+	if usePreLoginCtx {
+		log.ZInfo(baseCtx, "lintao api call use preLoginCtx",
+			"funcName", funcName,
+			"shortFunc", short,
+			"loginStatus", loginStatusString(UserForSDK.getLoginStatus(context.Background())),
+			"sessionCtxErr", UserForSDK.Context().Err())
 	}
 	ctx := ccontext.WithOperationID(baseCtx, operationID)
 
@@ -227,7 +245,7 @@ func call(callback open_im_sdk_callback.Base, operationID string, fn any, args .
 	go func() {
 		res, err := call_(operationID, fn, args...)
 		if err != nil {
-			if code, ok := err.(errs.CodeError); ok {
+			if code, ok := errs.Unwrap(err).(errs.CodeError); ok {
 				callback.OnError(int32(code.Code()), code.Error())
 			} else {
 				callback.OnError(sdkerrs.UnknownCode, fmt.Sprintf("error %T not implement CodeError: %s", err, err))

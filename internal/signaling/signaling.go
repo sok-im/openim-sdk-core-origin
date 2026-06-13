@@ -639,6 +639,7 @@ func (s *Signaling) handleRoomParticipantDisconnected(ctx context.Context, msg *
 
 // persistLocalCallRecord 异步投递写任务，避免阻塞信令通知路径。
 // direction 由本端角色与 status 在内部统一计算，调用方勿再传入。
+// 群音视频通话不落本地通话记录。
 func (s *Signaling) persistLocalCallRecord(
 	ctx context.Context,
 	inv *rtc.InvitationInfo,
@@ -647,7 +648,7 @@ func (s *Signaling) persistLocalCallRecord(
 	action string,
 	inviteMs, connectMs, endMs int64,
 ) {
-	if s.db == nil || inv == nil || s.recordCh == nil {
+	if s.db == nil || inv == nil || s.recordCh == nil || isGroupChatCall(inv) {
 		return
 	}
 	direction := s.resolveCallRecordDirection(inv, status)

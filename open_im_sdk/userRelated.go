@@ -59,11 +59,27 @@ const (
 	LogoutStatus = iota + 1
 	Logging
 	Logged
+	LoggingOut
 )
 
 const (
 	LogoutTips = "js sdk socket close"
 )
+
+func loginStatusString(status int) string {
+	switch status {
+	case LogoutStatus:
+		return "LogoutStatus"
+	case Logging:
+		return "Logging"
+	case Logged:
+		return "Logged"
+	case LoggingOut:
+		return "LoggingOut"
+	default:
+		return fmt.Sprintf("Unknown(%d)", status)
+	}
+}
 
 var (
 	// UserForSDK Client-independent user class
@@ -80,6 +96,16 @@ func isCaptchaFunc(shortFuncName string) bool {
 	switch shortFuncName {
 	case "GenerateCaptcha-fm", "VerifyCaptcha-fm",
 		"GenerateClickCaptcha-fm", "VerifyClickCaptcha-fm":
+		return true
+	default:
+		return false
+	}
+}
+
+// isSessionLifecycleFunc reports Login/Logout which may overlap logout context cancellation.
+func isSessionLifecycleFunc(shortFuncName string) bool {
+	switch shortFuncName {
+	case "Login-fm", "Logout-fm":
 		return true
 	default:
 		return false
@@ -314,12 +340,36 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 
 	for {
 		select {
-		case <-u.loginMgrCh:
-			log.ZDebug(ctx, "logoutListener exit")
-			err := u.logout(ctx, true)
-			if err != nil {
-				log.ZError(ctx, "logout error", err)
+		case cmd := <-u.loginMgrCh:
+			currentStatus := u.getLoginStatus(ctx)
+			log.ZInfo(ctx, "lintao logoutListener triggered",
+				"cmd", cmd.Cmd,
+				"loginStatus", loginStatusString(currentStatus),
+				"loginUserID", u.loginUserID)
+			// Skip if already logging out or already logged out to prevent
+			// concurrent logout goroutines from corrupting shared state.
+			if currentStatus != Logged {
+				log.ZWarn(ctx, "logoutListener: skip duplicate logout trigger",
+					nil, "loginStatus", loginStatusString(currentStatus))
+				continue
 			}
+			// Advance status immediately so any subsequent message in loginMgrCh
+			// is discarded by the guard above before the goroutine runs.
+			u.setLoginStatus(LoggingOut)
+			// Run logout asynchronously: logout() waits on u.wg which includes
+			// this goroutine; a synchronous call deadlocks in LoggingOut forever.
+			logoutCtx := ctx
+			if cmd.Ctx != nil {
+				logoutCtx = cmd.Ctx
+			}
+			go func() {
+				log.ZInfo(logoutCtx, "lintao logoutListener triggered asynchronously",
+					"cmd", cmd.Cmd,
+					"loginUserID", u.loginUserID)
+				if err := u.logout(logoutCtx, true); err != nil {
+					log.ZError(logoutCtx, "logout error", err)
+				}
+			}()
 		case <-ctx.Done():
 			log.ZInfo(ctx, "logoutListener done sdk logout.....")
 			return
@@ -340,8 +390,15 @@ func (u *LoginMgr) getLoginStatus(_ context.Context) int {
 }
 func (u *LoginMgr) setLoginStatus(status int) {
 	u.w.Lock()
-	defer u.w.Unlock()
+	prev := u.loginStatus
 	u.loginStatus = status
+	u.w.Unlock()
+	if prev != status {
+		log.ZInfo(context.Background(), "lintao login status changed",
+			"from", loginStatusString(prev),
+			"to", loginStatusString(status),
+			"loginUserID", u.loginUserID)
+	}
 }
 func (u *LoginMgr) checkSendingMessage(ctx context.Context) {
 	sendingMessages, err := u.db.GetAllSendingMessages(ctx)
@@ -386,7 +443,53 @@ func (u *LoginMgr) handlerSendingMsg(ctx context.Context, sendingMsg *model_stru
 	return nil
 }
 
+func (u *LoginMgr) waitLogoutComplete() error {
+	const maxWait = 10 * time.Second
+	deadline := time.Now().Add(maxWait)
+	status := u.getLoginStatus(context.Background())
+	if status == LoggingOut {
+		log.ZInfo(context.Background(), "lintao login wait for logout complete",
+			"loginStatus", loginStatusString(status),
+			"loginUserID", u.loginUserID,
+			"maxWait", maxWait.String())
+	}
+	for status == LoggingOut {
+		if time.Now().After(deadline) {
+			log.ZError(context.Background(), "lintao login wait logout complete timeout", nil,
+				"loginStatus", loginStatusString(u.getLoginStatus(context.Background())),
+				"loginUserID", u.loginUserID,
+				"maxWait", maxWait.String())
+			return sdkerrs.ErrSdkInternal.WrapMsg("wait logout complete timeout")
+		}
+		time.Sleep(time.Millisecond * 100)
+		status = u.getLoginStatus(context.Background())
+	}
+	if status != LogoutStatus {
+		log.ZInfo(context.Background(), "lintao login proceed after waitLogoutComplete",
+			"loginStatus", loginStatusString(status),
+			"loginUserID", u.loginUserID)
+	}
+	return nil
+}
+
 func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
+	operationID := ccontext.Info(ctx).OperationID()
+	log.ZInfo(ctx, "login enter",
+		"userID", userID,
+		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+		"prevLoginUserID", u.loginUserID,
+		"ctxErr", ctx.Err())
+	if err := u.waitLogoutComplete(); err != nil {
+		return err
+	}
+	sessionCtx := u.Context()
+	if sessionCtx.Err() != nil {
+		log.ZError(ctx, "login session ctx canceled after waitLogoutComplete", sessionCtx.Err(),
+			"userID", userID,
+			"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+			"prevLoginUserID", u.loginUserID)
+	}
+	ctx = ccontext.WithOperationID(sessionCtx, operationID)
 	if u.getLoginStatus(ctx) == Logged {
 		return sdkerrs.ErrLoginRepeat
 	}
@@ -491,6 +594,9 @@ func (u *LoginMgr) preLoginCtx() context.Context {
 }
 
 func (u *LoginMgr) initResources() {
+	log.ZInfo(context.Background(), "initResources",
+		"prevLoginStatus", loginStatusString(u.getLoginStatus(context.Background())),
+		"prevLoginUserID", u.loginUserID)
 	ctx := ccontext.WithInfo(context.Background(), u.info)
 	u.ctx, u.cancel = context.WithCancel(ctx)
 	var convChanLen int
@@ -529,6 +635,15 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 		}
 	}()
 
+	// Mark logging out before canceling the session context so new API calls are
+	// rejected while in-flight requests are drained.
+	log.ZInfo(ctx, "logout start",
+		"isTokenValid", isTokenValid,
+		"loginUserID", u.loginUserID,
+		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+		"operationID", ccontext.Info(ctx).OperationID())
+	u.setLoginStatus(LoggingOut)
+
 	if ccontext.Info(ctx).OperationID() == LogoutTips {
 		isTokenValid = true
 	}
@@ -542,12 +657,14 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 			log.ZDebug(ctx, "TriggerCmdLogout server recycle resources success...")
 		}
 	}
+	log.ZInfo(ctx, "lintao logout cancel session ctx", "loginUserID", u.loginUserID)
 	u.Exit()
 	// Wait for all goroutines started in run() to finish before touching the
 	// database or re-initialising channels.  Without this wait, doConnected
 	// (called synchronously inside handlePushMsgAndEvent) can still be
 	// executing a db call after db.Close() returns, causing a nil-pointer panic.
 	u.wg.Wait()
+	log.ZInfo(ctx, "lintao logout goroutines exited", "loginUserID", u.loginUserID)
 	if u.signaling != nil {
 		u.signaling.Close()
 	}
@@ -568,8 +685,10 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 	u.loginUserID = ""
 	// user object must be rest  when user logout
 	u.initResources()
-	log.ZDebug(ctx, "TriggerCmdLogout client success...",
-		"isTokenValid", isTokenValid)
+	log.ZInfo(ctx, "lintao logout complete, resources reinitialized",
+		"isTokenValid", isTokenValid,
+		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
+		"sessionCtxErr", u.Context().Err())
 	return nil
 }
 

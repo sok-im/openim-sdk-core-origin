@@ -375,25 +375,33 @@ func (m *MsgSyncer) doConnected(ctx context.Context) {
 		log.ZDebug(m.ctx, "get max seq success", "resp", resp.MaxSeqs)
 	}
 
-	if reinstalled {
-		if hasReadSeqs, hErr := m.getHasReadSeqs(ctx); hErr == nil {
-			m.syncedMaxSeqsLock.Lock()
-			for convID, hasReadSeq := range hasReadSeqs {
+	// Advance the per-conversation sync cursor to the server hasReadSeq on every
+	// login or reconnect, not only after a reinstall.  This ensures that when the
+	// same account logs in from a different device only unread messages are pulled;
+	// messages already read on another device are skipped.
+	//
+	// Notification conversations (n_* prefix) are intentionally excluded: they
+	// carry state updates (group changes, friend requests, …) that must be
+	// processed from the last locally-seen seq regardless of read status.
+	// On reinstall, notifications are excluded from pulling by
+	// compareSeqsAndBatchSync anyway, so including them here is harmless.
+	if hasReadSeqs, hErr := m.getHasReadSeqs(ctx); hErr == nil {
+		m.syncedMaxSeqsLock.Lock()
+		for convID, hasReadSeq := range hasReadSeqs {
+			if reinstalled || !IsNotification(convID) {
 				if cur, ok := m.syncedMaxSeqs[convID]; !ok || cur < hasReadSeq {
 					m.syncedMaxSeqs[convID] = hasReadSeq
 				}
 			}
-			m.syncedMaxSeqsLock.Unlock()
-			log.ZDebug(ctx, "reinstalled", "hasReadSeqs", hasReadSeqs,
-				"count", len(hasReadSeqs))
-
-			// Persist normal-conversation cursors so that subsequent logins (where
-			// m.reinstalled is false) can still skip already-read history even when
-			// no local messages were stored (hasReadSeq == maxSeq at reinstall time).
-			m.persistHasReadSeqs(ctx, hasReadSeqs)
-		} else {
-			log.ZWarn(ctx, "reinstalled: getHasReadSeqs failed", hErr)
 		}
+		m.syncedMaxSeqsLock.Unlock()
+		// Persist cursors so future reconnects on this device also skip read history.
+		// persistHasReadSeqs already excludes notification conversations.
+		m.persistHasReadSeqs(ctx, hasReadSeqs)
+		log.ZDebug(ctx, "doConnected: advanced sync cursors to hasReadSeq",
+			"count", len(hasReadSeqs), "reinstalled", reinstalled)
+	} else {
+		log.ZWarn(ctx, "doConnected: getHasReadSeqs failed, falling back to local cursor", hErr)
 	}
 
 	m.compareSeqsAndBatchSync(ctx, resp.MaxSeqs, connectPullNums)

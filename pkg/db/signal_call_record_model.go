@@ -198,3 +198,64 @@ func (d *DataBase) ClearAllSignalCallRecords(ctx context.Context) error {
 		"ClearAllSignalCallRecords failed",
 	)
 }
+
+func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID, nickname, faceURL string) error {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return nil
+	}
+	d.mRWMutex.Lock()
+	defer d.mRWMutex.Unlock()
+	tx := d.signalDB().WithContext(ctx)
+	if nickname != "" {
+		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
+			Update("inviter_user_nickname", nickname).Error; err != nil {
+			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter nickname failed")
+		}
+		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
+			Update("invitee_user_nickname", nickname).Error; err != nil {
+			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
+		}
+	}
+	if faceURL != "" {
+		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
+			Update("inviter_user_face_url", faceURL).Error; err != nil {
+			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
+		}
+		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
+			Update("invitee_user_face_url", faceURL).Error; err != nil {
+			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
+		}
+	}
+	return nil
+}
+
+func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error) {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return nil, nil
+	}
+	d.mRWMutex.RLock()
+	defer d.mRWMutex.RUnlock()
+	pattern := "%\"" + userID + "\"%"
+	var list []*model_struct.LocalSignalCallRecord
+	err := d.signalDB().WithContext(ctx).
+		Where("inviter_user_id = ? OR invitee_uid = ? OR invitee_user_ids LIKE ?", userID, userID, pattern).
+		Find(&list).Error
+	return list, errs.WrapMsg(err, "ListSignalCallRecordsByParticipant failed")
+}
+
+func (d *DataBase) UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sID, calleeMatchText string) error {
+	sID = strings.TrimSpace(sID)
+	if sID == "" {
+		return nil
+	}
+	d.mRWMutex.Lock()
+	defer d.mRWMutex.Unlock()
+	return errs.WrapMsg(
+		d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{}).
+			Where("s_id = ?", sID).
+			Update("callee_match_text", calleeMatchText).Error,
+		"UpdateSignalCallRecordCalleeMatchText failed",
+	)
+}

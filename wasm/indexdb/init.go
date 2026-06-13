@@ -49,6 +49,9 @@ import (
 //   - getSignalCallRecordBySID(sID, loginUserID) → 返回 JSON 或空字符串（未找到时）
 //   - deleteSignalCallRecords(sIDsJson, loginUserID) → 批量删除
 //   - clearAllSignalCallRecords(loginUserID)         → 清空当前账号全部记录
+//   - updateSignalCallRecordUserProfile(userID, nickname, faceURL, loginUserID)
+//   - listSignalCallRecordsByParticipant(userID, loginUserID) → 返回 JSON 数组
+//   - updateSignalCallRecordCalleeMatchText(sID, calleeMatchText, loginUserID)
 // 表名：local_signal_call_records。未更新 JS 侧会导致 Web 端崩溃。
 
 type IndexDB struct {

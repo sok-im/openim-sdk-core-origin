@@ -112,3 +112,31 @@ func (i *SignalCallRecords) ClearAllSignalCallRecords(ctx context.Context) error
 	_, err := exec.Exec(i.loginUserID)
 	return err
 }
+
+func (i *SignalCallRecords) UpdateSignalCallRecordUserProfile(ctx context.Context, userID, nickname, faceURL string) error {
+	_, err := exec.Exec(userID, nickname, faceURL, i.loginUserID)
+	return err
+}
+
+func (i *SignalCallRecords) ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error) {
+	gList, err := exec.Exec(userID, i.loginUserID)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := gList.(string); ok {
+		if v == "" {
+			return nil, nil
+		}
+		var result []*model_struct.LocalSignalCallRecord
+		if err := utils.JsonStringToStruct(v, &result); err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return nil, exec.ErrType
+}
+
+func (i *SignalCallRecords) UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sID, calleeMatchText string) error {
+	_, err := exec.Exec(sID, calleeMatchText, i.loginUserID)
+	return err
+}

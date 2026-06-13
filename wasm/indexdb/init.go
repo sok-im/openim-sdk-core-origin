@@ -42,10 +42,10 @@ import (
 //   - batchUpsertSignalCallRecords(recordsJson, loginUserID)
 //   - searchSignalCallRecords(offset, count, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID, loginUserID)
 //   - countSignalCallRecords(sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID, loginUserID)
-//     sessionType=0 时须排除群通话：(group_id 为空) 且 session_type 不为 2/3（WriteGroupChatType/ReadGroupChatType）
+//     sessionType=0 时须排除群通话：(group_id 为空) 且 session_type 不为 2/3；SDK 侧群通话本身不落库，此处用于兼容历史数据
 //   - searchSignalCallRecordsByUser(userID, status, offset, count, startTime, endTime, loginUserID)
 //   - countSignalCallRecordsByUser(userID, status, startTime, endTime, loginUserID)
-//     须始终排除群通话（同上 group_id / session_type 条件）
+//     须始终排除群通话（同上 group_id / session_type 条件，兼容历史数据）
 //   - getSignalCallRecordBySID(sID, loginUserID) → 返回 JSON 或空字符串（未找到时）
 //   - deleteSignalCallRecords(sIDsJson, loginUserID) → 批量删除
 //   - clearAllSignalCallRecords(loginUserID)         → 清空当前账号全部记录

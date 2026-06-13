@@ -293,8 +293,15 @@ func extractGroupFaceURL(p *rtc.ParticipantMetaData) string {
 	return ""
 }
 
+// isGroupChatCall 判定是否为群音视频通话（此类记录不落本地通话表）。
 func isGroupChatCall(inv *rtc.InvitationInfo) bool {
-	return inv != nil && strings.TrimSpace(inv.GroupID) != ""
+	if inv == nil {
+		return false
+	}
+	if strings.TrimSpace(inv.GroupID) != "" {
+		return true
+	}
+	return inv.SessionType == constant.WriteGroupChatType || inv.SessionType == constant.ReadGroupChatType
 }
 
 func callRecordRole(l *model_struct.LocalSignalCallRecord) int32 {

@@ -648,15 +648,15 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 	if ccontext.Info(ctx).OperationID() == LogoutTips {
 		isTokenValid = true
 	}
-	if !isTokenValid {
-		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-		defer cancel()
-		err := u.longConnMgr.SendReqWaitResp(ctx, &push.DelUserPushTokenReq{UserID: u.info.UserID, PlatformID: u.info.PlatformID}, constant.LogoutMsg, &push.DelUserPushTokenResp{})
-		if err != nil {
-			log.ZWarn(ctx, "TriggerCmdLogout server recycle resources failed...", err)
-		} else {
-			log.ZDebug(ctx, "TriggerCmdLogout server recycle resources success...")
-		}
+	// Always notify msgGateway before tearing down the session so the server marks
+	// the user offline promptly. Otherwise a message sent right after logout may be
+	// treated as an online push to a closing socket and never synced on re-login.
+	logoutCtx, logoutCancel := context.WithTimeout(ctx, 20*time.Second)
+	defer logoutCancel()
+	if err := u.longConnMgr.SendReqWaitResp(logoutCtx, &push.DelUserPushTokenReq{UserID: u.info.UserID, PlatformID: u.info.PlatformID}, constant.LogoutMsg, &push.DelUserPushTokenResp{}); err != nil {
+		log.ZWarn(ctx, "TriggerCmdLogout server recycle resources failed...", err)
+	} else {
+		log.ZDebug(ctx, "TriggerCmdLogout server recycle resources success...")
 	}
 	log.ZInfo(ctx, "lintao logout cancel session ctx", "loginUserID", u.loginUserID)
 	u.Exit()

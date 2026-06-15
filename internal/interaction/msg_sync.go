@@ -351,7 +351,11 @@ func (m *MsgSyncer) pushTriggerAndSync(ctx context.Context, pushMessages map[str
 		}
 		if lastSeq == m.syncedMaxSeqs[conversationID]+int64(len(storageMsgs)) && lastSeq != 0 {
 			log.ZDebug(ctx, "trigger msgs", "msgs", storageMsgs)
-			_ = triggerFunc(ctx, map[string]*sdkws.PullMsgs{conversationID: {Msgs: storageMsgs}})
+			if err := triggerFunc(ctx, map[string]*sdkws.PullMsgs{conversationID: {Msgs: storageMsgs}}); err != nil {
+				log.ZWarn(ctx, "trigger push msgs failed, will pull on sync", err, "conversationID", conversationID, "lastSeq", lastSeq)
+				needSyncSeqMap[conversationID] = [2]int64{m.syncedMaxSeqs[conversationID] + 1, lastSeq}
+				continue
+			}
 			m.syncedMaxSeqs[conversationID] = lastSeq
 		} else if lastSeq != 0 && lastSeq > m.syncedMaxSeqs[conversationID] {
 			//must pull message when message type is notification
@@ -389,20 +393,34 @@ func (m *MsgSyncer) doConnected(ctx context.Context) {
 	// On reinstall, notifications are excluded from pulling by
 	// compareSeqsAndBatchSync anyway, so including them here is harmless.
 	if hasReadSeqs, hErr := m.getHasReadSeqs(ctx); hErr == nil {
+		persistedHasReadSeqs := make(map[string]int64)
 		m.syncedMaxSeqsLock.Lock()
 		for convID, hasReadSeq := range hasReadSeqs {
 			if reinstalled || !IsNotification(convID) {
-				if cur, ok := m.syncedMaxSeqs[convID]; !ok || cur < hasReadSeq {
+				cur, ok := m.syncedMaxSeqs[convID]
+				if !ok {
+					cur = 0
+				}
+				if cur >= hasReadSeq {
+					continue
+				}
+				maxSeq := resp.MaxSeqs[convID]
+				// Advance to server hasReadSeq only when there are newer unread server
+				// seqs (maxSeq > hasReadSeq) so we skip the cross-device read portion.
+				// If hasReadSeq > localMax and maxSeq == hasReadSeq, the gap may be
+				// offline/unread messages (e.g. received while logged out) — do not
+				// advance or they will never be pulled on re-login.
+				if maxSeq > hasReadSeq {
 					m.syncedMaxSeqs[convID] = hasReadSeq
+					persistedHasReadSeqs[convID] = hasReadSeq
 				}
 			}
 		}
 		m.syncedMaxSeqsLock.Unlock()
-		// Persist cursors so future reconnects on this device also skip read history.
-		// persistHasReadSeqs already excludes notification conversations.
-		m.persistHasReadSeqs(ctx, hasReadSeqs)
+		// Persist only cursors we actually applied.
+		m.persistHasReadSeqs(ctx, persistedHasReadSeqs)
 		log.ZDebug(ctx, "doConnected: advanced sync cursors to hasReadSeq",
-			"count", len(hasReadSeqs), "reinstalled", reinstalled)
+			"count", len(persistedHasReadSeqs), "reinstalled", reinstalled)
 	} else {
 		log.ZWarn(ctx, "doConnected: getHasReadSeqs failed, falling back to local cursor", hErr)
 	}

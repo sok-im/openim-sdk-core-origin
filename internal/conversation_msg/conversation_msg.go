@@ -625,8 +625,8 @@ func (c *Conversation) doMsgSyncByReinstalled(c2v common.Cmd2Value) {
 	_ = c.batchInsertMessageList(ctx, insertMsg)
 
 	// conversation storage
-	if err := c.db.BatchUpdateConversationList(ctx, conversationList); err != nil {
-		log.ZError(ctx, "insert new conversation err:", err)
+	if err := c.db.UpdateOrCreateConversations(ctx, conversationList); err != nil {
+		log.ZError(ctx, "upsert conversation in reinstalled sync err:", err)
 	}
 	log.ZDebug(ctx, "before trigger msg", "cost time", time.Since(b).Seconds(), "len", len(allMsg))
 

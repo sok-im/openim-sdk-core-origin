@@ -120,40 +120,79 @@ func (c *Conversation) checkEndBlock(ctx context.Context, conversationID string,
 			_, minSeq, _ := c.getMaxAndMinHaveSeqList(*list)
 			log.ZDebug(ctx, "validateAndFillEndBlockContinuity", "minSeq", minSeq,
 				"conversationID", conversationID, "userCanPullMinSeq", userCanPullMinSeq)
+
+			// minSeq==0 means this batch has no seq-bearing local messages (empty DB,
+			// or only seq=0 placeholders).  Do NOT use minSeq<=userCanPullMinSeq here:
+			// with unread-only mode userCanPullMinSeq is hasReadSeq+1, so 0<=floor would
+			// wrongly set IsEnd and skip the server fetch for tail unread messages.
+			if minSeq == 0 {
+				currentMaxSeq := c.getConversationMaxSeq(ctx, conversationID)
+				lastMinSeq, _ := c.messagePullForwardEndSeqMap.Load(conversationID, viewType)
+				log.ZDebug(ctx, "validateAndFillEndBlockContinuity: empty local batch",
+					"conversationID", conversationID,
+					"currentMaxSeq", currentMaxSeq,
+					"lastMinSeq", lastMinSeq,
+					"userCanPullMinSeq", userCanPullMinSeq,
+					"syncAllHistory", c.syncAllHistory)
+
+				if !c.syncAllHistory && currentMaxSeq >= userCanPullMinSeq {
+					lostSeqList := getLostSeqListWithLimitLength(userCanPullMinSeq, currentMaxSeq, []int64{}, isReverse)
+					if len(lostSeqList) > 0 {
+						isShouldFetchMessage = true
+						seqList = lostSeqList
+						log.ZInfo(ctx, "validateAndFillEndBlockContinuity: fetch unread tail from server",
+							"conversationID", conversationID,
+							"userCanPullMinSeq", userCanPullMinSeq,
+							"currentMaxSeq", currentMaxSeq,
+							"lostSeqCount", len(lostSeqList))
+						return isShouldFetchMessage, seqList
+					}
+				}
+
+				if lastMinSeq > 0 && lastMinSeq <= userCanPullMinSeq {
+					messageListCallback.IsEnd = true
+					log.ZInfo(ctx, "validateAndFillEndBlockContinuity: empty batch reached lower bound",
+						"conversationID", conversationID,
+						"lastMinSeq", lastMinSeq,
+						"userCanPullMinSeq", userCanPullMinSeq)
+					return isShouldFetchMessage, seqList
+				}
+
+				if !c.syncAllHistory && currentMaxSeq > 0 && currentMaxSeq < userCanPullMinSeq {
+					messageListCallback.IsEnd = true
+					log.ZInfo(ctx, "validateAndFillEndBlockContinuity: server max below unread floor",
+						"conversationID", conversationID,
+						"currentMaxSeq", currentMaxSeq,
+						"userCanPullMinSeq", userCanPullMinSeq)
+					return isShouldFetchMessage, seqList
+				}
+			}
+
 			// The reason for being less than is that in cases of poor network conditions,
 			// minSeq may be 0, but in fact, the server's sequence has not yet synchronized to the local.
-			if minSeq <= userCanPullMinSeq {
+			if minSeq > 0 && minSeq <= userCanPullMinSeq {
 				messageListCallback.IsEnd = true
-				log.ZInfo(ctx, "lintao validateAndFillEndBlockContinuity: reached history lower bound",
+				log.ZInfo(ctx, "validateAndFillEndBlockContinuity: reached history lower bound",
 					"conversationID", conversationID,
 					"minSeq", minSeq,
 					"userCanPullMinSeq", userCanPullMinSeq,
 					"syncAllHistory", c.syncAllHistory,
 					"unreadOnlyMode", !c.syncAllHistory)
-			} else {
+			} else if minSeq > userCanPullMinSeq {
 				lastMinSeq, _ := c.messagePullForwardEndSeqMap.Load(conversationID, viewType)
 				log.ZDebug(ctx, "validateAndFillEndBlockContinuity", "lastMinSeq", lastMinSeq, "conversationID", conversationID)
-				// If `minSeq` is zero and `lastMinSeq` is at the minimum server sequence, this batch is fully local
-				if minSeq == 0 && lastMinSeq <= userCanPullMinSeq { // All messages in this batch are local messages,
-					// and the minimum seq of the last batch of valid messages has already reached the minimum pullable seq from the server.
-					messageListCallback.IsEnd = true
-					log.ZInfo(ctx, "lintao validateAndFillEndBlockContinuity: local-only batch reached lower bound",
-						"conversationID", conversationID,
-						"lastMinSeq", lastMinSeq,
-						"userCanPullMinSeq", userCanPullMinSeq,
-						"syncAllHistory", c.syncAllHistory)
-				} else {
-					// The batch includes sequences but has not reached the minimum value,
-					// This condition indicates local-only messages, with `minSeq > userCanPullMinSeq` as the only case,
-					// since `lastMinSeq > userCanPullMinSeq` is handled in inter-block continuity.
-					lostSeqList := getLostSeqListWithLimitLength(userCanPullMinSeq, minSeq-1, []int64{}, isReverse)
-					if len(lostSeqList) > 0 {
-						isShouldFetchMessage = true
-						seqList = lostSeqList
-						log.ZDebug(ctx, "validateAndFillEndBlockContinuity", "lostSeqList", lostSeqList)
-					}
-
+				lostSeqList := getLostSeqListWithLimitLength(userCanPullMinSeq, minSeq-1, []int64{}, isReverse)
+				if len(lostSeqList) > 0 {
+					isShouldFetchMessage = true
+					seqList = lostSeqList
+					log.ZDebug(ctx, "validateAndFillEndBlockContinuity", "lostSeqList", lostSeqList)
 				}
+			} else if minSeq == 0 {
+				// syncAllHistory legacy path: local batch empty, keep previous end behaviour.
+				messageListCallback.IsEnd = true
+				log.ZInfo(ctx, "validateAndFillEndBlockContinuity: empty local batch end (syncAllHistory)",
+					"conversationID", conversationID,
+					"userCanPullMinSeq", userCanPullMinSeq)
 			}
 			return isShouldFetchMessage, seqList
 		}

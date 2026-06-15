@@ -119,6 +119,10 @@ func (c *Conversation) SyncAllConversationHashReadSeqs(ctx context.Context) erro
 		err = c.db.BatchInsertConversationList(ctx, conversationsOnServer)
 		if err != nil {
 			log.ZWarn(ctx, "BatchInsertConversationList err", err, "conversationsOnServer", conversationsOnServer)
+		} else {
+			for _, conversation := range conversationsOnServer {
+				conversationChangedIDs = append(conversationChangedIDs, conversation.ConversationID)
+			}
 		}
 		log.ZDebug(ctx, "BatchInsertConversationList completed", "duration", time.Since(stepStartTime).Seconds())
 	}

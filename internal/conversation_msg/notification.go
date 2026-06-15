@@ -102,6 +102,10 @@ func (c *Conversation) syncFlag(c2v common.Cmd2Value) {
 
 	case constant.AppDataSyncFinish:
 		log.ZDebug(ctx, "AppDataSyncFinish", "time", time.Since(c.startTime).Milliseconds())
+		// Message pull may finish after AppDataSyncStart; refresh unread from server once more.
+		if err := c.SyncAllConversationHashReadSeqs(ctx); err != nil {
+			log.ZWarn(ctx, "SyncAllConversationHashReadSeqs on AppDataSyncFinish err", err)
+		}
 		c.progress = 100
 		c.ConversationListener().OnSyncServerProgress(c.progress)
 		c.ConversationListener().OnSyncServerFinish(true)
@@ -113,6 +117,10 @@ func (c *Conversation) syncFlag(c2v common.Cmd2Value) {
 		c.ConversationListener().OnSyncServerFailed(false)
 	case constant.MsgSyncEnd:
 		log.ZDebug(ctx, "MsgSyncEnd", "time", time.Since(c.startTime).Milliseconds())
+		// Refresh unread counts after cross-device message sync completes.
+		if err := c.SyncAllConversationHashReadSeqs(ctx); err != nil {
+			log.ZWarn(ctx, "SyncAllConversationHashReadSeqs on MsgSyncEnd err", err)
+		}
 		c.ConversationListener().OnSyncServerFinish(false)
 	}
 }
@@ -491,8 +499,9 @@ func (c *Conversation) syncData(c2v common.Cmd2Value) {
 	//clear SubscriptionStatusMap
 	//c.user.OnlineStatusCache.DeleteAll()
 
-	// Synchronous sync functions
+	// Sync conversations first so unread refresh can update existing local rows.
 	syncFuncs := []func(c context.Context) error{
+		c.IncrSyncConversationsWithLock,
 		c.SyncAllConversationHashReadSeqs,
 	}
 
@@ -504,7 +513,6 @@ func (c *Conversation) syncData(c2v common.Cmd2Value) {
 		c.relation.SyncAllBlackList,
 		c.group.SyncAllJoinedGroupsAndMembersWithLock,
 		c.relation.IncrSyncFriendsWithLock,
-		c.IncrSyncConversationsWithLock,
 	}
 
 	runSyncFunctions(ctx, asyncFuncs, asyncNoWait)

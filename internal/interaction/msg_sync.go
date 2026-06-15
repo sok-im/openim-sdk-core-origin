@@ -37,8 +37,8 @@ import (
 )
 
 const (
-	connectPullNums = 1
 	defaultPullNums = 10
+	connectPullNums = defaultPullNums
 	SplitPullMsgNum = 100
 
 	pullMsgGoroutineLimit = 10
@@ -503,9 +503,7 @@ func (m *MsgSyncer) syncAndTriggerMsgs(ctx context.Context, seqMap map[string][2
 			}
 			_ = m.triggerConversation(ctx, resp.Msgs)
 			_ = m.triggerNotification(ctx, resp.NotificationMsgs)
-			for conversationID, seqs := range tempSeqMap {
-				m.syncedMaxSeqs[conversationID] = seqs[1]
-			}
+			m.advanceCursorsFromPull(tempSeqMap, resp.Msgs, resp.NotificationMsgs)
 			// Reset tempSeqMap and msgNum to handle the next batch
 			tempSeqMap = make(map[string][2]int64, 50)
 			msgNum = 0
@@ -521,9 +519,7 @@ func (m *MsgSyncer) syncAndTriggerMsgs(ctx context.Context, seqMap map[string][2
 		}
 		_ = m.triggerConversation(ctx, resp.Msgs)
 		_ = m.triggerNotification(ctx, resp.NotificationMsgs)
-		for conversationID, seqs := range tempSeqMap {
-			m.syncedMaxSeqs[conversationID] = seqs[1]
-		}
+		m.advanceCursorsFromPull(tempSeqMap, resp.Msgs, resp.NotificationMsgs)
 	}
 
 	return nil
@@ -532,6 +528,49 @@ func (m *MsgSyncer) syncAndTriggerMsgs(ctx context.Context, seqMap map[string][2
 func (m *MsgSyncer) advanceSyncedMaxSeqs(seqMap map[string][2]int64) {
 	for conversationID, seqs := range seqMap {
 		m.syncedMaxSeqs[conversationID] = seqs[1]
+	}
+}
+
+// advanceCursorsFromPull updates syncedMaxSeqs after a pull response.
+//
+// Instead of blindly advancing to the requested range end (seqs[1]), it
+// advances to the highest seq actually returned by the server.  This prevents
+// silently skipping messages when the server returns fewer messages than the
+// full range (e.g. when syncMsgNum caps a large gap at reconnect time).
+// The remaining gap — from (lastFetchedSeq+1) to seqs[1] — will be picked
+// up on the next wake-up or incoming-push sync cycle.
+//
+// If the server returned no messages for a conversation (all deleted, minSeq
+// advancement, etc.) the cursor still advances to seqs[1] so the syncer does
+// not get stuck polling an empty range forever.
+func (m *MsgSyncer) advanceCursorsFromPull(
+	seqMap map[string][2]int64,
+	msgs map[string]*sdkws.PullMsgs,
+	notificationMsgs map[string]*sdkws.PullMsgs,
+) {
+	for conversationID, seqs := range seqMap {
+		var maxFetched int64
+		if pullMsgs, ok := msgs[conversationID]; ok {
+			for _, msg := range pullMsgs.Msgs {
+				if msg.Seq > maxFetched {
+					maxFetched = msg.Seq
+				}
+			}
+		}
+		if pullMsgs, ok := notificationMsgs[conversationID]; ok {
+			for _, msg := range pullMsgs.Msgs {
+				if msg.Seq > maxFetched {
+					maxFetched = msg.Seq
+				}
+			}
+		}
+		if maxFetched > 0 && maxFetched > m.syncedMaxSeqs[conversationID] {
+			m.syncedMaxSeqs[conversationID] = maxFetched
+		} else if maxFetched == 0 {
+			// Nothing returned (range fully deleted / below minSeq) — advance to
+			// range end to avoid an infinite pull loop.
+			m.syncedMaxSeqs[conversationID] = seqs[1]
+		}
 	}
 }
 

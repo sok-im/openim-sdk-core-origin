@@ -50,6 +50,10 @@ type OnGroupListener interface {
 	OnGroupCallStarted(groupCallStartedTips string)
 	// OnGroupCallEnded mediaType: "audio" | "video" | "audio_video"; durationSecs: 0 means cancelled/not answered
 	OnGroupCallEnded(groupCallEndedTips string)
+	// OnGroupCallParticipantCountUpdated fires whenever the in-call participant count
+	// changes during an ongoing group call (someone joined or left). The payload is a
+	// JSON-serialised GroupCallParticipantCountUpdatedTips.
+	OnGroupCallParticipantCountUpdated(groupCallParticipantCountUpdatedTips string)
 	// OnGroupBurnDurationSet durationSecs: message disappear duration in seconds; 0 means turned off
 	OnGroupBurnDurationSet(groupBurnDurationSetTips string)
 	// OnGroupFaceURLSet fired when a group avatar is changed

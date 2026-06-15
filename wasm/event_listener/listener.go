@@ -407,6 +407,9 @@ func (f *GroupCallback) OnGroupCallStarted(groupCallStartedTips string) {
 func (f *GroupCallback) OnGroupCallEnded(groupCallEndedTips string) {
 	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupCallEndedTips).SendMessage()
 }
+func (f *GroupCallback) OnGroupCallParticipantCountUpdated(groupCallParticipantCountUpdatedTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupCallParticipantCountUpdatedTips).SendMessage()
+}
 func (f *GroupCallback) OnGroupBurnDurationSet(groupBurnDurationSetTips string) {
 	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupBurnDurationSetTips).SendMessage()
 }

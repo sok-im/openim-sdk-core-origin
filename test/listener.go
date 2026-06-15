@@ -143,6 +143,10 @@ func (o *onGroupListener) OnGroupCallEnded(groupCallEndedTips string) {
 	log.ZInfo(o.ctx, "OnGroupCallEnded", "groupCallEndedTips", groupCallEndedTips)
 }
 
+func (o *onGroupListener) OnGroupCallParticipantCountUpdated(groupCallParticipantCountUpdatedTips string) {
+	log.ZInfo(o.ctx, "OnGroupCallParticipantCountUpdated", "groupCallParticipantCountUpdatedTips", groupCallParticipantCountUpdatedTips)
+}
+
 func (o *onGroupListener) OnGroupBurnDurationSet(groupBurnDurationSetTips string) {
 	log.ZInfo(o.ctx, "OnGroupBurnDurationSet", "groupBurnDurationSetTips", groupBurnDurationSetTips)
 }

@@ -239,6 +239,10 @@ func (testGroupListener) OnGroupCallEnded(callbackInfo string) {
 
 }
 
+func (testGroupListener) OnGroupCallParticipantCountUpdated(callbackInfo string) {
+
+}
+
 func (testGroupListener) OnGroupBurnDurationSet(callbackInfo string) {
 
 }

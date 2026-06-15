@@ -55,15 +55,20 @@ type MsgSyncer struct {
 	db                db_interface.DataBase // data store
 	syncTimes         int                   // times of sync
 	ctx               context.Context       // context
-	reinstalled       bool                  //true if the app was uninstalled and reinstalled
+	reinstalled       bool                  // true if the app was uninstalled and reinstalled
+	syncAllHistory    bool                  // pull all history gaps (legacy); when false only unread history is fetched
 	isSyncing         bool                  // indicates whether data is being synced
 	isSyncingLock     sync.Mutex            // lock for syncing state
-
 }
 
 // NewMsgSyncer creates a new instance of the message synchronizer.
+// syncAllHistory mirrors IMConfig.SyncAllHistory: when false (the default) the
+// syncer fetches the server hasReadSeq on every connect and only pulls messages
+// with seq > hasReadSeq, skipping already-read history.  Set to true to restore
+// the legacy behaviour of pulling all history gaps.
 func NewMsgSyncer(ctx context.Context, conversationCh, recvCh chan common.Cmd2Value,
-	loginUserID string, longConnMgr *LongConnMgr, db db_interface.DataBase, syncTimes int) (*MsgSyncer, error) {
+	loginUserID string, longConnMgr *LongConnMgr, db db_interface.DataBase, syncTimes int,
+	syncAllHistory bool) (*MsgSyncer, error) {
 	m := &MsgSyncer{
 		loginUserID:    loginUserID,
 		longConnMgr:    longConnMgr,
@@ -73,11 +78,16 @@ func NewMsgSyncer(ctx context.Context, conversationCh, recvCh chan common.Cmd2Va
 		syncedMaxSeqs:  make(map[string]int64),
 		db:             db,
 		syncTimes:      syncTimes,
+		syncAllHistory: syncAllHistory,
 	}
 	if err := m.loadSeq(ctx); err != nil {
 		log.ZError(ctx, "loadSeq err", err)
 		return nil, err
 	}
+	log.ZInfo(ctx, "lintao NewMsgSyncer initialized",
+		"syncAllHistory", syncAllHistory,
+		"reinstalled", m.reinstalled,
+		"syncedMaxSeqs", m.syncedMaxSeqs)
 	return m, nil
 }
 
@@ -96,6 +106,8 @@ func (m *MsgSyncer) loadSeq(ctx context.Context) error {
 		}
 		if version == nil || !version.Installed {
 			m.reinstalled = true
+			log.ZInfo(ctx, "lintao loadSeq: detected reinstall (empty conversation list)",
+				"installed", version != nil && version.Installed)
 		}
 	}
 
@@ -234,67 +246,99 @@ func (m *MsgSyncer) handlePushMsgAndEvent(cmd common.Cmd2Value) {
 
 func (m *MsgSyncer) compareSeqsAndBatchSync(ctx context.Context, maxSeqToSync map[string]int64, pullNums int64) {
 	needSyncSeqMap := make(map[string][2]int64)
-	//when app reinstalled do not pull notifications messages.
-	if m.reinstalled {
-		notificationsSeqMap := make(map[string]int64)
-		messagesSeqMap := make(map[string]int64)
-		for conversationID, seq := range maxSeqToSync {
+
+	// skipNewNotifications is true when the SDK should NOT pull notification
+	// history for conversations it has never tracked locally.  This covers:
+	//   1. App reinstall / fresh install (m.reinstalled == true)
+	//   2. syncAllHistory == false (default) – skip read notification history
+	//      on every connect, not just after reinstall.
+	//
+	// For already-tracked notification conversations (syncedMaxSeqs entry
+	// exists) we still perform normal incremental sync regardless of this flag.
+	skipNewNotifications := m.reinstalled || !m.syncAllHistory
+	log.ZInfo(ctx, "lintao compareSeqsAndBatchSync start",
+		"syncAllHistory", m.syncAllHistory,
+		"reinstalled", m.reinstalled,
+		"skipNewNotifications", skipNewNotifications,
+		"conversationMaxSeqs", maxSeqToSync,
+		"pullNums", pullNums)
+
+	if skipNewNotifications {
+		var newNotificationSeqs []*model_struct.NotificationSeqs
+		skippedNotificationCount := 0
+
+		for conversationID, maxSeq := range maxSeqToSync {
 			if IsNotification(conversationID) {
-				if seq != 0 { // seq is 0, no need to sync
-					notificationsSeqMap[conversationID] = seq
+				if _, tracked := m.syncedMaxSeqs[conversationID]; !tracked {
+					// New (untracked) notification conversation: record the
+					// server's current max seq without pulling any history.
+					if maxSeq != 0 {
+						newNotificationSeqs = append(newNotificationSeqs, &model_struct.NotificationSeqs{
+							ConversationID: conversationID,
+							Seq:            maxSeq,
+						})
+						m.syncedMaxSeqs[conversationID] = maxSeq
+						skippedNotificationCount++
+						log.ZDebug(ctx, "lintao compareSeqsAndBatchSync: skip new notification history",
+							"conversationID", conversationID, "maxSeq", maxSeq)
+					}
+					continue
 				}
-			} else {
-				messagesSeqMap[conversationID] = seq
+				// Already tracked – fall through to normal gap computation.
 			}
-		}
 
-		var notificationSeqs []*model_struct.NotificationSeqs
-
-		for conversationID, seq := range notificationsSeqMap {
-			notificationSeqs = append(notificationSeqs, &model_struct.NotificationSeqs{
-				ConversationID: conversationID,
-				Seq:            seq,
-			})
-			m.syncedMaxSeqs[conversationID] = seq
-		}
-
-		if len(notificationSeqs) > 0 {
-			err := m.db.BatchInsertNotificationSeq(ctx, notificationSeqs)
-			if err != nil {
-				log.ZWarn(ctx, "BatchInsertNotificationSeq err", err)
-			}
-		}
-
-		for conversationID, maxSeq := range messagesSeqMap {
+			// Normal gap computation for message conversations and
+			// already-tracked notification conversations.
 			if syncedMaxSeq, ok := m.syncedMaxSeqs[conversationID]; ok {
 				if maxSeq > syncedMaxSeq {
 					needSyncSeqMap[conversationID] = [2]int64{syncedMaxSeq + 1, maxSeq}
 				}
 			} else {
-				needSyncSeqMap[conversationID] = [2]int64{0, maxSeq}
+				if maxSeq != 0 {
+					needSyncSeqMap[conversationID] = [2]int64{0, maxSeq}
+				}
 			}
 		}
-		defer func() {
-			if err := m.db.SetAppSDKVersion(ctx, &model_struct.LocalAppSDKVersion{
-				Installed: true,
-			}); err != nil {
-				log.ZError(ctx, "SetAppSDKVersion err", err)
+
+		if len(newNotificationSeqs) > 0 {
+			if err := m.db.BatchInsertNotificationSeq(ctx, newNotificationSeqs); err != nil {
+				log.ZWarn(ctx, "BatchInsertNotificationSeq err", err)
 			}
-			m.reinstalled = false
-		}()
-		_ = m.syncAndTriggerReinstallMsgs(m.ctx, needSyncSeqMap, pullNums)
+		}
+		log.ZInfo(ctx, "lintao compareSeqsAndBatchSync unread-only path",
+			"needSyncConversationSeqs", needSyncSeqMap,
+			"skippedNewNotificationCount", skippedNotificationCount,
+			"recordedNotificationSeqs", newNotificationSeqs)
+
+		if m.reinstalled {
+			defer func() {
+				if err := m.db.SetAppSDKVersion(ctx, &model_struct.LocalAppSDKVersion{
+					Installed: true,
+				}); err != nil {
+					log.ZError(ctx, "SetAppSDKVersion err", err)
+				}
+				m.reinstalled = false
+			}()
+			_ = m.syncAndTriggerReinstallMsgs(m.ctx, needSyncSeqMap, pullNums)
+		} else {
+			_ = m.syncAndTriggerMsgs(m.ctx, needSyncSeqMap, pullNums)
+		}
 	} else {
+		log.ZInfo(ctx, "lintao compareSeqsAndBatchSync: syncAllHistory enabled, pull all history gaps")
 		for conversationID, maxSeq := range maxSeqToSync {
 			if syncedMaxSeq, ok := m.syncedMaxSeqs[conversationID]; ok {
 				if maxSeq > syncedMaxSeq {
 					needSyncSeqMap[conversationID] = [2]int64{syncedMaxSeq + 1, maxSeq}
 				}
 			} else {
-				if maxSeq != 0 { // seq is 0, no need to sync
+				if maxSeq != 0 {
 					needSyncSeqMap[conversationID] = [2]int64{0, maxSeq}
 				}
 			}
 		}
+		log.ZInfo(ctx, "lintao compareSeqsAndBatchSync legacy path",
+			"needSyncConversationSeqs", needSyncSeqMap,
+			"pullNums", pullNums)
 		_ = m.syncAndTriggerMsgs(m.ctx, needSyncSeqMap, pullNums)
 	}
 }
@@ -361,6 +405,9 @@ func (m *MsgSyncer) pushTriggerAndSync(ctx context.Context, pushMessages map[str
 // Called after successful reconnection to synchronize the latest message
 func (m *MsgSyncer) doConnected(ctx context.Context) {
 	reinstalled := m.reinstalled
+	log.ZInfo(ctx, "lintao doConnected start",
+		"reinstalled", reinstalled,
+		"syncAllHistory", m.syncAllHistory)
 	if reinstalled {
 		common.TriggerCmdSyncFlag(m.ctx, constant.AppDataSyncStart, m.conversationCh)
 	} else {
@@ -375,25 +422,43 @@ func (m *MsgSyncer) doConnected(ctx context.Context) {
 		log.ZDebug(m.ctx, "get max seq success", "resp", resp.MaxSeqs)
 	}
 
-	if reinstalled {
+	// Fetch the server-side hasReadSeq cursors when:
+	//   (a) app was reinstalled / fresh-install, OR
+	//   (b) syncAllHistory is false (default) – only pull unread history.
+	// The fetched values advance syncedMaxSeqs so that seq ≤ hasReadSeq is
+	// never re-pulled on this connect cycle.
+	if reinstalled || !m.syncAllHistory {
+		log.ZInfo(ctx, "lintao doConnected: prefetch hasReadSeq cursors",
+			"reinstalled", reinstalled, "syncAllHistory", m.syncAllHistory)
 		if hasReadSeqs, hErr := m.getHasReadSeqs(ctx); hErr == nil {
+			bumpedCount := 0
 			m.syncedMaxSeqsLock.Lock()
 			for convID, hasReadSeq := range hasReadSeqs {
 				if cur, ok := m.syncedMaxSeqs[convID]; !ok || cur < hasReadSeq {
+					log.ZDebug(ctx, "lintao doConnected: advance syncedMaxSeq by hasReadSeq",
+						"conversationID", convID, "prevSyncedMaxSeq", cur, "hasReadSeq", hasReadSeq)
 					m.syncedMaxSeqs[convID] = hasReadSeq
+					bumpedCount++
 				}
 			}
 			m.syncedMaxSeqsLock.Unlock()
-			log.ZDebug(ctx, "reinstalled", "hasReadSeqs", hasReadSeqs,
-				"count", len(hasReadSeqs))
+			log.ZInfo(ctx, "lintao doConnected: applied hasReadSeq cursors",
+				"reinstalled", reinstalled,
+				"syncAllHistory", m.syncAllHistory,
+				"hasReadSeqs", hasReadSeqs,
+				"bumpedSyncedMaxSeqCount", bumpedCount)
 
-			// Persist normal-conversation cursors so that subsequent logins (where
-			// m.reinstalled is false) can still skip already-read history even when
-			// no local messages were stored (hasReadSeq == maxSeq at reinstall time).
+			// Persist normal-conversation cursors so that subsequent logins can
+			// still skip already-read history even when no local messages were
+			// stored (hasReadSeq == maxSeq at reinstall time).
 			m.persistHasReadSeqs(ctx, hasReadSeqs)
 		} else {
-			log.ZWarn(ctx, "reinstalled: getHasReadSeqs failed", hErr)
+			log.ZWarn(ctx, "getHasReadSeqs failed", hErr,
+				"reinstalled", reinstalled, "syncAllHistory", m.syncAllHistory)
 		}
+	} else {
+		log.ZInfo(ctx, "lintao doConnected: skip hasReadSeq prefetch (syncAllHistory enabled)",
+			"reinstalled", reinstalled)
 	}
 
 	m.compareSeqsAndBatchSync(ctx, resp.MaxSeqs, connectPullNums)
@@ -701,6 +766,7 @@ func (m *MsgSyncer) getHasReadSeqs(ctx context.Context) (map[string]int64, error
 	for convID, seqs := range resp.Seqs {
 		result[convID] = seqs.HasReadSeq
 	}
+	log.ZDebug(ctx, "lintao getHasReadSeqs success", "getHasReadSeqs", result)
 	return result, nil
 }
 
@@ -719,6 +785,7 @@ func (m *MsgSyncer) persistHasReadSeqs(ctx context.Context, hasReadSeqs map[stri
 		}
 	}
 	if len(toUpsert) == 0 {
+		log.ZDebug(ctx, "lintao persistHasReadSeqs: nothing to persist")
 		return
 	}
 	if err := m.db.BatchUpsertConversationSyncedMaxSeqs(ctx, toUpsert); err != nil {

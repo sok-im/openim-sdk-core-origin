@@ -61,6 +61,13 @@ func (c *Conversation) getAdvancedHistoryMessageList(ctx context.Context, req sd
 	var err error
 	var messageList sdk_struct.NewMsgList
 	conversationID = req.ConversationID
+	log.ZInfo(ctx, "lintao getAdvancedHistoryMessageList start",
+		"conversationID", conversationID,
+		"startClientMsgID", req.StartClientMsgID,
+		"count", req.Count,
+		"isReverse", isReverse,
+		"syncAllHistory", c.syncAllHistory,
+		"unreadOnlyMode", !c.syncAllHistory)
 	if len(req.StartClientMsgID) > 0 {
 		m, err := c.db.GetMessage(ctx, conversationID, req.StartClientMsgID)
 		if err != nil {

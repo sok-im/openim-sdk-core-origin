@@ -315,6 +315,13 @@ type IMConfig struct {
 	IsLogStandardOutput  bool   `json:"isLogStandardOutput"`
 	LogFilePath          string `json:"logFilePath"`
 	IsExternalExtensions bool   `json:"isExternalExtensions"`
+	// SyncAllHistory controls the message-history strategy on re-login,
+	// device switch, or reinstall.
+	//
+	//   false (default) – only fetch unread history (seq > server hasReadSeq).
+	//                     Already-read messages and notifications are skipped.
+	//   true            – pull all history gaps as before (legacy behaviour).
+	SyncAllHistory bool `json:"syncAllHistory"`
 }
 
 type CmdNewMsgComeToConversation struct {

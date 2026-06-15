@@ -520,10 +520,13 @@ func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
 	u.virgilSecurity = ivirgil.NewVirgilSecurity()
 	u.openMLS = openmls.NewOpenMLS()
 	log.ZDebug(ctx, "forcedSynchronization success...", "login cost time: ", time.Since(t1))
+	log.ZInfo(ctx, "lintao login: history sync strategy",
+		"syncAllHistory", u.info.SyncAllHistory,
+		"userID", userID)
 
-	u.msgSyncer, _ = interaction.NewMsgSyncer(ctx, u.conversationCh, u.msgSyncerCh, u.loginUserID, u.longConnMgr, u.db, 0)
+	u.msgSyncer, _ = interaction.NewMsgSyncer(ctx, u.conversationCh, u.msgSyncerCh, u.loginUserID, u.longConnMgr, u.db, 0, u.info.SyncAllHistory)
 	u.conversation = conv.NewConversation(ctx, u.longConnMgr, u.db, u.conversationCh, u.msgSyncerCh,
-		u.relation, u.group, u.user, u.file, u.signaling)
+		u.relation, u.group, u.user, u.file, u.signaling, u.info.SyncAllHistory)
 	u.relation.SetIncrSyncConversations(u.conversation.IncrSyncConversationsWithLock)
 	u.group.SetIncrSyncConversations(u.conversation.IncrSyncConversationsWithLock)
 	u.setListener(ctx)

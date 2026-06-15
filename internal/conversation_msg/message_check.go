@@ -124,6 +124,12 @@ func (c *Conversation) checkEndBlock(ctx context.Context, conversationID string,
 			// minSeq may be 0, but in fact, the server's sequence has not yet synchronized to the local.
 			if minSeq <= userCanPullMinSeq {
 				messageListCallback.IsEnd = true
+				log.ZInfo(ctx, "lintao validateAndFillEndBlockContinuity: reached history lower bound",
+					"conversationID", conversationID,
+					"minSeq", minSeq,
+					"userCanPullMinSeq", userCanPullMinSeq,
+					"syncAllHistory", c.syncAllHistory,
+					"unreadOnlyMode", !c.syncAllHistory)
 			} else {
 				lastMinSeq, _ := c.messagePullForwardEndSeqMap.Load(conversationID, viewType)
 				log.ZDebug(ctx, "validateAndFillEndBlockContinuity", "lastMinSeq", lastMinSeq, "conversationID", conversationID)
@@ -131,6 +137,11 @@ func (c *Conversation) checkEndBlock(ctx context.Context, conversationID string,
 				if minSeq == 0 && lastMinSeq <= userCanPullMinSeq { // All messages in this batch are local messages,
 					// and the minimum seq of the last batch of valid messages has already reached the minimum pullable seq from the server.
 					messageListCallback.IsEnd = true
+					log.ZInfo(ctx, "lintao validateAndFillEndBlockContinuity: local-only batch reached lower bound",
+						"conversationID", conversationID,
+						"lastMinSeq", lastMinSeq,
+						"userCanPullMinSeq", userCanPullMinSeq,
+						"syncAllHistory", c.syncAllHistory)
 				} else {
 					// The batch includes sequences but has not reached the minimum value,
 					// This condition indicates local-only messages, with `minSeq > userCanPullMinSeq` as the only case,
@@ -220,7 +231,8 @@ func (c *Conversation) fetchAndMergeMissingMessages(ctx context.Context, convers
 	} else {
 		getSeqMessageReq.Order = sdkws.PullOrder_PullOrderDesc
 	}
-	log.ZDebug(ctx, "conversation pull message,  ", "req", getSeqMessageReq)
+	log.ZDebug(ctx, "lintao conversation pull message,  ", "req", getSeqMessageReq,
+		"syncAllHistory", c.syncAllHistory, "seqList", seqList)
 	if startTime == 0 && !c.LongConnMgr.IsConnected() {
 		return
 	}
@@ -266,15 +278,43 @@ func (c *Conversation) getConversationMaxSeq(ctx context.Context, conversationID
 }
 func (c *Conversation) getConversationMinSeq(ctx context.Context, conversationID string) int64 {
 	conversation, err := c.db.GetConversation(ctx, conversationID)
+	minSeq := int64(1)
 	if err != nil {
 		log.ZWarn(ctx, "Failed to get conversation", err)
-		return 1
+	} else if conversation.MinSeq > 0 {
+		minSeq = conversation.MinSeq
 	}
-	if conversation.MinSeq == 0 {
-		return 1
 
+	// When SyncAllHistory is false (default), the login sync only pulled
+	// messages with seq > hasReadSeq into the local DB.  Use the persisted
+	// hasReadSeq + 1 as the effective lower bound so that the gap-fill logic
+	// never fetches already-read history from the server.
+	if !c.syncAllHistory {
+		syncedMaxSeq, dbErr := c.db.GetConversationSyncedMaxSeq(ctx, conversationID)
+		if dbErr != nil {
+			log.ZWarn(ctx, "GetConversationSyncedMaxSeq failed", dbErr, "conversationID", conversationID)
+		} else if syncedMaxSeq > 0 {
+			floor := syncedMaxSeq + 1
+			if floor > minSeq {
+				log.ZInfo(ctx, "lintao getConversationMinSeq: clamped by hasReadSeq",
+					"conversationID", conversationID,
+					"serverMinSeq", minSeq, "hasReadSeq", syncedMaxSeq, "effectiveMinSeq", floor)
+				minSeq = floor
+			} else {
+				log.ZDebug(ctx, "lintao getConversationMinSeq: hasReadSeq not applied",
+					"conversationID", conversationID,
+					"serverMinSeq", minSeq, "hasReadSeq", syncedMaxSeq)
+			}
+		} else {
+			log.ZDebug(ctx, "lintao getConversationMinSeq: no persisted hasReadSeq cursor",
+				"conversationID", conversationID, "serverMinSeq", minSeq)
+		}
+	} else {
+		log.ZDebug(ctx, "lintao getConversationMinSeq: syncAllHistory enabled",
+			"conversationID", conversationID, "serverMinSeq", minSeq)
 	}
-	return conversation.MinSeq
+
+	return minSeq
 }
 func (c *Conversation) setConversationMinSeq(ctx context.Context, isReverse bool, conversationID string, endSeq int64) {
 	conversation, err := c.db.GetConversation(ctx, conversationID)

@@ -50,3 +50,21 @@ func (i *LocalConversationSyncCursor) GetAllConversationSyncedMaxSeqs(ctx contex
 	}
 	return nil, exec.ErrType
 }
+
+// GetConversationSyncedMaxSeq returns the persisted read-cursor for a single
+// conversation.  The WASM layer returns 0 when no cursor record is found,
+// which causes the caller to fall back to the server MinSeq (legacy behaviour).
+func (i *LocalConversationSyncCursor) GetConversationSyncedMaxSeq(ctx context.Context, conversationID string) (int64, error) {
+	res, err := exec.Exec(conversationID)
+	if err != nil {
+		return 0, nil // treat missing cursor as "no floor"
+	}
+	if v, ok := res.(string); ok {
+		var cursor model_struct.LocalConversationSyncedMaxSeq
+		if err := utils.JsonStringToStruct(v, &cursor); err != nil {
+			return 0, nil
+		}
+		return cursor.SyncedMaxSeq, nil
+	}
+	return 0, nil
+}

@@ -83,6 +83,7 @@ type MessageModel interface {
 	GetNotificationAllSeqs(ctx context.Context) ([]*model_struct.NotificationSeqs, error)
 	BatchUpsertConversationSyncedMaxSeqs(ctx context.Context, seqs []*model_struct.LocalConversationSyncedMaxSeq) error
 	GetAllConversationSyncedMaxSeqs(ctx context.Context) ([]*model_struct.LocalConversationSyncedMaxSeq, error)
+	GetConversationSyncedMaxSeq(ctx context.Context, conversationID string) (int64, error)
 }
 
 type ConversationModel interface {

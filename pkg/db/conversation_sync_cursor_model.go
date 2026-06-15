@@ -19,9 +19,13 @@ package db
 
 import (
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/tools/errs"
+	"github.com/openimsdk/tools/log"
 )
 
 // BatchUpsertConversationSyncedMaxSeqs inserts or updates the synced-max-seq cursor
@@ -41,4 +45,21 @@ func (d *DataBase) GetAllConversationSyncedMaxSeqs(ctx context.Context) ([]*mode
 	defer d.mRWMutex.RUnlock()
 	var seqs []*model_struct.LocalConversationSyncedMaxSeq
 	return seqs, errs.WrapMsg(d.conn.WithContext(ctx).Find(&seqs).Error, "GetAllConversationSyncedMaxSeqs failed")
+}
+
+// GetConversationSyncedMaxSeq returns the persisted read-cursor (hasReadSeq) for
+// a single conversation.  Returns 0 (and nil error) when no cursor exists.
+func (d *DataBase) GetConversationSyncedMaxSeq(ctx context.Context, conversationID string) (int64, error) {
+	d.mRWMutex.RLock()
+	defer d.mRWMutex.RUnlock()
+	var cursor model_struct.LocalConversationSyncedMaxSeq
+	err := d.conn.WithContext(ctx).Where("conversation_id = ?", conversationID).First(&cursor).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return 0, nil
+	}
+	if err == nil {
+		log.ZDebug(ctx, "lintao GetConversationSyncedMaxSeq",
+			"conversationID", conversationID, "syncedMaxSeq", cursor.SyncedMaxSeq)
+	}
+	return cursor.SyncedMaxSeq, errs.WrapMsg(err, "GetConversationSyncedMaxSeq failed")
 }

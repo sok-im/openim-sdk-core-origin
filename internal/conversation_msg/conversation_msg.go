@@ -72,6 +72,7 @@ type Conversation struct {
 	messagePullForwardEndSeqMap *cache.ConversationSeqContextCache
 	messagePullReverseEndSeqMap *cache.ConversationSeqContextCache
 	IsExternalExtensions        bool
+	syncAllHistory              bool // pull all history gaps; when false only unread history is fetched
 	msgOffset                   int
 	progress                    int
 	conversationSyncMutex       sync.Mutex
@@ -99,7 +100,7 @@ func (c *Conversation) SetBusinessListener(businessListener func() open_im_sdk_c
 
 func NewConversation(ctx context.Context, longConnMgr *interaction.LongConnMgr, db db_interface.DataBase,
 	recvCh, msgSyncerCh chan common.Cmd2Value, relation *relation.Relation, group *group.Group, user *user.User,
-	file *file.File, sig *signaling.Signaling) *Conversation {
+	file *file.File, sig *signaling.Signaling, syncAllHistory bool) *Conversation {
 	info := ccontext.Info(ctx)
 	n := &Conversation{db: db,
 		LongConnMgr:                 longConnMgr,
@@ -114,6 +115,7 @@ func NewConversation(ctx context.Context, longConnMgr *interaction.LongConnMgr, 
 		file:                        file,
 		signaling:                   sig,
 		IsExternalExtensions:        info.IsExternalExtensions(),
+		syncAllHistory:              syncAllHistory,
 		maxSeqRecorder:              NewMaxSeqRecorder(),
 		messagePullForwardEndSeqMap: cache.NewConversationSeqContextCache(),
 		messagePullReverseEndSeqMap: cache.NewConversationSeqContextCache(),
@@ -123,6 +125,9 @@ func NewConversation(ctx context.Context, longConnMgr *interaction.LongConnMgr, 
 	n.typing = newTyping(n)
 	n.initSyncer()
 	n.cache = cache.NewCache[string, *model_struct.LocalConversation]()
+	log.ZInfo(ctx, "lintao NewConversation initialized",
+		"syncAllHistory", syncAllHistory,
+		"loginUserID", info.UserID())
 	return n
 }
 

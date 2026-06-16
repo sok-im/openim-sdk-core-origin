@@ -35,14 +35,15 @@ type roomTiming struct {
 
 // recordTask 异步写记录任务，包含构建 LocalSignalCallRecord 所需的全部信息。
 type recordTask struct {
-	inv         *rtc.InvitationInfo
-	participant *rtc.ParticipantMetaData
-	status      int32
-	direction   int32
-	action      string // constant.SignalCallAction*
-	inviteMs    int64  // 从 roomTimings 取得
-	connectMs   int64  // 从 roomTimings 取得（0 = 未接通）
-	endMs       int64  // 通话结束时间（调用处捕获，避免异步延迟误差）
+	inv          *rtc.InvitationInfo
+	participant  *rtc.ParticipantMetaData
+	status       int32
+	direction    int32
+	action       string // constant.SignalCallAction*
+	inviteMs     int64  // 从 roomTimings 取得
+	connectMs    int64  // 从 roomTimings 取得（0 = 未接通）
+	endMs        int64  // 通话结束时间（调用处捕获，避免异步延迟误差）
+	callDuration int64  // 客户端主动上报的通话时长（毫秒）；0 = 由时间戳推算
 }
 
 // inviteTimer 本端收到/发起邀请后的超时定时器
@@ -126,6 +127,7 @@ func (s *Signaling) recordWorker() {
 			inviteMs:        task.inviteMs,
 			connectMs:       task.connectMs,
 			endMs:           task.endMs,
+			callDuration:    task.callDuration,
 			calleeMatchText: calleeText,
 			inviteeNickname: inviteeNickname,
 			inviteeUID:      inviteeUID,
@@ -340,7 +342,7 @@ func (s *Signaling) notifyInvitationTimeout(ctx context.Context, inv *rtc.Invita
 	s.persistLocalCallRecord(ctx, inv, nil,
 		constant.SignalCallStatusNotConnected,
 		constant.SignalCallActionTimeout,
-		inviteMs, 0, time.Now().UnixMilli())
+		inviteMs, 0, time.Now().UnixMilli(), 0)
 	log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", inv, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionTimeout)
 
 }
@@ -529,7 +531,7 @@ func (s *Signaling) handleReject(ctx context.Context, listener open_im_sdk_callb
 			s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 				constant.SignalCallStatusNotConnected,
 				constant.SignalCallActionReject,
-				inviteMs, 0, time.Now().UnixMilli())
+				inviteMs, 0, time.Now().UnixMilli(), 0)
 			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionReject)
 		}
 		return nil
@@ -577,7 +579,7 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallActionCancel,
-			inviteMs, 0, time.Now().UnixMilli())
+			inviteMs, 0, time.Now().UnixMilli(), 0)
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 	}
 	return nil
@@ -603,7 +605,7 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
 			constant.SignalCallActionHungUp,
-			inviteMs, connectMs, time.Now().UnixMilli())
+			inviteMs, connectMs, time.Now().UnixMilli(), req.CallDuration)
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
 	}
 	return nil
@@ -639,6 +641,7 @@ func (s *Signaling) handleRoomParticipantDisconnected(ctx context.Context, msg *
 
 // persistLocalCallRecord 异步投递写任务，避免阻塞信令通知路径。
 // direction 由本端角色与 status 在内部统一计算，调用方勿再传入。
+// callDuration > 0 时直接用作通话时长（毫秒），否则由时间戳推算。
 // 群音视频通话不落本地通话记录。
 func (s *Signaling) persistLocalCallRecord(
 	ctx context.Context,
@@ -647,6 +650,7 @@ func (s *Signaling) persistLocalCallRecord(
 	status int32,
 	action string,
 	inviteMs, connectMs, endMs int64,
+	callDuration int64,
 ) {
 	if s.db == nil || inv == nil || s.recordCh == nil || isGroupChatCall(inv) {
 		return
@@ -654,14 +658,15 @@ func (s *Signaling) persistLocalCallRecord(
 	direction := s.resolveCallRecordDirection(inv, status)
 	select {
 	case s.recordCh <- recordTask{
-		inv:         inv,
-		participant: participant,
-		status:      status,
-		direction:   direction,
-		action:      action,
-		inviteMs:    inviteMs,
-		connectMs:   connectMs,
-		endMs:       endMs,
+		inv:          inv,
+		participant:  participant,
+		status:       status,
+		direction:    direction,
+		action:       action,
+		inviteMs:     inviteMs,
+		connectMs:    connectMs,
+		endMs:        endMs,
+		callDuration: callDuration,
 	}:
 	case <-s.done:
 		return

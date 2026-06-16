@@ -20,6 +20,9 @@ type callRecordConfig struct {
 	inviteMs         int64
 	connectMs        int64
 	endMs            int64
+	// callDuration: 客户端主动上报的通话时长（毫秒）。>0 时直接使用，不再从时间戳推算，
+	// 用于保证主/被叫双端记录时长一致。
+	callDuration     int64
 	calleeMatchText  string
 	inviteeNickname  string
 	inviteeUID       string
@@ -53,7 +56,12 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 	var dialDuration, callDuration int64
 	if cfg.connectMs > 0 {
 		dialDuration = cfg.connectMs - inviteMs
-		callDuration = cfg.endMs - cfg.connectMs
+		if cfg.callDuration > 0 {
+			// 主动方挂断时上报的精确时长，优先于本地时间戳推算，确保双端一致。
+			callDuration = cfg.callDuration
+		} else {
+			callDuration = cfg.endMs - cfg.connectMs
+		}
 	} else {
 		dialDuration = cfg.endMs - inviteMs
 	}

@@ -265,6 +265,7 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
 				return err
 			}
+			log.ZInfo(ctx, "lintao GroupCallStartedTips", "detail", detail)
 			g.listener().OnGroupCallStarted(utils.StructToJsonString(detail))
 			return nil
 		case constant.GroupCallEndedNotification: // 1523

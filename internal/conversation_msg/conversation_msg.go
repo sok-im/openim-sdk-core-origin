@@ -310,21 +310,9 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 				continue
 			}
 			// 非历史消息记入在线集合，并纳入“新消息回调”队列。
-			log.ZInfo(ctx, "lintao do notification onlineMap", "msg", v, "onlineMap", onlineMap)
-
 			if !isHistory {
-				log.ZInfo(ctx, "lintao do notification onlineMap", "msg", v, "onlineMap", onlineMap)
-
 				onlineMap[onlineMsgKey{ClientMsgID: v.ClientMsgID, ServerMsgID: v.ServerMsgID}] = struct{}{}
 				newMessages = append(newMessages, msg)
-				// 1522/1523/1527 由 RTC 写入 sg_ 群聊时间线（IsNotNotification=true），不会走 notification 通道。
-				// 在此补发 group 通知，触发 OnGroupCallStarted / OnGroupCallEnded / OnGroupCallParticipantCountUpdated。
-				if v.ContentType == constant.GroupCallStartedNotification ||
-					v.ContentType == constant.GroupCallEndedNotification ||
-					v.ContentType == constant.GroupCallParticipantCountUpdatedNotification {
-					log.ZInfo(ctx, "lintao do notification", "msg", v)
-					c.group.DoNotification(ctx, v)
-				}
 			}
 			log.ZDebug(ctx, "decode message", "msg", msg)
 			if v.SendID == c.loginUserID { //seq

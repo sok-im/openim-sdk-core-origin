@@ -161,3 +161,9 @@ func (w *WrapperSignaling) SignalingSendCustomSignal(_ js.Value, args []js.Value
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SignalingSendCustomSignal, callback, &args).AsyncCallWithCallback()
 }
+
+// SignalingNotifyGroupCallEnded 群通话结束时通知全员（1523）。
+func (w *WrapperSignaling) SignalingNotifyGroupCallEnded(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingNotifyGroupCallEnded, callback, &args).AsyncCallWithCallback()
+}

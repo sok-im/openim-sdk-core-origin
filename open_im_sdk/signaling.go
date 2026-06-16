@@ -97,3 +97,7 @@ func SignalingClearAllCallRecords(callback open_im_sdk_callback.Base, operationI
 func SignalingSendCustomSignal(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().SendCustomSignal, req)
 }
+
+func SignalingNotifyGroupCallEnded(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().NotifyGroupCallEnded, req)
+}

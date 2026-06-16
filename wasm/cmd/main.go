@@ -253,6 +253,7 @@ func registerFunc() {
 	js.Global().Set("signalingClearAllLocalCallRecords", js.FuncOf(wrapperSignaling.SignalingClearAllLocalCallRecords))
 	js.Global().Set("signalingClearAllCallRecords", js.FuncOf(wrapperSignaling.SignalingClearAllCallRecords))
 	js.Global().Set("signalingSendCustomSignal", js.FuncOf(wrapperSignaling.SignalingSendCustomSignal))
+	js.Global().Set("signalingNotifyGroupCallEnded", js.FuncOf(wrapperSignaling.SignalingNotifyGroupCallEnded))
 
 	wrapperRedPacket := wasm_wrapper.NewWrapperRedPacket(globalFuc)
 	js.Global().Set("redPacketCreateOrder", js.FuncOf(wrapperRedPacket.RedPacketCreateOrder))

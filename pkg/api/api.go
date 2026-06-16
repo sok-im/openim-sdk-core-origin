@@ -162,6 +162,7 @@ var (
 	GetSignalInvitationInfo        = newApi[rtc.GetSignalInvitationInfoReq, rtc.GetSignalInvitationInfoResp]("/rtc/get_signal_invitation_info")
 	GetSignalInvitationInfoStartApp = newApi[rtc.GetSignalInvitationInfoStartAppReq, rtc.GetSignalInvitationInfoStartAppResp]("/rtc/get_signal_invitation_info_start_app")
 	SignalSendCustomSignal         = newApi[rtc.SignalSendCustomSignalReq, rtc.SignalSendCustomSignalResp]("/rtc/signal_send_custom_signal")
+	SignalNotifyGroupCallEnded     = newApi[rtc.SignalNotifyGroupCallEndedReq, rtc.SignalNotifyGroupCallEndedResp]("/rtc/signal_notify_group_call_ended")
 	GetSignalInvitationRecords     = newApi[rtc.GetSignalInvitationRecordsReq, rtc.GetSignalInvitationRecordsResp]("/rtc/get_signal_invitation_records")
 	DeleteSignalRecords            = newApi[rtc.DeleteSignalRecordsReq, rtc.DeleteSignalRecordsResp]("/rtc/delete_signal_records")
 )

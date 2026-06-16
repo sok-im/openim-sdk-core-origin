@@ -637,6 +637,11 @@ func (s *Signaling) SendCustomSignal(ctx context.Context, req *rtc.SignalSendCus
 	return api.SignalSendCustomSignal.Execute(ctx, req)
 }
 
+// NotifyGroupCallEnded sends GroupCallEndedNotification (1523) to all group members.
+func (s *Signaling) NotifyGroupCallEnded(ctx context.Context, req *rtc.SignalNotifyGroupCallEndedReq) error {
+	return api.SignalNotifyGroupCallEnded.Execute(ctx, req)
+}
+
 func (s *Signaling) fillInviteDefaults(invitation *rtc.InvitationInfo) {
 	if invitation == nil {
 		return

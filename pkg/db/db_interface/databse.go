@@ -195,6 +195,8 @@ type SignalCallRecordModel interface {
 	SearchSignalCallRecordsByUser(ctx context.Context, userID string, status int32, offset, count int, startTime, endTime int64) ([]*model_struct.LocalSignalCallRecord, error)
 	CountSignalCallRecordsByUser(ctx context.Context, userID string, status int32, startTime, endTime int64) (int64, error)
 	GetSignalCallRecordBySID(ctx context.Context, sID string) (*model_struct.LocalSignalCallRecord, error)
+	// GetSignalCallRecordByRoomID 根据 roomID 查询最近的本地通话记录；不存在时返回 ErrRecordNotFound。
+	GetSignalCallRecordByRoomID(ctx context.Context, roomID string) (*model_struct.LocalSignalCallRecord, error)
 	DeleteSignalCallRecords(ctx context.Context, sIDs []string) error
 	ClearAllSignalCallRecords(ctx context.Context) error
 	// UpdateSignalCallRecordUserProfile 更新指定用户作为主叫/被叫时的展示昵称与头像。

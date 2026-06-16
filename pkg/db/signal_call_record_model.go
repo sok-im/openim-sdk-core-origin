@@ -178,6 +178,23 @@ func (d *DataBase) GetSignalCallRecordBySID(ctx context.Context, sID string) (*m
 	return &rec, nil
 }
 
+func (d *DataBase) GetSignalCallRecordByRoomID(ctx context.Context, roomID string) (*model_struct.LocalSignalCallRecord, error) {
+	if roomID == "" {
+		return nil, errs.ErrRecordNotFound.Wrap()
+	}
+	d.mRWMutex.RLock()
+	defer d.mRWMutex.RUnlock()
+	var rec model_struct.LocalSignalCallRecord
+	err := d.signalDB().WithContext(ctx).Where("room_id = ?", roomID).Order("create_time DESC").Take(&rec).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ErrRecordNotFound.Wrap()
+		}
+		return nil, errs.WrapMsg(err, "GetSignalCallRecordByRoomID failed")
+	}
+	return &rec, nil
+}
+
 func (d *DataBase) DeleteSignalCallRecords(ctx context.Context, sIDs []string) error {
 	if len(sIDs) == 0 {
 		return nil

@@ -300,6 +300,11 @@ func (c *Conversation) doMsgNew(c2v common.Cmd2Value) {
 				continue
 			}
 
+			// 服务端发送的单聊通话结束消息（rtcCallRecord）：同步更新本地通话记录表。
+			if msg.ContentType == constant.Custom && c.signaling != nil {
+				c.signaling.MaybeUpsertCallRecordFromChatMsg(ctx, msg)
+			}
+
 			// 未标记“非私聊”时，兜底视为私聊消息。
 			if !isNotPrivate {
 				msg.AttachedInfoElem.IsPrivateChat = true

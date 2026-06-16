@@ -100,6 +100,24 @@ func (i *SignalCallRecords) GetSignalCallRecordBySID(ctx context.Context, sID st
 	return nil, exec.ErrType
 }
 
+func (i *SignalCallRecords) GetSignalCallRecordByRoomID(ctx context.Context, roomID string) (*model_struct.LocalSignalCallRecord, error) {
+	msg, err := exec.Exec(roomID, i.loginUserID)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := msg.(string); ok {
+		var rec model_struct.LocalSignalCallRecord
+		if err := utils.JsonStringToStruct(v, &rec); err != nil {
+			return nil, err
+		}
+		if rec.SID == "" {
+			return nil, errs.ErrRecordNotFound.Wrap()
+		}
+		return &rec, nil
+	}
+	return nil, exec.ErrType
+}
+
 func (i *SignalCallRecords) DeleteSignalCallRecords(ctx context.Context, sIDs []string) error {
 	if len(sIDs) == 0 {
 		return nil

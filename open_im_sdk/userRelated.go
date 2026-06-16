@@ -342,7 +342,7 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 		select {
 		case cmd := <-u.loginMgrCh:
 			currentStatus := u.getLoginStatus(ctx)
-			log.ZInfo(ctx, "lintao logoutListener triggered",
+			log.ZInfo(ctx, "logoutListener triggered",
 				"cmd", cmd.Cmd,
 				"loginStatus", loginStatusString(currentStatus),
 				"loginUserID", u.loginUserID)
@@ -363,7 +363,7 @@ func (u *LoginMgr) logoutListener(ctx context.Context) {
 				logoutCtx = cmd.Ctx
 			}
 			go func() {
-				log.ZInfo(logoutCtx, "lintao logoutListener triggered asynchronously",
+				log.ZInfo(logoutCtx, "logoutListener triggered asynchronously",
 					"cmd", cmd.Cmd,
 					"loginUserID", u.loginUserID)
 				if err := u.logout(logoutCtx, true); err != nil {
@@ -394,7 +394,7 @@ func (u *LoginMgr) setLoginStatus(status int) {
 	u.loginStatus = status
 	u.w.Unlock()
 	if prev != status {
-		log.ZInfo(context.Background(), "lintao login status changed",
+		log.ZInfo(context.Background(), "login status changed",
 			"from", loginStatusString(prev),
 			"to", loginStatusString(status),
 			"loginUserID", u.loginUserID)
@@ -448,14 +448,14 @@ func (u *LoginMgr) waitLogoutComplete() error {
 	deadline := time.Now().Add(maxWait)
 	status := u.getLoginStatus(context.Background())
 	if status == LoggingOut {
-		log.ZInfo(context.Background(), "lintao login wait for logout complete",
+		log.ZInfo(context.Background(), "login wait for logout complete",
 			"loginStatus", loginStatusString(status),
 			"loginUserID", u.loginUserID,
 			"maxWait", maxWait.String())
 	}
 	for status == LoggingOut {
 		if time.Now().After(deadline) {
-			log.ZError(context.Background(), "lintao login wait logout complete timeout", nil,
+			log.ZError(context.Background(), "login wait logout complete timeout", nil,
 				"loginStatus", loginStatusString(u.getLoginStatus(context.Background())),
 				"loginUserID", u.loginUserID,
 				"maxWait", maxWait.String())
@@ -465,7 +465,7 @@ func (u *LoginMgr) waitLogoutComplete() error {
 		status = u.getLoginStatus(context.Background())
 	}
 	if status != LogoutStatus {
-		log.ZInfo(context.Background(), "lintao login proceed after waitLogoutComplete",
+		log.ZInfo(context.Background(), "login proceed after waitLogoutComplete",
 			"loginStatus", loginStatusString(status),
 			"loginUserID", u.loginUserID)
 	}
@@ -520,7 +520,7 @@ func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
 	u.virgilSecurity = ivirgil.NewVirgilSecurity()
 	u.openMLS = openmls.NewOpenMLS()
 	log.ZDebug(ctx, "forcedSynchronization success...", "login cost time: ", time.Since(t1))
-	log.ZInfo(ctx, "lintao login: history sync strategy",
+	log.ZInfo(ctx, "login: history sync strategy",
 		"syncAllHistory", u.info.SyncAllHistory,
 		"userID", userID)
 
@@ -660,14 +660,14 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 			log.ZDebug(ctx, "TriggerCmdLogout server recycle resources success...")
 		}
 	}
-	log.ZInfo(ctx, "lintao logout cancel session ctx", "loginUserID", u.loginUserID)
+	log.ZInfo(ctx, "logout cancel session ctx", "loginUserID", u.loginUserID)
 	u.Exit()
 	// Wait for all goroutines started in run() to finish before touching the
 	// database or re-initialising channels.  Without this wait, doConnected
 	// (called synchronously inside handlePushMsgAndEvent) can still be
 	// executing a db call after db.Close() returns, causing a nil-pointer panic.
 	u.wg.Wait()
-	log.ZInfo(ctx, "lintao logout goroutines exited", "loginUserID", u.loginUserID)
+	log.ZInfo(ctx, "logout goroutines exited", "loginUserID", u.loginUserID)
 	if u.signaling != nil {
 		u.signaling.Close()
 	}
@@ -688,7 +688,7 @@ func (u *LoginMgr) logout(ctx context.Context, isTokenValid bool) error {
 	u.loginUserID = ""
 	// user object must be rest  when user logout
 	u.initResources()
-	log.ZInfo(ctx, "lintao logout complete, resources reinitialized",
+	log.ZInfo(ctx, "logout complete, resources reinitialized",
 		"isTokenValid", isTokenValid,
 		"loginStatus", loginStatusString(u.getLoginStatus(ctx)),
 		"sessionCtxErr", u.Context().Err())

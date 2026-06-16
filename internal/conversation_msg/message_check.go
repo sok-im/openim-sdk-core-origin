@@ -270,7 +270,7 @@ func (c *Conversation) fetchAndMergeMissingMessages(ctx context.Context, convers
 	} else {
 		getSeqMessageReq.Order = sdkws.PullOrder_PullOrderDesc
 	}
-	log.ZDebug(ctx, "lintao conversation pull message,  ", "req", getSeqMessageReq,
+	log.ZDebug(ctx, "conversation pull message,  ", "req", getSeqMessageReq,
 		"syncAllHistory", c.syncAllHistory, "seqList", seqList)
 	if startTime == 0 && !c.LongConnMgr.IsConnected() {
 		return
@@ -335,21 +335,21 @@ func (c *Conversation) getConversationMinSeq(ctx context.Context, conversationID
 		} else if syncedMaxSeq > 0 {
 			floor := syncedMaxSeq + 1
 			if floor > minSeq {
-				log.ZInfo(ctx, "lintao getConversationMinSeq: clamped by hasReadSeq",
+				log.ZInfo(ctx, "getConversationMinSeq: clamped by hasReadSeq",
 					"conversationID", conversationID,
 					"serverMinSeq", minSeq, "hasReadSeq", syncedMaxSeq, "effectiveMinSeq", floor)
 				minSeq = floor
 			} else {
-				log.ZDebug(ctx, "lintao getConversationMinSeq: hasReadSeq not applied",
+				log.ZDebug(ctx, "getConversationMinSeq: hasReadSeq not applied",
 					"conversationID", conversationID,
 					"serverMinSeq", minSeq, "hasReadSeq", syncedMaxSeq)
 			}
 		} else {
-			log.ZDebug(ctx, "lintao getConversationMinSeq: no persisted hasReadSeq cursor",
+			log.ZDebug(ctx, "getConversationMinSeq: no persisted hasReadSeq cursor",
 				"conversationID", conversationID, "serverMinSeq", minSeq)
 		}
 	} else {
-		log.ZDebug(ctx, "lintao getConversationMinSeq: syncAllHistory enabled",
+		log.ZDebug(ctx, "getConversationMinSeq: syncAllHistory enabled",
 			"conversationID", conversationID, "serverMinSeq", minSeq)
 	}
 

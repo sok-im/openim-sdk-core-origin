@@ -105,7 +105,7 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 	if usePreLoginCtx {
 		baseCtx = UserForSDK.preLoginCtx()
 	} else if baseCtx.Err() != nil {
-		log.ZError(baseCtx, "lintao sdk session context canceled, reject api call",
+		log.ZError(baseCtx, "sdk session context canceled, reject api call",
 			baseCtx.Err(),
 			"funcName", funcName,
 			"shortFunc", short,
@@ -115,7 +115,7 @@ func call_(operationID string, fn any, args ...any) (res any, err error) {
 		return nil, sdkerrs.ErrLoginOut.WrapMsg("sdk session context canceled")
 	}
 	if usePreLoginCtx {
-		log.ZInfo(baseCtx, "lintao api call use preLoginCtx",
+		log.ZInfo(baseCtx, "api call use preLoginCtx",
 			"funcName", funcName,
 			"shortFunc", short,
 			"loginStatus", loginStatusString(UserForSDK.getLoginStatus(context.Background())),

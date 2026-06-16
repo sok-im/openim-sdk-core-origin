@@ -58,7 +58,7 @@ func (d *DataBase) GetConversationSyncedMaxSeq(ctx context.Context, conversation
 		return 0, nil
 	}
 	if err == nil {
-		log.ZDebug(ctx, "lintao GetConversationSyncedMaxSeq",
+		log.ZDebug(ctx, "GetConversationSyncedMaxSeq",
 			"conversationID", conversationID, "syncedMaxSeq", cursor.SyncedMaxSeq)
 	}
 	return cursor.SyncedMaxSeq, errs.WrapMsg(err, "GetConversationSyncedMaxSeq failed")

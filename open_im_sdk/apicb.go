@@ -24,15 +24,15 @@ func (c *apiErrCallback) OnError(ctx context.Context, err error) {
 	}
 	codeErr, ok := errs.Unwrap(err).(errs.CodeError)
 	if !ok {
-		log.ZError(ctx, "lintao OnError callback not CodeError", err)
+		log.ZError(ctx, "OnError callback not CodeError", err)
 		return
 	}
-	log.ZError(ctx, "lintao OnError callback CodeError", err, "code", codeErr.Code(), "msg", codeErr.Msg(), "detail", codeErr.Detail())
+	log.ZError(ctx, "OnError callback CodeError", err, "code", codeErr.Code(), "msg", codeErr.Msg(), "detail", codeErr.Detail())
 	switch codeErr.Code() {
 	case
 		errs.TokenExpiredError:
 		if atomic.CompareAndSwapInt32(&c.tokenExpiredState, 0, 1) {
-			log.ZError(ctx, "lintao OnUserTokenExpired callback, trigger logout", err)
+			log.ZError(ctx, "OnUserTokenExpired callback, trigger logout", err)
 			c.listener.OnUserTokenExpired()
 			_ = common.TriggerCmdLogOut(ctx, c.loginMgrCh)
 		}
@@ -43,14 +43,14 @@ func (c *apiErrCallback) OnError(ctx context.Context, err error) {
 		errs.TokenUnknownError,
 		errs.TokenNotExistError:
 		if atomic.CompareAndSwapInt32(&c.tokenInvalidState, 0, 1) {
-			log.ZError(ctx, "lintao OnUserTokenInvalid callback, trigger logout", err)
+			log.ZError(ctx, "OnUserTokenInvalid callback, trigger logout", err)
 			c.listener.OnUserTokenInvalid(err.Error())
 			_ = common.TriggerCmdLogOut(ctx, c.loginMgrCh)
 		}
 
 	case errs.TokenKickedError:
 		if atomic.CompareAndSwapInt32(&c.kickedOfflineState, 0, 1) {
-			log.ZError(ctx, "lintao OnKickedOffline callback, trigger logout", err)
+			log.ZError(ctx, "OnKickedOffline callback, trigger logout", err)
 			c.listener.OnKickedOffline()
 			_ = common.TriggerCmdLogOut(ctx, c.loginMgrCh)
 		}

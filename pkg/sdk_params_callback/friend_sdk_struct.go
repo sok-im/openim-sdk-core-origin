@@ -29,6 +29,12 @@ type SearchFriendsParam struct {
 	IsSearchUserID   bool     `json:"isSearchUserID"`
 	IsSearchNickname bool     `json:"isSearchNickname"`
 	IsSearchRemark   bool     `json:"isSearchRemark"`
+	IsSearchFullName bool     `json:"isSearchFullName"`
+}
+
+// SearchFriendsByProfileParam 按备注、firstName+lastName、nickname 模糊搜索好友。
+type SearchFriendsByProfileParam struct {
+	Keyword string `json:"keyword"`
 }
 
 type SearchFriendItem struct {

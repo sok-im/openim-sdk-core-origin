@@ -52,6 +52,9 @@ import (
 //   - updateSignalCallRecordUserProfile(userID, nickname, faceURL, loginUserID)
 //   - listSignalCallRecordsByParticipant(userID, loginUserID) → 返回 JSON 数组
 //   - updateSignalCallRecordCalleeMatchText(sID, calleeMatchText, loginUserID)
+// 好友搜索（Web 侧须实现，参数顺序与 exec.Exec 一致）：
+//   - searchFriendList(keyword, isSearchUserID, isSearchNickname, isSearchRemark, isSearchFullName, loginUserID)
+//   - searchFriendListByProfile(keyword, loginUserID)
 // 表名：local_signal_call_records。未更新 JS 侧会导致 Web 端崩溃。
 
 type IndexDB struct {

@@ -32,6 +32,11 @@ func SearchFriends(callback open_im_sdk_callback.Base, operationID string, searc
 	call(callback, operationID, UserForSDK.Relation().SearchFriends, searchParam)
 }
 
+// SearchFriendsByProfile 按备注、firstName+lastName、nickname 模糊搜索好友；searchParam 为 JSON，见 sdk_params_callback.SearchFriendsByProfileParam。
+func SearchFriendsByProfile(callback open_im_sdk_callback.Base, operationID string, searchParam string) {
+	call(callback, operationID, UserForSDK.Relation().SearchFriendsByProfile, searchParam)
+}
+
 func CheckFriend(callback open_im_sdk_callback.Base, operationID string, userIDList string) {
 	call(callback, operationID, UserForSDK.Relation().CheckFriend, userIDList)
 }

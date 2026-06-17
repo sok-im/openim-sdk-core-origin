@@ -124,8 +124,30 @@ func (i *Friend) DeleteAllFriend(ctx context.Context) error {
 	return err
 }
 
-func (i *Friend) SearchFriendList(ctx context.Context, keyword string, isSearchUserID, isSearchNickname, isSearchRemark bool) (result []*model_struct.LocalFriend, err error) {
-	gList, err := exec.Exec(keyword, isSearchUserID, isSearchNickname, isSearchRemark)
+func (i *Friend) SearchFriendList(ctx context.Context, keyword string, isSearchUserID, isSearchNickname, isSearchRemark, isSearchFullName bool) (result []*model_struct.LocalFriend, err error) {
+	gList, err := exec.Exec(keyword, isSearchUserID, isSearchNickname, isSearchRemark, isSearchFullName, i.loginUserID)
+	if err != nil {
+		return nil, err
+	} else {
+		if v, ok := gList.(string); ok {
+			var temp []model_struct.LocalFriend
+			err := utils.JsonStringToStruct(v, &temp)
+			if err != nil {
+				return nil, err
+			}
+			for _, v := range temp {
+				v1 := v
+				result = append(result, &v1)
+			}
+			return result, err
+		} else {
+			return nil, exec.ErrType
+		}
+	}
+}
+
+func (i *Friend) SearchFriendListByProfile(ctx context.Context, keyword string) (result []*model_struct.LocalFriend, err error) {
+	gList, err := exec.Exec(keyword, i.loginUserID)
 	if err != nil {
 		return nil, err
 	} else {

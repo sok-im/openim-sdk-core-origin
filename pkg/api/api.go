@@ -37,6 +37,7 @@ var (
 	GetUserPrivacySettings   = newApi[user.GetUserPrivacySettingsReq, user.GetUserPrivacySettingsResp]("/user/get_user_privacy_settings")
 	GetUserByPhone           = newApi[user.GetUserByPhoneReq, user.GetUserByPhoneResp]("/user/get_user_by_phone")
 	GetUsersByNickname       = newApi[user.GetUsersByNicknameReq, user.GetUsersByNicknameResp]("/user/get_users_by_nickname")
+	CheckNickname            = newApi[user.CheckNicknameReq, user.CheckNicknameResp]("/user/check_nickname")
 )
 
 var (

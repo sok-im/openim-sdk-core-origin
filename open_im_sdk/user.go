@@ -111,3 +111,9 @@ func GetUserByPhone(callback open_im_sdk_callback.Base, operationID string, phon
 func GetUsersByNickname(callback open_im_sdk_callback.Base, operationID string, nickname string) {
 	call(callback, operationID, UserForSDK.User().GetUsersByNickname, nickname)
 }
+
+// CheckNickname 检查昵称是否已被占用，成功回调 JSON 为 bool。
+// excludeUserID 修改昵称时传入当前用户 ID 以排除本人；注册场景可传空字符串。
+func CheckNickname(callback open_im_sdk_callback.Base, operationID string, nickname, excludeUserID string) {
+	call(callback, operationID, UserForSDK.User().CheckNickname, nickname, excludeUserID)
+}

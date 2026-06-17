@@ -171,6 +171,12 @@ func (u *User) GetUsersByNickname(ctx context.Context, nickname string) ([]*sdkw
 	return u.getUsersByNickname(ctx, nickname)
 }
 
+// CheckNickname 检查昵称是否已被占用（HTTP /user/check_nickname）。
+// excludeUserID 修改昵称时传入当前用户 ID 以排除本人；注册场景可传空字符串。
+func (u *User) CheckNickname(ctx context.Context, nickname, excludeUserID string) (bool, error) {
+	return u.checkNickname(ctx, nickname, excludeUserID)
+}
+
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {
 	usersInfo, err := u.GetUsersInfoWithCache(ctx, userIDs)
 	if err != nil {

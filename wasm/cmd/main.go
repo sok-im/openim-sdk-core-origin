@@ -200,6 +200,7 @@ func registerFunc() {
 	js.Global().Set("getUserPrivacySettings", js.FuncOf(wrapperUser.GetUserPrivacySettings))
 	js.Global().Set("getUserByPhone", js.FuncOf(wrapperUser.GetUserByPhone))
 	js.Global().Set("getUsersByNickname", js.FuncOf(wrapperUser.GetUsersByNickname))
+	js.Global().Set("checkNickname", js.FuncOf(wrapperUser.CheckNickname))
 
 	wrapperFriend := wasm_wrapper.NewWrapperFriend(globalFuc)
 	js.Global().Set("getSpecifiedFriendsInfo", js.FuncOf(wrapperFriend.GetSpecifiedFriendsInfo))

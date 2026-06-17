@@ -114,3 +114,16 @@ func (u *User) getUsersByNickname(ctx context.Context, nickname string) ([]*sdkw
 	}
 	return resp.UsersInfo, nil
 }
+
+// checkNickname 检查昵称是否已被占用；excludeUserID 修改昵称时传入当前用户 ID 排除本人
+func (u *User) checkNickname(ctx context.Context, nickname, excludeUserID string) (bool, error) {
+	req := &user.CheckNicknameReq{Nickname: nickname, ExcludeUserID: excludeUserID}
+	resp, err := api.CheckNickname.Invoke(ctx, req)
+	if err != nil {
+		return false, err
+	}
+	if resp == nil {
+		return false, nil
+	}
+	return resp.Exists, nil
+}

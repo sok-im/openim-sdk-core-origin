@@ -606,7 +606,8 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			status,
 			constant.SignalCallActionHungUp,
 			inviteMs, connectMs, time.Now().UnixMilli(), req.CallDuration)
-		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
+		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation,
+			"status", status, "action", constant.SignalCallActionHungUp, "callDuration", req.CallDuration)
 	}
 	return nil
 }

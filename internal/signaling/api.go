@@ -279,7 +279,8 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 				status,
 				constant.SignalCallActionHungUp,
 				inviteMs, connectMs, time.Now().UnixMilli(), signalHungUpReq.CallDuration)
-			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation, "status", status, "action", constant.SignalCallActionHungUp)
+			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation,
+				"status", status, "action", constant.SignalCallActionHungUp, "callDuration", signalHungUpReq.CallDuration)
 
 		}
 	}

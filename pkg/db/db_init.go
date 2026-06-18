@@ -216,7 +216,10 @@ func (d *DataBase) initSignalDB(ctx context.Context, zLogLevel logger.LogLevel) 
 	if err = runSignalCallSchemaMigrations(ctx, d.signalConn, d.loginUserID); err != nil {
 		return err
 	}
-	return migrateSignalCallRecordsFromMainDB(ctx, d.conn, d.signalConn)
+	if err = migrateSignalCallRecordsFromMainDB(ctx, d.conn, d.signalConn, d.loginUserID); err != nil {
+		return err
+	}
+	return backfillSignalCallRecordOwnerAndPurgeForeign(ctx, d.signalConn, d.loginUserID)
 }
 
 func runSignalCallSchemaMigrations(ctx context.Context, db *gorm.DB, loginUserID string) error {
@@ -306,7 +309,7 @@ func runSignalCallSchemaMigrations(ctx context.Context, db *gorm.DB, loginUserID
 }
 
 // migrateSignalCallRecordsFromMainDB 将旧版主库中的通话记录一次性迁入独立库（按 loginUserID 隔离）。
-func migrateSignalCallRecordsFromMainDB(ctx context.Context, mainDB, signalDB *gorm.DB) error {
+func migrateSignalCallRecordsFromMainDB(ctx context.Context, mainDB, signalDB *gorm.DB, loginUserID string) error {
 	if mainDB == nil || signalDB == nil {
 		return nil
 	}
@@ -338,9 +341,34 @@ func migrateSignalCallRecordsFromMainDB(ctx context.Context, mainDB, signalDB *g
 		if r == nil || r.SID == "" {
 			continue
 		}
+		r.OwnerUserID = loginUserID
 		if err := signalDB.WithContext(ctx).Save(r).Error; err != nil {
 			return errs.WrapMsg(err, "migrateSignalCallRecordsFromMainDB Save failed")
 		}
+	}
+	return nil
+}
+
+// backfillSignalCallRecordOwnerAndPurgeForeign 为旧数据补全 owner_user_id，并清除非当前账号的记录。
+func backfillSignalCallRecordOwnerAndPurgeForeign(ctx context.Context, db *gorm.DB, loginUserID string) error {
+	if db == nil || loginUserID == "" {
+		return nil
+	}
+	inviteePattern := "%\"" + loginUserID + "\"%"
+	if err := db.WithContext(ctx).Exec(
+		`UPDATE local_signal_call_records SET owner_user_id = ?
+		 WHERE (owner_user_id = '' OR owner_user_id IS NULL)
+		   AND (inviter_user_id = ? OR invitee_uid = ? OR invitee_user_ids LIKE ?)`,
+		loginUserID, loginUserID, loginUserID, inviteePattern,
+	).Error; err != nil {
+		return err
+	}
+	if err := db.WithContext(ctx).Exec(
+		`DELETE FROM local_signal_call_records
+		 WHERE owner_user_id != ? OR owner_user_id IS NULL OR owner_user_id = ''`,
+		loginUserID,
+	).Error; err != nil {
+		return err
 	}
 	return nil
 }

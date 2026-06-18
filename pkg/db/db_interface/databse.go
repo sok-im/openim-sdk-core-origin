@@ -143,7 +143,8 @@ type FriendModel interface {
 	BatchInsertFriend(ctx context.Context, friendList []*model_struct.LocalFriend) error
 	DeleteAllFriend(ctx context.Context) error
 
-	SearchFriendList(ctx context.Context, keyword string, isSearchUserID, isSearchNickname, isSearchRemark bool) ([]*model_struct.LocalFriend, error)
+	SearchFriendList(ctx context.Context, keyword string, isSearchUserID, isSearchNickname, isSearchRemark, isSearchFullName bool) ([]*model_struct.LocalFriend, error)
+	SearchFriendListByProfile(ctx context.Context, keyword string) ([]*model_struct.LocalFriend, error)
 	GetFriendInfoByFriendUserID(ctx context.Context, FriendUserID string) (*model_struct.LocalFriend, error)
 	GetFriendInfoList(ctx context.Context, friendUserIDList []string) ([]*model_struct.LocalFriend, error)
 	UpdateColumnsFriend(ctx context.Context, friendIDs []string, args map[string]interface{}) error

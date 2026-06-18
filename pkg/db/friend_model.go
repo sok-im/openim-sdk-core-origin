@@ -21,12 +21,33 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/tools/errs"
 )
+
+const friendFullNameMatchSQL = "first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?"
+
+func applyFriendProfileSearch(tx *gorm.DB, keyword string) *gorm.DB {
+	pattern := "%" + keyword + "%"
+	profileCond := "remark LIKE ? OR name LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?"
+	args := []interface{}{pattern, pattern, pattern, pattern, pattern}
+
+	tokens := strings.Fields(keyword)
+	if len(tokens) > 1 {
+		var multiParts []string
+		for _, t := range tokens {
+			p := "%" + t + "%"
+			multiParts = append(multiParts, "("+friendFullNameMatchSQL+")")
+			args = append(args, p, p, p)
+		}
+		profileCond = "(" + profileCond + " OR (" + strings.Join(multiParts, " AND ") + "))"
+	}
+	return tx.Where(profileCond, args...)
+}
 
 func (d *DataBase) InsertFriend(ctx context.Context, friend *model_struct.LocalFriend) error {
 	d.mRWMutex.Lock()
@@ -90,9 +111,13 @@ func (d *DataBase) DeleteAllFriend(ctx context.Context) error {
 	return errs.WrapMsg(d.conn.WithContext(ctx).Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model_struct.LocalFriend{}).Error, "DeleteAllFriend failed")
 }
 
-func (d *DataBase) SearchFriendList(ctx context.Context, keyword string, isSearchUserID, isSearchNickname, isSearchRemark bool) ([]*model_struct.LocalFriend, error) {
+func (d *DataBase) SearchFriendList(ctx context.Context, keyword string, isSearchUserID, isSearchNickname, isSearchRemark, isSearchFullName bool) ([]*model_struct.LocalFriend, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
+	keyword = strings.TrimSpace(keyword)
+	if keyword == "" {
+		return nil, nil
+	}
 	var count int
 	var friendList []*model_struct.LocalFriend
 	var condition string
@@ -112,9 +137,33 @@ func (d *DataBase) SearchFriendList(ctx context.Context, keyword string, isSearc
 			condition += "or "
 		}
 		condition += fmt.Sprintf("remark like %q ", "%"+keyword+"%")
+		count++
 	}
-	err := d.conn.WithContext(ctx).Where(condition).Order("create_time DESC").Find(&friendList).Error
+	if isSearchFullName {
+		if count > 0 {
+			condition += "or "
+		}
+		condition += fmt.Sprintf("(first_name like %q or last_name like %q or (first_name || ' ' || last_name) like %q) ", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if count == 0 {
+		return nil, nil
+	}
+	err := d.conn.WithContext(ctx).Where("owner_user_id = ?", d.loginUserID).Where(condition).Order("create_time DESC").Find(&friendList).Error
 	return friendList, errs.WrapMsg(err, "SearchFriendList failed")
+}
+
+func (d *DataBase) SearchFriendListByProfile(ctx context.Context, keyword string) ([]*model_struct.LocalFriend, error) {
+	d.mRWMutex.RLock()
+	defer d.mRWMutex.RUnlock()
+	keyword = strings.TrimSpace(keyword)
+	if keyword == "" {
+		return nil, nil
+	}
+	var friendList []*model_struct.LocalFriend
+	tx := d.conn.WithContext(ctx).Where("owner_user_id = ?", d.loginUserID)
+	tx = applyFriendProfileSearch(tx, keyword)
+	err := tx.Order("create_time DESC").Find(&friendList).Error
+	return friendList, errs.WrapMsg(err, "SearchFriendListByProfile failed")
 }
 
 func (d *DataBase) GetFriendInfoByFriendUserID(ctx context.Context, FriendUserID string) (*model_struct.LocalFriend, error) {

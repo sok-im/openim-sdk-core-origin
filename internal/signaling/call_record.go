@@ -31,6 +31,7 @@ type callRecordConfig struct {
 	inviterNickname  string
 	inviterFaceURL   string
 	groupName        string
+	ownerUserID      string
 }
 
 // newLocalSignalCallRecord 根据 callRecordConfig 生成本地通话记录，并计算拨打时长与通话时长。
@@ -107,6 +108,7 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 		Direction:           cfg.direction,
 		Role:                constant.SignalCallRoleFromDirection(cfg.direction),
 		Action:              cfg.action,
+		OwnerUserID:         strings.TrimSpace(cfg.ownerUserID),
 	}
 }
 

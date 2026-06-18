@@ -366,13 +366,29 @@ func (r *Relation) GetFriendListPage(ctx context.Context, offset, count int32, f
 }
 
 func (r *Relation) SearchFriends(ctx context.Context, param *sdk.SearchFriendsParam) ([]*sdk.SearchFriendItem, error) {
-	if len(param.KeywordList) == 0 || (!param.IsSearchNickname && !param.IsSearchUserID && !param.IsSearchRemark) {
+	if len(param.KeywordList) == 0 || (!param.IsSearchNickname && !param.IsSearchUserID && !param.IsSearchRemark && !param.IsSearchFullName) {
 		return nil, sdkerrs.ErrArgs.WrapMsg("keyword is null or search field all false")
 	}
-	localFriendList, err := r.db.SearchFriendList(ctx, param.KeywordList[0], param.IsSearchUserID, param.IsSearchNickname, param.IsSearchRemark)
+	localFriendList, err := r.db.SearchFriendList(ctx, param.KeywordList[0], param.IsSearchUserID, param.IsSearchNickname, param.IsSearchRemark, param.IsSearchFullName)
 	if err != nil {
 		return nil, err
 	}
+	return r.buildSearchFriendItems(ctx, localFriendList)
+}
+
+// SearchFriendsByProfile 按备注、firstName+lastName、nickname 模糊搜索好友。
+func (r *Relation) SearchFriendsByProfile(ctx context.Context, param *sdk.SearchFriendsByProfileParam) ([]*sdk.SearchFriendItem, error) {
+	if strings.TrimSpace(param.Keyword) == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("keyword is null")
+	}
+	localFriendList, err := r.db.SearchFriendListByProfile(ctx, param.Keyword)
+	if err != nil {
+		return nil, err
+	}
+	return r.buildSearchFriendItems(ctx, localFriendList)
+}
+
+func (r *Relation) buildSearchFriendItems(ctx context.Context, localFriendList []*model_struct.LocalFriend) ([]*sdk.SearchFriendItem, error) {
 	localBlackList, err := r.db.GetBlackListDB(ctx)
 	if err != nil {
 		return nil, err

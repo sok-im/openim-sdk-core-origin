@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/common"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	userPb "github.com/openimsdk/protocol/user"
 	"github.com/openimsdk/tools/errs"
@@ -42,6 +44,54 @@ func (u *User) SyncLoginUserInfoWithoutNotice(ctx context.Context) error {
 	}
 	log.ZDebug(ctx, "SyncLoginUserInfo", "remoteUser", remoteUser, "localUser", localUser)
 	return u.userSyncer.Sync(ctx, []*model_struct.LocalUser{remoteUser}, localUsers, nil, false, true)
+}
+
+// SyncUserInfo fetches the latest profile for userID from the server, stores it
+// in the in-memory UserCache, and fires conversation / message update events
+// when the display name or face URL has changed.
+//
+// It is intended for non-login users (e.g. a one-way friend whose profile
+// changed but whose friend-list version was not bumped on B's side).
+func (u *User) SyncUserInfo(ctx context.Context, userID string) error {
+	newUser, err := u.GetSingleUserFromServer(ctx, userID)
+	if err != nil {
+		log.ZWarn(ctx, "SyncUserInfo GetSingleUserFromServer failed", err, "userID", userID)
+		return err
+	}
+
+	oldUser, hasOld := u.UserCache.Load(userID)
+	u.UserCache.Store(userID, newUser)
+
+	newShowName := newUser.DisplayName()
+	changed := !hasOld ||
+		oldUser.FaceURL != newUser.FaceURL ||
+		oldUser.Nickname != newUser.Nickname ||
+		oldUser.FirstName != newUser.FirstName ||
+		oldUser.LastName != newUser.LastName
+
+	if changed {
+		log.ZInfo(ctx, "SyncUserInfo profile changed, triggering conversation update",
+			"userID", userID, "faceURL", newUser.FaceURL, "showName", newShowName)
+		_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
+			Action: constant.UpdateConFaceUrlAndNickName,
+			Args: common.SourceIDAndSessionType{
+				SourceID:    newUser.UserID,
+				SessionType: constant.SingleChatType,
+				FaceURL:     newUser.FaceURL,
+				Nickname:    newShowName,
+			},
+		}, u.conversationCh)
+		_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{
+			Action: constant.UpdateMsgFaceUrlAndNickName,
+			Args: common.UpdateMessageInfo{
+				SessionType: constant.SingleChatType,
+				UserID:      newUser.UserID,
+				FaceURL:     newUser.FaceURL,
+				Nickname:    newUser.Nickname,
+			},
+		}, u.conversationCh)
+	}
+	return nil
 }
 
 func (u *User) SyncAllCommand(ctx context.Context) error {

@@ -81,6 +81,15 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			return err
 		}
 		if tips.UserID != r.loginUserID {
+			// Actively sync the changed user's profile from the server.
+			// This covers the one-way case (A added B but B didn't add A): the server
+			// does NOT bump B's friend-list version, so IncrSyncFriends returns nothing
+			// and the friendSyncer never calls UserCache.Delete — leaving stale data.
+			// SyncUserInfo fetches fresh data, overwrites the cache, and fires
+			// conversation/message update events when name or face URL changed.
+			if err := r.user.SyncUserInfo(ctx, tips.UserID); err != nil {
+				log.ZWarn(ctx, "FriendInfoUpdatedNotification SyncUserInfo failed", err, "userID", tips.UserID)
+			}
 			return r.IncrSyncFriends(ctx)
 		}
 	case constant.BlackAddedNotification:

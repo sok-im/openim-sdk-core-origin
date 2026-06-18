@@ -73,6 +73,7 @@ var (
 	DeleteMsgs                       = newApi[msg.DeleteMsgsReq, msg.DeleteMsgsResp]("/msg/delete_msgs")                                  // Delete the specified message
 	RevokeMsg                        = newApi[msg.RevokeMsgReq, msg.RevokeMsgResp]("/msg/revoke_msg")
 	MarkMsgsAsRead                   = newApi[msg.MarkMsgsAsReadReq, msg.MarkMsgsAsReadResp]("/msg/mark_msgs_as_read")
+	MarkGroupMsgsAsRead              = newApi[msg.MarkGroupMsgsAsReadReq, msg.MarkGroupMsgsAsReadResp]("/msg/mark_group_msgs_as_read")
 	GetConversationsHasReadAndMaxSeq = newApi[msg.GetConversationsHasReadAndMaxSeqReq, msg.GetConversationsHasReadAndMaxSeqResp]("/msg/get_conversations_has_read_and_max_seq")
 	MarkConversationAsRead           = newApi[msg.MarkConversationAsReadReq, msg.MarkConversationAsReadResp]("/msg/mark_conversation_as_read")
 	SetConversationHasReadSeq        = newApi[msg.SetConversationHasReadSeqReq, msg.SetConversationHasReadSeqResp]("/msg/set_conversation_has_read_seq")

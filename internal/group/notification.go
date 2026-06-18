@@ -265,16 +265,16 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
 				return err
 			}
-			log.ZInfo(ctx, "lintao GroupCallStartedTips", "detail", detail)
+			log.ZInfo(ctx, "GroupCallStartedTips", "detail", detail)
 			g.listener().OnGroupCallStarted(utils.StructToJsonString(detail))
 			return nil
 		case constant.GroupCallEndedNotification: // 1523
 			var detail sdkws.GroupCallEndedTips
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
-				log.ZError(ctx, "lintao UnmarshalNotificationElem failed", err)
+				log.ZError(ctx, "UnmarshalNotificationElem failed", err)
 				return err
 			}
-			log.ZInfo(ctx, "lintao GroupCallEndedTips", "detail", detail)
+			log.ZInfo(ctx, "GroupCallEndedTips", "detail", detail)
 
 			g.listener().OnGroupCallEnded(utils.StructToJsonString(detail))
 			return nil

@@ -13,6 +13,15 @@ func (c *Conversation) markMsgAsRead2Server(ctx context.Context, conversationID 
 	return api.MarkMsgsAsRead.Execute(ctx, req)
 }
 
+func (c *Conversation) markGroupMsgsAsRead2Server(ctx context.Context, conversationID string, seqs []int64) error {
+	req := &pbMsg.MarkGroupMsgsAsReadReq{
+		UserID:         c.loginUserID,
+		ConversationID: conversationID,
+		Seqs:           seqs,
+	}
+	return api.MarkGroupMsgsAsRead.Execute(ctx, req)
+}
+
 func (c *Conversation) markConversationAsReadServer(ctx context.Context, conversationID string, hasReadSeq int64, seqs []int64) error {
 	req := &pbMsg.MarkConversationAsReadReq{UserID: c.loginUserID, ConversationID: conversationID, HasReadSeq: hasReadSeq, Seqs: seqs}
 	return api.MarkConversationAsRead.Execute(ctx, req)

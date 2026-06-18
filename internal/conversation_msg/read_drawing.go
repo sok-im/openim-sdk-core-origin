@@ -90,6 +90,19 @@ func (c *Conversation) markConversationMessageAsRead(ctx context.Context, conver
 		}
 	case constant.ReadGroupChatType, constant.NotificationChatType:
 		log.ZDebug(ctx, "markConversationMessageAsRead", "conversationID", conversationID, "peerUserMaxSeq", peerUserMaxSeq, "maxSeq", maxSeq)
+		if conversation.ConversationType == constant.ReadGroupChatType {
+			unreadMsgs, err := c.db.GetUnreadMessage(ctx, conversationID)
+			if err != nil {
+				log.ZWarn(ctx, "GetUnreadMessage err", err, "conversationID", conversationID)
+			} else {
+				_, seqs := c.getAsReadMsgMapAndList(ctx, unreadMsgs)
+				if len(seqs) > 0 {
+					if err := c.markGroupMsgsAsRead2Server(ctx, conversationID, seqs); err != nil {
+						log.ZWarn(ctx, "markGroupMsgsAsRead2Server err", err, "conversationID", conversationID)
+					}
+				}
+			}
+		}
 		if err := c.markConversationAsReadServer(ctx, conversationID, maxSeq, nil); err != nil {
 			return err
 		}
@@ -105,7 +118,7 @@ func (c *Conversation) markConversationMessageAsRead(ctx context.Context, conver
 
 // mark a conversation's message as read by seqs
 func (c *Conversation) markMessagesAsReadByMsgID(ctx context.Context, conversationID string, msgIDs []string) error {
-	_, err := c.db.GetConversation(ctx, conversationID)
+	conversation, err := c.db.GetConversation(ctx, conversationID)
 	if err != nil {
 		return err
 	}
@@ -127,8 +140,14 @@ func (c *Conversation) markMessagesAsReadByMsgID(ctx context.Context, conversati
 		log.ZWarn(ctx, "seqs is empty", nil, "conversationID", conversationID)
 		return nil
 	}
-	if err := c.markMsgAsRead2Server(ctx, conversationID, seqs); err != nil {
-		return err
+	if conversation.ConversationType == constant.ReadGroupChatType {
+		if err := c.markGroupMsgsAsRead2Server(ctx, conversationID, seqs); err != nil {
+			return err
+		}
+	} else {
+		if err := c.markMsgAsRead2Server(ctx, conversationID, seqs); err != nil {
+			return err
+		}
 	}
 	decrCount, err := c.db.MarkConversationMessageAsReadDB(ctx, conversationID, markAsReadMsgIDs)
 	if err != nil {
@@ -279,6 +298,29 @@ func (c *Conversation) doReadDrawing(ctx context.Context, msg *sdkws.MsgData) er
 			var messageReceiptResp = []*sdk_struct.MessageReceipt{{UserID: tips.MarkAsReadUserID, MsgIDList: successMsgIDs,
 				SessionType: conversation.ConversationType, ReadTime: msg.SendTime}}
 			c.msgListener().OnRecvC2CReadReceipt(utils.StructToJsonString(messageReceiptResp))
+		} else if conversation.ConversationType == constant.ReadGroupChatType {
+			var successMsgIDs []string
+			for _, message := range messages {
+				if message.IsRead {
+					continue
+				}
+				message.IsRead = true
+				if err = c.db.UpdateMessage(ctx, tips.ConversationID, message); err != nil {
+					log.ZWarn(ctx, "UpdateMessage err", err, "conversationID", tips.ConversationID, "message", message)
+				} else {
+					successMsgIDs = append(successMsgIDs, message.ClientMsgID)
+				}
+			}
+			if len(successMsgIDs) > 0 {
+				receipt := []*sdk_struct.MessageReceipt{{
+					GroupID:     conversation.GroupID,
+					UserID:      tips.MarkAsReadUserID,
+					MsgIDList:   successMsgIDs,
+					SessionType: conversation.ConversationType,
+					ReadTime:    msg.SendTime,
+				}}
+				c.msgListener().OnRecvGroupReadReceipt(utils.StructToJsonString(receipt))
+			}
 		}
 	} else {
 		return c.doUnreadCount(ctx, conversation, tips.HasReadSeq, tips.Seqs)

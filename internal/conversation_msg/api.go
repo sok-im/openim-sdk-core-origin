@@ -859,6 +859,16 @@ func (c *Conversation) MarkMessagesAsReadByMsgID(ctx context.Context, conversati
 	return c.markMessagesAsReadByMsgID(ctx, conversationID, clientMsgIDs)
 }
 
+func (c *Conversation) MarkGroupMsgsAsRead(ctx context.Context, conversationID string, seqs []int64) error {
+	if conversationID == "" {
+		return sdkerrs.ErrArgs.WrapMsg("conversationID is empty")
+	}
+	if len(seqs) == 0 {
+		return sdkerrs.ErrArgs.WrapMsg("seqs is empty")
+	}
+	return c.markGroupMsgsAsRead2Server(ctx, conversationID, seqs)
+}
+
 func (c *Conversation) DeleteMessageFromLocalStorage(ctx context.Context, conversationID string, clientMsgID string) error {
 	return c.deleteMessageFromLocal(ctx, conversationID, clientMsgID)
 }

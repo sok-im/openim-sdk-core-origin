@@ -78,11 +78,35 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 	case constant.FriendInfoUpdatedNotification:
 		var tips sdkws.UserInfoUpdatedTips
 		if err := utils.UnmarshalNotificationElem(msg.Content, &tips); err != nil {
+			log.ZError(ctx, "lintao FriendInfoUpdatedNotification unmarshal failed", err, "loginUserID", r.loginUserID)
 			return err
 		}
-		if tips.UserID != r.loginUserID {
-			return r.IncrSyncFriends(ctx)
+		log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification received",
+			"loginUserID", r.loginUserID,
+			"changedUserID", tips.UserID)
+		if tips.UserID == r.loginUserID {
+			log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification skip self update",
+				"loginUserID", r.loginUserID)
+			return nil
 		}
+		if err := r.IncrSyncFriends(ctx); err != nil {
+			log.ZError(ctx, "lintao FriendInfoUpdatedNotification IncrSyncFriends failed", err,
+				"loginUserID", r.loginUserID,
+				"changedUserID", tips.UserID)
+			return err
+		}
+		// Reverse one-way friend: peer is not in local friend list but still needs
+		// conversation / message sender name refreshed from server user profile.
+		if err := r.syncPeerUserConversationDisplay(ctx, tips.UserID); err != nil {
+			log.ZError(ctx, "lintao FriendInfoUpdatedNotification syncPeerUserConversationDisplay failed", err,
+				"loginUserID", r.loginUserID,
+				"changedUserID", tips.UserID)
+			return err
+		}
+		log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification handled",
+			"loginUserID", r.loginUserID,
+			"changedUserID", tips.UserID)
+		return nil
 	case constant.BlackAddedNotification:
 		var tips sdkws.BlackAddedTips
 		if err := utils.UnmarshalNotificationElem(msg.Content, &tips); err != nil {

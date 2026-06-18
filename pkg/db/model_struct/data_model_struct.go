@@ -428,6 +428,8 @@ type LocalSignalCallRecord struct {
 	EndTime     int64 `gorm:"column:end_time" json:"endTime"`
 	// Action 触发本条记录的信令动作：accept / reject / cancel / hungup / timeout
 	Action string `gorm:"column:action;type:varchar(32);index:idx_signal_action" json:"action"`
+	// OwnerUserID 记录归属的登录账号（同设备换号 / 共享 IndexDB 时用于隔离）
+	OwnerUserID string `gorm:"column:owner_user_id;type:varchar(64);index:idx_signal_owner" json:"ownerUserID"`
 }
 
 func (LocalSignalCallRecord) TableName() string {

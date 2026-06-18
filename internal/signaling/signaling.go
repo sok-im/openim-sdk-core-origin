@@ -136,6 +136,7 @@ func (s *Signaling) recordWorker() {
 			inviterNickname: inviterNickname,
 			inviterFaceURL:  inviterFaceURL,
 			groupName:       groupName,
+			ownerUserID:     s.loginUserID,
 		}
 		lr := newLocalSignalCallRecord(cfg)
 		if lr == nil {

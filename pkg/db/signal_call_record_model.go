@@ -27,6 +27,7 @@ func (d *DataBase) BatchUpsertSignalCallRecords(ctx context.Context, records []*
 		if r == nil || r.SID == "" {
 			continue
 		}
+		r.OwnerUserID = d.loginUserID
 		if err := d.signalDB().WithContext(ctx).Save(r).Error; err != nil {
 			return errs.WrapMsg(err, "BatchUpsertSignalCallRecords Save failed")
 		}
@@ -34,10 +35,19 @@ func (d *DataBase) BatchUpsertSignalCallRecords(ctx context.Context, records []*
 	return nil
 }
 
+func applySignalCallOwnerFilter(tx *gorm.DB, ownerUserID string) *gorm.DB {
+	ownerUserID = strings.TrimSpace(ownerUserID)
+	if ownerUserID == "" {
+		return tx
+	}
+	return tx.Where("owner_user_id = ?", ownerUserID)
+}
+
 func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx = applySignalCallOwnerFilter(tx, d.loginUserID)
 	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID)
 	var list []*model_struct.LocalSignalCallRecord
 	err := tx.Order("create_time DESC").Offset(offset).Limit(count).Find(&list).Error
@@ -48,6 +58,7 @@ func (d *DataBase) CountSignalCallRecords(ctx context.Context, sessionType int32
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx = applySignalCallOwnerFilter(tx, d.loginUserID)
 	tx = applySignalCallFilters(tx, sessionType, status, direction, startTime, endTime, keyword, userName, inviteeNickname, inviterUserID, peerUserID)
 	var n int64
 	err := tx.Count(&n).Error
@@ -126,6 +137,7 @@ func (d *DataBase) SearchSignalCallRecordsByUser(ctx context.Context, userID str
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx = applySignalCallOwnerFilter(tx, d.loginUserID)
 	tx = applySignalCallUserFilters(tx, userID, status, startTime, endTime)
 	var list []*model_struct.LocalSignalCallRecord
 	err := tx.Order("create_time DESC").Offset(offset).Limit(count).Find(&list).Error
@@ -136,6 +148,7 @@ func (d *DataBase) CountSignalCallRecordsByUser(ctx context.Context, userID stri
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	tx := d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{})
+	tx = applySignalCallOwnerFilter(tx, d.loginUserID)
 	tx = applySignalCallUserFilters(tx, userID, status, startTime, endTime)
 	var n int64
 	err := tx.Count(&n).Error
@@ -168,7 +181,10 @@ func (d *DataBase) GetSignalCallRecordBySID(ctx context.Context, sID string) (*m
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
 	var rec model_struct.LocalSignalCallRecord
-	err := d.signalDB().WithContext(ctx).Where("s_id = ?", sID).Take(&rec).Error
+	err := applySignalCallOwnerFilter(
+		d.signalDB().WithContext(ctx).Where("s_id = ?", sID),
+		d.loginUserID,
+	).Take(&rec).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.ErrRecordNotFound.Wrap()
@@ -185,7 +201,10 @@ func (d *DataBase) DeleteSignalCallRecords(ctx context.Context, sIDs []string) e
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	return errs.WrapMsg(
-		d.signalDB().WithContext(ctx).Where("s_id IN ?", sIDs).Delete(&model_struct.LocalSignalCallRecord{}).Error,
+		applySignalCallOwnerFilter(
+			d.signalDB().WithContext(ctx).Where("s_id IN ?", sIDs),
+			d.loginUserID,
+		).Delete(&model_struct.LocalSignalCallRecord{}).Error,
 		"DeleteSignalCallRecords failed",
 	)
 }
@@ -194,7 +213,10 @@ func (d *DataBase) ClearAllSignalCallRecords(ctx context.Context) error {
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	return errs.WrapMsg(
-		d.signalDB().WithContext(ctx).Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model_struct.LocalSignalCallRecord{}).Error,
+		applySignalCallOwnerFilter(
+			d.signalDB().WithContext(ctx),
+			d.loginUserID,
+		).Delete(&model_struct.LocalSignalCallRecord{}).Error,
 		"ClearAllSignalCallRecords failed",
 	)
 }
@@ -206,7 +228,7 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	}
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
-	tx := d.signalDB().WithContext(ctx)
+	tx := applySignalCallOwnerFilter(d.signalDB().WithContext(ctx), d.loginUserID)
 	if nickname != "" {
 		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
 			Update("inviter_user_nickname", nickname).Error; err != nil {
@@ -239,9 +261,11 @@ func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userI
 	defer d.mRWMutex.RUnlock()
 	pattern := "%\"" + userID + "\"%"
 	var list []*model_struct.LocalSignalCallRecord
-	err := d.signalDB().WithContext(ctx).
-		Where("inviter_user_id = ? OR invitee_uid = ? OR invitee_user_ids LIKE ?", userID, userID, pattern).
-		Find(&list).Error
+	err := applySignalCallOwnerFilter(
+		d.signalDB().WithContext(ctx).
+			Where("inviter_user_id = ? OR invitee_uid = ? OR invitee_user_ids LIKE ?", userID, userID, pattern),
+		d.loginUserID,
+	).Find(&list).Error
 	return list, errs.WrapMsg(err, "ListSignalCallRecordsByParticipant failed")
 }
 
@@ -253,9 +277,11 @@ func (d *DataBase) UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sI
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	return errs.WrapMsg(
-		d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{}).
-			Where("s_id = ?", sID).
-			Update("callee_match_text", calleeMatchText).Error,
+		applySignalCallOwnerFilter(
+			d.signalDB().WithContext(ctx).Model(&model_struct.LocalSignalCallRecord{}).
+				Where("s_id = ?", sID),
+			d.loginUserID,
+		).Update("callee_match_text", calleeMatchText).Error,
 		"UpdateSignalCallRecordCalleeMatchText failed",
 	)
 }

@@ -149,6 +149,29 @@ func isRTCSignalingContentType(contentType int32) bool {
 	return contentType >= 1600 && contentType < 1699
 }
 
+func parseNotificationDetail(msg *sdk_struct.MsgStruct) error {
+	notification := sdk_struct.NotificationElem{}
+	if err := utils.JsonStringToStruct(msg.Content, &notification); err != nil {
+		return err
+	}
+	msg.NotificationElem = &notification
+	switch msg.ContentType {
+	case constant.ServiceNotification:
+		detail := sdk_struct.ServiceNotificationContent{}
+		if err := utils.JsonStringToStruct(notification.Detail, &detail); err != nil {
+			return err
+		}
+		msg.ServiceNotificationElem = &detail
+	case constant.PaymentNotification:
+		detail := sdk_struct.PaymentNotificationContent{}
+		if err := utils.JsonStringToStruct(notification.Detail, &detail); err != nil {
+			return err
+		}
+		msg.PaymentNotificationElem = &detail
+	}
+	return nil
+}
+
 func msgHandleByContentType(msg *sdk_struct.MsgStruct) (err error) {
 	log.ZInfo(context.Background(), "msgHandleByContentType", "contentType", msg.ContentType, "msg", msg)
 	if isRTCSignalingContentType(msg.ContentType) {
@@ -220,6 +243,8 @@ func msgHandleByContentType(msg *sdk_struct.MsgStruct) (err error) {
 		t := sdk_struct.CardElem{}
 		err = utils.JsonStringToStruct(msg.Content, &t)
 		msg.CardElem = &t
+	case constant.ServiceNotification, constant.PaymentNotification, constant.OANotification:
+		err = parseNotificationDetail(msg)
 	default:
 		t := sdk_struct.NotificationElem{}
 		err = utils.JsonStringToStruct(msg.Content, &t)

@@ -74,6 +74,7 @@ const (
 	UserCommandUpdateNotification = 1307
 
 	UserNotificationEnd = 1399
+	OANotification      = 1400
 
 	GroupNotificationBegin = 1500
 
@@ -110,6 +111,8 @@ const (
 	ClearConversationNotification       = 1703
 
 	BusinessNotification = 2001
+	ServiceNotification  = 2002
+	PaymentNotification  = 2003
 
 	RevokeNotification = 2101
 

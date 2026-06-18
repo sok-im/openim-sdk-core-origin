@@ -235,8 +235,10 @@ type MsgStruct struct {
 	LocationElem     *LocationElem          `json:"locationElem,omitempty"`
 	CustomElem       *CustomElem            `json:"customElem,omitempty"`
 	QuoteElem        *QuoteElem             `json:"quoteElem,omitempty"`
-	NotificationElem *NotificationElem      `json:"notificationElem,omitempty"`
-	AdvancedTextElem *AdvancedTextElem      `json:"advancedTextElem,omitempty"`
+	NotificationElem          *NotificationElem          `json:"notificationElem,omitempty"`
+	ServiceNotificationElem   *ServiceNotificationContent `json:"serviceNotificationElem,omitempty"`
+	PaymentNotificationElem   *PaymentNotificationContent `json:"paymentNotificationElem,omitempty"`
+	AdvancedTextElem          *AdvancedTextElem          `json:"advancedTextElem,omitempty"`
 	TypingElem       *TypingElem            `json:"typingElem,omitempty"`
 	AttachedInfoElem *AttachedInfoElem      `json:"attachedInfoElem,omitempty"`
 }

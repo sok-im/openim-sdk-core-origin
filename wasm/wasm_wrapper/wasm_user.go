@@ -126,6 +126,41 @@ func (w *WrapperUser) GetUserPrivacySettings(_ js.Value, args []js.Value) interf
 	return event_listener.NewCaller(open_im_sdk.GetUserPrivacySettings, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperUser) SetMsgNotificationSwitch(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetMsgNotificationSwitch, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetSokimPaymentNotificationSwitch(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetSokimPaymentNotificationSwitch, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetSokimServiceNotificationSwitch(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetSokimServiceNotificationSwitch, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetAvNotificationSwitch(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetAvNotificationSwitch, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetAvCallRingtoneSwitch(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetAvCallRingtoneSwitch, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) SetPlayCalleeRingtoneOnAnswerSwitch(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetPlayCalleeRingtoneOnAnswerSwitch, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperUser) GetUserNotificationSettings(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetUserNotificationSettings, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperUser) GetUserByPhone(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.GetUserByPhone, callback, &args).AsyncCallWithCallback()

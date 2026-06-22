@@ -160,6 +160,53 @@ func (u *User) GetUserPrivacySettings(ctx context.Context) (*userPb.GetUserPriva
 	return u.getUserPrivacySettings(ctx)
 }
 
+// SetMsgNotificationSwitch 设置消息通知开关：enable true=打开 false=关闭。
+func (u *User) SetMsgNotificationSwitch(ctx context.Context, enable bool) error {
+	return u.setMsgNotificationSwitch(ctx, &userPb.SetMsgNotificationSwitchReq{
+		Enable: enable,
+	})
+}
+
+// SetSokimPaymentNotificationSwitch 设置 sokim 支付通知开关：enable true=打开 false=关闭。
+func (u *User) SetSokimPaymentNotificationSwitch(ctx context.Context, enable bool) error {
+	return u.setSokimPaymentNotificationSwitch(ctx, &userPb.SetSokimPaymentNotificationSwitchReq{
+		Enable: enable,
+	})
+}
+
+// SetSokimServiceNotificationSwitch 设置 sokim 服务通知开关：enable true=打开 false=关闭。
+func (u *User) SetSokimServiceNotificationSwitch(ctx context.Context, enable bool) error {
+	return u.setSokimServiceNotificationSwitch(ctx, &userPb.SetSokimServiceNotificationSwitchReq{
+		Enable: enable,
+	})
+}
+
+// SetAvNotificationSwitch 设置音视频通知开关：enable true=打开 false=关闭。
+func (u *User) SetAvNotificationSwitch(ctx context.Context, enable bool) error {
+	return u.setAvNotificationSwitch(ctx, &userPb.SetAvNotificationSwitchReq{
+		Enable: enable,
+	})
+}
+
+// SetAvCallRingtoneSwitch 设置音视频来电铃声开关：enable true=打开 false=关闭。
+func (u *User) SetAvCallRingtoneSwitch(ctx context.Context, enable bool) error {
+	return u.setAvCallRingtoneSwitch(ctx, &userPb.SetAvCallRingtoneSwitchReq{
+		Enable: enable,
+	})
+}
+
+// SetPlayCalleeRingtoneOnAnswerSwitch 设置接听时播放对方铃声开关：enable true=打开 false=关闭。
+func (u *User) SetPlayCalleeRingtoneOnAnswerSwitch(ctx context.Context, enable bool) error {
+	return u.setPlayCalleeRingtoneOnAnswerSwitch(ctx, &userPb.SetPlayCalleeRingtoneOnAnswerSwitchReq{
+		Enable: enable,
+	})
+}
+
+// GetUserNotificationSettings 获取当前登录用户的通知相关开关（HTTP /user/get_user_notification_settings）。
+func (u *User) GetUserNotificationSettings(ctx context.Context) (*userPb.GetUserNotificationSettingsResp, error) {
+	return u.getUserNotificationSettings(ctx)
+}
+
 // GetUserByPhone 根据手机号精确查询用户（HTTP /user/get_user_by_phone）。
 // 返回 nil 表示未找到、无权限或对方隐藏；具体语义以服务端为准。
 func (u *User) GetUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {

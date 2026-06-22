@@ -89,6 +89,47 @@ func (u *User) getUserPrivacySettings(ctx context.Context) (*user.GetUserPrivacy
 	return api.GetUserPrivacySettings.Invoke(ctx, &user.GetUserPrivacySettingsReq{})
 }
 
+// setMsgNotificationSwitch 调服务端设置消息通知开关
+func (u *User) setMsgNotificationSwitch(ctx context.Context, req *user.SetMsgNotificationSwitchReq) error {
+	req.UserID = u.loginUserID
+	return api.SetMsgNotificationSwitch.Execute(ctx, req)
+}
+
+// setSokimPaymentNotificationSwitch 调服务端设置 sokim 支付通知开关
+func (u *User) setSokimPaymentNotificationSwitch(ctx context.Context, req *user.SetSokimPaymentNotificationSwitchReq) error {
+	req.UserID = u.loginUserID
+	return api.SetSokimPaymentNotificationSwitch.Execute(ctx, req)
+}
+
+// setSokimServiceNotificationSwitch 调服务端设置 sokim 服务通知开关
+func (u *User) setSokimServiceNotificationSwitch(ctx context.Context, req *user.SetSokimServiceNotificationSwitchReq) error {
+	req.UserID = u.loginUserID
+	return api.SetSokimServiceNotificationSwitch.Execute(ctx, req)
+}
+
+// setAvNotificationSwitch 调服务端设置音视频通知开关
+func (u *User) setAvNotificationSwitch(ctx context.Context, req *user.SetAvNotificationSwitchReq) error {
+	req.UserID = u.loginUserID
+	return api.SetAvNotificationSwitch.Execute(ctx, req)
+}
+
+// setAvCallRingtoneSwitch 调服务端设置音视频来电铃声开关
+func (u *User) setAvCallRingtoneSwitch(ctx context.Context, req *user.SetAvCallRingtoneSwitchReq) error {
+	req.UserID = u.loginUserID
+	return api.SetAvCallRingtoneSwitch.Execute(ctx, req)
+}
+
+// setPlayCalleeRingtoneOnAnswerSwitch 调服务端设置接听时播放对方铃声开关
+func (u *User) setPlayCalleeRingtoneOnAnswerSwitch(ctx context.Context, req *user.SetPlayCalleeRingtoneOnAnswerSwitchReq) error {
+	req.UserID = u.loginUserID
+	return api.SetPlayCalleeRingtoneOnAnswerSwitch.Execute(ctx, req)
+}
+
+// getUserNotificationSettings 调服务端获取当前登录用户通知相关开关（HTTP /user/get_user_notification_settings）
+func (u *User) getUserNotificationSettings(ctx context.Context) (*user.GetUserNotificationSettingsResp, error) {
+	return api.GetUserNotificationSettings.Invoke(ctx, &user.GetUserNotificationSettingsReq{})
+}
+
 // getUserByPhone 调服务端按手机号精确查询用户；userInfo 为空表示未找到或无权限
 func (u *User) getUserByPhone(ctx context.Context, phone string) (*sdkws.UserInfo, error) {
 	req := &user.GetUserByPhoneReq{Phone: phone}

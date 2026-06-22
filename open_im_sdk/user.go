@@ -102,6 +102,42 @@ func GetUserPrivacySettings(callback open_im_sdk_callback.Base, operationID stri
 	call(callback, operationID, UserForSDK.User().GetUserPrivacySettings)
 }
 
+// SetMsgNotificationSwitch 设置消息通知开关：enable true=打开 false=关闭。
+func SetMsgNotificationSwitch(callback open_im_sdk_callback.Base, operationID string, enable bool) {
+	call(callback, operationID, UserForSDK.User().SetMsgNotificationSwitch, enable)
+}
+
+// SetSokimPaymentNotificationSwitch 设置 sokim 支付通知开关：enable true=打开 false=关闭。
+func SetSokimPaymentNotificationSwitch(callback open_im_sdk_callback.Base, operationID string, enable bool) {
+	call(callback, operationID, UserForSDK.User().SetSokimPaymentNotificationSwitch, enable)
+}
+
+// SetSokimServiceNotificationSwitch 设置 sokim 服务通知开关：enable true=打开 false=关闭。
+func SetSokimServiceNotificationSwitch(callback open_im_sdk_callback.Base, operationID string, enable bool) {
+	call(callback, operationID, UserForSDK.User().SetSokimServiceNotificationSwitch, enable)
+}
+
+// SetAvNotificationSwitch 设置音视频通知开关：enable true=打开 false=关闭。
+func SetAvNotificationSwitch(callback open_im_sdk_callback.Base, operationID string, enable bool) {
+	call(callback, operationID, UserForSDK.User().SetAvNotificationSwitch, enable)
+}
+
+// SetAvCallRingtoneSwitch 设置音视频来电铃声开关：enable true=打开 false=关闭。
+func SetAvCallRingtoneSwitch(callback open_im_sdk_callback.Base, operationID string, enable bool) {
+	call(callback, operationID, UserForSDK.User().SetAvCallRingtoneSwitch, enable)
+}
+
+// SetPlayCalleeRingtoneOnAnswerSwitch 设置接听时播放对方铃声开关：enable true=打开 false=关闭。
+func SetPlayCalleeRingtoneOnAnswerSwitch(callback open_im_sdk_callback.Base, operationID string, enable bool) {
+	call(callback, operationID, UserForSDK.User().SetPlayCalleeRingtoneOnAnswerSwitch, enable)
+}
+
+// GetUserNotificationSettings 获取当前登录用户的通知相关开关（对应 HTTP POST /user/get_user_notification_settings）。
+// 成功回调 JSON 为 openim.user.GetUserNotificationSettingsResp。
+func GetUserNotificationSettings(callback open_im_sdk_callback.Base, operationID string) {
+	call(callback, operationID, UserForSDK.User().GetUserNotificationSettings)
+}
+
 // GetUserByPhone 根据手机号精确查询用户，成功回调 JSON 为 sdkws.UserInfo 或 null（未找到）
 func GetUserByPhone(callback open_im_sdk_callback.Base, operationID string, phone string) {
 	call(callback, operationID, UserForSDK.User().GetUserByPhone, phone)

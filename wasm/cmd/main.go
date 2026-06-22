@@ -86,6 +86,7 @@ func registerFunc() {
 	js.Global().Set("markConversationMessageAsRead", js.FuncOf(wrapperConMsg.MarkConversationMessageAsRead))
 	js.Global().Set("markAllConversationMessageAsRead", js.FuncOf(wrapperConMsg.MarkAllConversationMessageAsRead))
 	js.Global().Set("markMessagesAsReadByMsgID", js.FuncOf(wrapperConMsg.MarkMessagesAsReadByMsgID))
+	js.Global().Set("markGroupMsgsAsRead", js.FuncOf(wrapperConMsg.MarkGroupMsgsAsRead))
 	js.Global().Set("sendMessage", js.FuncOf(wrapperConMsg.SendMessage))
 	js.Global().Set("sendMessageNotOss", js.FuncOf(wrapperConMsg.SendMessageNotOss))
 	js.Global().Set("getAllConversationList", js.FuncOf(wrapperConMsg.GetAllConversationList))

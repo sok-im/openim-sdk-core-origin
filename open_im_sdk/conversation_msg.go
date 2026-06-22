@@ -185,6 +185,10 @@ func MarkMessagesAsReadByMsgID(callback open_im_sdk_callback.Base, operationID s
 	call(callback, operationID, UserForSDK.Conversation().MarkMessagesAsReadByMsgID, conversationID, clientMsgIDs)
 }
 
+func MarkGroupMsgsAsRead(callback open_im_sdk_callback.Base, operationID string, conversationID string, seqs string) {
+	call(callback, operationID, UserForSDK.Conversation().MarkGroupMsgsAsRead, conversationID, seqs)
+}
+
 func DeleteMessageFromLocalStorage(callback open_im_sdk_callback.Base, operationID string, conversationID string, clientMsgID string) {
 	call(callback, operationID, UserForSDK.Conversation().DeleteMessageFromLocalStorage, conversationID, clientMsgID)
 }

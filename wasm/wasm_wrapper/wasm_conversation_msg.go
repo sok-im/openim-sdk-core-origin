@@ -220,6 +220,11 @@ func (w *WrapperConMsg) ReportSpam(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.ReportSpam, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperConMsg) SendPaymentNotification(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SendPaymentNotification, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperConMsg) TypingStatusUpdate(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.TypingStatusUpdate, callback, &args).AsyncCallWithCallback()

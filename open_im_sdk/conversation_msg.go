@@ -168,6 +168,12 @@ func ReportSpam(callback open_im_sdk_callback.Base, operationID string, req stri
 	call(callback, operationID, UserForSDK.Conversation().ReportSpam, req)
 }
 
+// SendPaymentNotification 发送钱包/支付通知；req 为 JSON，字段见 api.SendPaymentNotificationReq。
+// sendUserID 须为已注册的通知账号；使用当前登录用户 Token 即可。
+func SendPaymentNotification(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().SendPaymentNotification, req)
+}
+
 func TypingStatusUpdate(callback open_im_sdk_callback.Base, operationID string, recvID string, msgTip string) {
 	call(callback, operationID, UserForSDK.Conversation().TypingStatusUpdate, recvID, msgTip)
 }

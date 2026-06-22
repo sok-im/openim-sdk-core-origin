@@ -15,6 +15,7 @@ import (
 
 	"github.com/openimsdk/openim-sdk-core/v3/internal/third/file"
 	"github.com/openimsdk/openim-sdk-core/v3/open_im_sdk_callback"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/api"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/common"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/content_type"
@@ -831,6 +832,22 @@ func (c *Conversation) ReportSpam(ctx context.Context, req *pbMsg.ReportSpamReq)
 		return nil, sdkerrs.ErrArgs.WrapMsg(err.Error())
 	}
 	return c.reportSpamToServer(ctx, req)
+}
+
+// SendPaymentNotification 向单个用户发送钱包/支付通知（POST /msg/send_payment_notification）。
+// sendUserID 须为已注册的通知账号；使用当前登录用户 Token 即可。
+func (c *Conversation) SendPaymentNotification(ctx context.Context, req *api.SendPaymentNotificationReq) (*pbMsg.SendMsgResp, error) {
+	if req == nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg("req is nil")
+	}
+	if req.SendUserID == "" || req.RecvUserID == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("sendUserID and recvUserID are required")
+	}
+	content := req.Content
+	if content.Title == "" || content.Amount == "" || content.TransactionType == "" || content.TransactionTime == "" || content.Currency == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("content title, amount, transactionType, transactionTime and currency are required")
+	}
+	return c.sendPaymentNotificationToServer(ctx, req)
 }
 
 func (c *Conversation) TypingStatusUpdate(ctx context.Context, recvID, msgTip string) error {

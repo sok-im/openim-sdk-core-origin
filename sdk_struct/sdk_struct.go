@@ -357,4 +357,6 @@ type PublicUser struct {
 	CallRingtoneName   string `json:"callRingtoneName"`
 	CallRingtoneCover  string `json:"callRingtoneCover"`
 	CallRingtoneAuthor string `json:"callRingtoneAuthor"`
+	// AppLanguage 用户应用语言（如 zh-CN、en-US）
+	AppLanguage string `json:"appLanguage"`
 }

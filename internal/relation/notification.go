@@ -117,6 +117,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 				log.ZWarn(ctx, "lintao FriendInfoUpdatedNotification IncrSyncFriends failed", err, "userID", tips.UserID)
 				return err
 			}
+			r.syncCallRecordsUserProfile(ctx, tips.UserID)
 			log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification IncrSyncFriends ok", "userID", tips.UserID)
 			return nil
 		}
@@ -155,6 +156,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 					"loginUserID", r.loginUserID, "friendIDs", tips.FriendIDs)
 				return err
 			}
+			r.syncCallRecordsUserProfile(ctx, tips.FriendIDs...)
 			log.ZInfo(ctx, "lintao FriendsInfoUpdateNotification IncrSyncFriends ok",
 				"loginUserID", r.loginUserID, "friendIDs", tips.FriendIDs)
 			return nil

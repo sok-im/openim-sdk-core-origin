@@ -61,7 +61,12 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			return err
 		}
 		if tips.FromToUserID != nil {
-			if tips.FromToUserID.FromUserID == r.loginUserID {
+			if tips.FromToUserID.ToUserID == r.loginUserID && tips.FromToUserID.FromUserID != r.loginUserID {
+				if err := r.user.SyncUserInfo(ctx, tips.FromToUserID.FromUserID); err != nil {
+					log.ZWarn(ctx, "FriendDeletedNotification SyncUserInfo failed", err, "userID", tips.FromToUserID.FromUserID)
+				}
+			}
+			if tips.FromToUserID.FromUserID == r.loginUserID || tips.FromToUserID.ToUserID == r.loginUserID {
 				return r.IncrSyncFriends(ctx)
 			}
 		}

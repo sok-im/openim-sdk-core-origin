@@ -6,6 +6,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/common"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/sdkerrs"
 	userPb "github.com/openimsdk/protocol/user"
 	"github.com/openimsdk/tools/errs"
 	"github.com/openimsdk/tools/log"
@@ -55,7 +56,12 @@ func (u *User) SyncLoginUserInfoWithoutNotice(ctx context.Context) error {
 func (u *User) SyncUserInfo(ctx context.Context, userID string) error {
 	newUser, err := u.GetSingleUserFromServer(ctx, userID)
 	if err != nil {
-		log.ZWarn(ctx, "SyncUserInfo GetSingleUserFromServer failed", err, "userID", userID)
+		if sdkerrs.ErrUserIDNotFound.Is(errs.Unwrap(err)) {
+			u.UserCache.Delete(userID)
+			log.ZInfo(ctx, "SyncUserInfo user not found, removed from cache", "userID", userID)
+		} else {
+			log.ZWarn(ctx, "SyncUserInfo GetSingleUserFromServer failed", err, "userID", userID)
+		}
 		return err
 	}
 

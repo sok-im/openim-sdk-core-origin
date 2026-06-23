@@ -66,6 +66,13 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 					log.ZWarn(ctx, "FriendDeletedNotification SyncUserInfo failed", err, "userID", tips.FromToUserID.FromUserID)
 				}
 			}
+			// When the login user removed a friend (FromUserID == self), the friend's
+			// UserCache entry must be evicted immediately. IncrSyncFriends only updates
+			// the friend DB; it does not touch UserCache, leaving stale data that
+			// GetUsersInfo would serve even after the friend's account is deleted.
+			if tips.FromToUserID.FromUserID == r.loginUserID && tips.FromToUserID.ToUserID != r.loginUserID {
+				r.user.UserCache.Delete(tips.FromToUserID.ToUserID)
+			}
 			if tips.FromToUserID.FromUserID == r.loginUserID || tips.FromToUserID.ToUserID == r.loginUserID {
 				return r.IncrSyncFriends(ctx)
 			}
@@ -119,6 +126,15 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			return err
 		}
 		if tips.FromToUserID.ToUserID == r.loginUserID {
+			// Eagerly evict the named friend IDs from UserCache so that the next
+			// GetUsersInfo call fetches fresh data from the server rather than
+			// returning stale cached data. This is critical for the account-deletion
+			// case: DeleteFriend (step 3b) sends this notification before the user
+			// record is hard-deleted (step 6), so without eviction there is a window
+			// where GetUsersInfo still returns the deleted user's profile.
+			for _, friendID := range tips.FriendIDs {
+				r.user.UserCache.Delete(friendID)
+			}
 			return r.IncrSyncFriends(ctx)
 		}
 	default:

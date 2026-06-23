@@ -194,8 +194,8 @@ type LocalUser struct {
 	CallRingtoneName   string `gorm:"column:call_ringtone_name;type:varchar(255)" json:"callRingtoneName"`
 	CallRingtoneCover  string `gorm:"column:call_ringtone_cover;type:varchar(512)" json:"callRingtoneCover"`
 	CallRingtoneAuthor string `gorm:"column:call_ringtone_author;type:varchar(255)" json:"callRingtoneAuthor"`
-	// AppLanguage 用户应用语言（如 zh-CN、en-US）
-	AppLanguage string `gorm:"column:app_language;type:varchar(32)" json:"appLanguage"`
+	// Language 用户应用语言（如 zh-CN、en-US）
+	Language string `gorm:"column:language;type:varchar(32)" json:"language"`
 }
 
 type LocalBlack struct {

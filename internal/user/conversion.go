@@ -26,7 +26,7 @@ func ServerUserToLocalUser(user *sdkws.UserInfo) *model_struct.LocalUser {
 		CallRingtoneName:   user.GetCallRingtoneName(),
 		CallRingtoneCover:  user.GetCallRingtoneCover(),
 		CallRingtoneAuthor: user.GetCallRingtoneAuthor(),
-		AppLanguage:        user.GetAppLanguage(),
+		Language:           user.GetLanguage(),
 	}
 }
 func ServerCommandToLocalCommand(data *user.AllCommandInfoResp) *model_struct.LocalUserCommand {
@@ -52,6 +52,6 @@ func LocalUserToPublicUser(user *model_struct.LocalUser) *sdk_struct.PublicUser 
 		CallRingtoneName:   user.CallRingtoneName,
 		CallRingtoneCover:  user.CallRingtoneCover,
 		CallRingtoneAuthor: user.CallRingtoneAuthor,
-		AppLanguage:        user.AppLanguage,
+		Language:           user.Language,
 	}
 }

@@ -224,6 +224,11 @@ func (u *User) CheckNickname(ctx context.Context, nickname, excludeUserID string
 	return u.checkNickname(ctx, nickname, excludeUserID)
 }
 
+// CheckUserExist 检查指定 userID 的用户是否存在（HTTP /user/check_user_exist）。
+func (u *User) CheckUserExist(ctx context.Context, userID string) (bool, error) {
+	return u.checkUserExist(ctx, userID)
+}
+
 func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struct.PublicUser, error) {
 	usersInfo, err := u.GetUsersInfoWithCache(ctx, userIDs)
 	if err != nil {

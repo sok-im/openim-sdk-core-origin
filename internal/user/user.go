@@ -155,9 +155,14 @@ func (u *User) GetUserInfoWithCache(ctx context.Context, cacheKey string) (*mode
 func (u *User) GetUsersInfoWithCache(ctx context.Context, cacheKeys []string) ([]*model_struct.LocalUser, error) {
 	m, err := u.UserCache.BatchFetch(ctx, cacheKeys)
 	if err != nil {
+		log.ZWarn(ctx, "lintao GetUsersInfoWithCache BatchFetch failed", err,
+			"loginUserID", u.loginUserID, "userIDs", cacheKeys)
 		return nil, err
 	}
-	return datautil.Values(m), nil
+	users := datautil.Values(m)
+	log.ZDebug(ctx, "lintao GetUsersInfoWithCache result",
+		"loginUserID", u.loginUserID, "requested", cacheKeys, "returnedCount", len(users))
+	return users, nil
 }
 
 // GetSingleUserFromServer retrieves user information from the server.

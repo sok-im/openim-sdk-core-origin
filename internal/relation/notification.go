@@ -61,20 +61,33 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			return err
 		}
 		if tips.FromToUserID != nil {
+			log.ZInfo(ctx, "lintao FriendDeletedNotification received",
+				"loginUserID", r.loginUserID,
+				"fromUserID", tips.FromToUserID.FromUserID,
+				"toUserID", tips.FromToUserID.ToUserID)
 			if tips.FromToUserID.ToUserID == r.loginUserID && tips.FromToUserID.FromUserID != r.loginUserID {
+				log.ZInfo(ctx, "lintao FriendDeletedNotification SyncUserInfo for deleted friend profile",
+					"loginUserID", r.loginUserID, "changedUserID", tips.FromToUserID.FromUserID)
 				if err := r.user.SyncUserInfo(ctx, tips.FromToUserID.FromUserID); err != nil {
-					log.ZWarn(ctx, "FriendDeletedNotification SyncUserInfo failed", err, "userID", tips.FromToUserID.FromUserID)
+					log.ZWarn(ctx, "lintao FriendDeletedNotification SyncUserInfo failed", err, "userID", tips.FromToUserID.FromUserID)
 				}
 			}
-			// When the login user removed a friend (FromUserID == self), the friend's
-			// UserCache entry must be evicted immediately. IncrSyncFriends only updates
-			// the friend DB; it does not touch UserCache, leaving stale data that
-			// GetUsersInfo would serve even after the friend's account is deleted.
 			if tips.FromToUserID.FromUserID == r.loginUserID && tips.FromToUserID.ToUserID != r.loginUserID {
+				log.ZInfo(ctx, "lintao FriendDeletedNotification evict UserCache",
+					"loginUserID", r.loginUserID, "friendUserID", tips.FromToUserID.ToUserID)
 				r.user.UserCache.Delete(tips.FromToUserID.ToUserID)
 			}
 			if tips.FromToUserID.FromUserID == r.loginUserID || tips.FromToUserID.ToUserID == r.loginUserID {
-				return r.IncrSyncFriends(ctx)
+				if err := r.IncrSyncFriends(ctx); err != nil {
+					log.ZWarn(ctx, "lintao FriendDeletedNotification IncrSyncFriends failed", err,
+						"loginUserID", r.loginUserID, "fromUserID", tips.FromToUserID.FromUserID,
+						"toUserID", tips.FromToUserID.ToUserID)
+					return err
+				}
+				log.ZInfo(ctx, "lintao FriendDeletedNotification IncrSyncFriends ok",
+					"loginUserID", r.loginUserID, "fromUserID", tips.FromToUserID.FromUserID,
+					"toUserID", tips.FromToUserID.ToUserID)
+				return nil
 			}
 		}
 	case constant.FriendRemarkSetNotification:
@@ -92,17 +105,20 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 		if err := utils.UnmarshalNotificationElem(msg.Content, &tips); err != nil {
 			return err
 		}
+		log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification received",
+			"loginUserID", r.loginUserID, "changedUserID", tips.UserID)
 		if tips.UserID != r.loginUserID {
-			// Actively sync the changed user's profile from the server.
-			// This covers the one-way case (A added B but B didn't add A): the server
-			// does NOT bump B's friend-list version, so IncrSyncFriends returns nothing
-			// and the friendSyncer never calls UserCache.Delete — leaving stale data.
-			// SyncUserInfo fetches fresh data, overwrites the cache, and fires
-			// conversation/message update events when name or face URL changed.
 			if err := r.user.SyncUserInfo(ctx, tips.UserID); err != nil {
-				log.ZWarn(ctx, "FriendInfoUpdatedNotification SyncUserInfo failed", err, "userID", tips.UserID)
+				log.ZWarn(ctx, "lintao FriendInfoUpdatedNotification SyncUserInfo failed", err, "userID", tips.UserID)
+			} else {
+				log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification SyncUserInfo ok", "userID", tips.UserID)
 			}
-			return r.IncrSyncFriends(ctx)
+			if err := r.IncrSyncFriends(ctx); err != nil {
+				log.ZWarn(ctx, "lintao FriendInfoUpdatedNotification IncrSyncFriends failed", err, "userID", tips.UserID)
+				return err
+			}
+			log.ZInfo(ctx, "lintao FriendInfoUpdatedNotification IncrSyncFriends ok", "userID", tips.UserID)
+			return nil
 		}
 	case constant.BlackAddedNotification:
 		var tips sdkws.BlackAddedTips
@@ -125,17 +141,23 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 		if err := utils.UnmarshalNotificationElem(msg.Content, &tips); err != nil {
 			return err
 		}
+		log.ZInfo(ctx, "lintao FriendsInfoUpdateNotification received",
+			"loginUserID", r.loginUserID, "toUserID", tips.FromToUserID.GetToUserID(), "friendIDs", tips.FriendIDs)
 		if tips.FromToUserID.ToUserID == r.loginUserID {
-			// Eagerly evict the named friend IDs from UserCache so that the next
-			// GetUsersInfo call fetches fresh data from the server rather than
-			// returning stale cached data. This is critical for the account-deletion
-			// case: DeleteFriend (step 3b) sends this notification before the user
-			// record is hard-deleted (step 6), so without eviction there is a window
-			// where GetUsersInfo still returns the deleted user's profile.
 			for _, friendID := range tips.FriendIDs {
+				_, hadCache := r.user.UserCache.Load(friendID)
 				r.user.UserCache.Delete(friendID)
+				log.ZInfo(ctx, "lintao FriendsInfoUpdateNotification evict UserCache",
+					"loginUserID", r.loginUserID, "friendUserID", friendID, "hadCache", hadCache)
 			}
-			return r.IncrSyncFriends(ctx)
+			if err := r.IncrSyncFriends(ctx); err != nil {
+				log.ZWarn(ctx, "lintao FriendsInfoUpdateNotification IncrSyncFriends failed", err,
+					"loginUserID", r.loginUserID, "friendIDs", tips.FriendIDs)
+				return err
+			}
+			log.ZInfo(ctx, "lintao FriendsInfoUpdateNotification IncrSyncFriends ok",
+				"loginUserID", r.loginUserID, "friendIDs", tips.FriendIDs)
+			return nil
 		}
 	default:
 		return fmt.Errorf("type failed %d", msg.ContentType)

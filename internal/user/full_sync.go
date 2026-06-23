@@ -54,19 +54,26 @@ func (u *User) SyncLoginUserInfoWithoutNotice(ctx context.Context) error {
 // It is intended for non-login users (e.g. a one-way friend whose profile
 // changed but whose friend-list version was not bumped on B's side).
 func (u *User) SyncUserInfo(ctx context.Context, userID string) error {
+	log.ZInfo(ctx, "SyncUserInfo start", "loginUserID", u.loginUserID, "userID", userID)
 	newUser, err := u.GetSingleUserFromServer(ctx, userID)
 	if err != nil {
 		if sdkerrs.ErrUserIDNotFound.Is(errs.Unwrap(err)) {
+			_, hadCache := u.UserCache.Load(userID)
 			u.UserCache.Delete(userID)
-			log.ZInfo(ctx, "SyncUserInfo user not found, removed from cache", "userID", userID)
+			log.ZInfo(ctx, "SyncUserInfo user not found, removed from cache",
+				"loginUserID", u.loginUserID, "userID", userID, "hadCache", hadCache)
 		} else {
-			log.ZWarn(ctx, "SyncUserInfo GetSingleUserFromServer failed", err, "userID", userID)
+			log.ZWarn(ctx, "SyncUserInfo GetSingleUserFromServer failed", err,
+				"loginUserID", u.loginUserID, "userID", userID)
 		}
 		return err
 	}
 
 	oldUser, hasOld := u.UserCache.Load(userID)
 	u.UserCache.Store(userID, newUser)
+	log.ZInfo(ctx, "SyncUserInfo fetched from server",
+		"loginUserID", u.loginUserID, "userID", userID, "hadCache", hasOld,
+		"nickname", newUser.Nickname, "faceURL", newUser.FaceURL)
 
 	newShowName := newUser.DisplayName()
 	changed := !hasOld ||

@@ -31,11 +31,11 @@ func (s *Signaling) UpdateCallRecordsUserProfile(ctx context.Context, userID, ni
 	s.invalidateCallRecordDetailCache(ctx, userID, records)
 
 	searchTokens := s.collectUserSearchTokens(ctx, userID, nickname)
-	if len(searchTokens) == 0 {
-		return nil
-	}
 	for _, rec := range records {
 		if rec == nil || rec.SID == "" {
+			continue
+		}
+		if len(searchTokens) == 0 {
 			continue
 		}
 		newText := appendUniqueSearchTokens(rec.CalleeMatchText, searchTokens)
@@ -48,8 +48,21 @@ func (s *Signaling) UpdateCallRecordsUserProfile(ctx context.Context, userID, ni
 		}
 		s.invalidateCallRecordDetailCacheEntry(ctx, userID, rec.SID)
 	}
+	// s.notifyLocalCallRecordProfileChanged(ctx, userID)
 	return nil
 }
+
+// func (s *Signaling) notifyLocalCallRecordProfileChanged(ctx context.Context, userID string) {
+// 	if s.listener == nil {
+// 		return
+// 	}
+// 	listener := s.listener()
+// 	if listener == nil {
+// 		return
+// 	}
+// 	log.ZInfo(ctx, "lintao OnLocalCallRecordProfileChanged", "friendUserID", userID)
+// 	listener.OnLocalCallRecordProfileChanged(userID)
+// }
 
 // InvalidateCallRecordDetailCacheForUser drops cached call-record details for every
 // local record that involves userID (as inviter or invitee).

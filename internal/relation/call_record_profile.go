@@ -100,16 +100,19 @@ func (r *Relation) applyCallRecordUserProfile(ctx context.Context, f *model_stru
 			"lastName", f.LastName, "remark", f.Remark)
 		return
 	}
-	if err := r.db.UpdateSignalCallRecordUserProfile(ctx, f.FriendUserID, showName, f.FaceURL); err != nil {
-		log.ZWarn(ctx, "lintao syncCallRecordsUserProfile UpdateSignalCallRecordUserProfile failed", err,
+	var err error
+	if r.updateCallRecordsUserProfile != nil {
+		err = r.updateCallRecordsUserProfile(ctx, f.FriendUserID, showName, f.FaceURL)
+	} else {
+		err = r.db.UpdateSignalCallRecordUserProfile(ctx, f.FriendUserID, showName, f.FaceURL)
+	}
+	if err != nil {
+		log.ZWarn(ctx, "lintao syncCallRecordsUserProfile update call record profile failed", err,
 			"loginUserID", r.loginUserID, "friendUserID", f.FriendUserID,
 			"source", source, "showName", showName, "faceURL", f.FaceURL)
 		return
 	}
-	log.ZInfo(ctx, "lintao syncCallRecordsUserProfile UpdateSignalCallRecordUserProfile ok",
+	log.ZInfo(ctx, "lintao syncCallRecordsUserProfile update call record profile ok",
 		"loginUserID", r.loginUserID, "friendUserID", f.FriendUserID,
 		"source", source, "showName", showName, "faceURL", f.FaceURL)
-	if r.invalidateCallRecordDetailCache != nil {
-		r.invalidateCallRecordDetailCache(ctx, f.FriendUserID)
-	}
 }

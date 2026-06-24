@@ -41,7 +41,7 @@ type Relation struct {
 	listenerForService              open_im_sdk_callback.OnListenerForService
 	relationSyncMutex               sync.Mutex
 	incrSyncConversations           func(ctx context.Context) error
-	invalidateCallRecordDetailCache func(ctx context.Context, userID string)
+	updateCallRecordsUserProfile    func(ctx context.Context, userID, nickname, faceURL string) error
 }
 
 func (r *Relation) initSyncer() {
@@ -177,6 +177,6 @@ func (r *Relation) SetIncrSyncConversations(fn func(ctx context.Context) error) 
 	r.incrSyncConversations = fn
 }
 
-func (r *Relation) SetInvalidateCallRecordDetailCache(fn func(ctx context.Context, userID string)) {
-	r.invalidateCallRecordDetailCache = fn
+func (r *Relation) SetUpdateCallRecordsUserProfile(fn func(ctx context.Context, userID, nickname, faceURL string) error) {
+	r.updateCallRecordsUserProfile = fn
 }

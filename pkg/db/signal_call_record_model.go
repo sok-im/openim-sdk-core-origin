@@ -13,6 +13,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/tools/errs"
+	"github.com/openimsdk/tools/log"
 
 	"gorm.io/gorm"
 )
@@ -221,6 +222,11 @@ func (d *DataBase) ClearAllSignalCallRecords(ctx context.Context) error {
 	)
 }
 
+func signalCallInviteeParticipantCond(userID string) (string, []any) {
+	pattern := "%\"" + userID + "\"%"
+	return "invitee_uid = ? OR invitee_user_ids LIKE ?", []any{userID, pattern}
+}
+
 func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID, nickname, faceURL string) error {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
@@ -229,27 +235,43 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	tx := applySignalCallOwnerFilter(d.signalDB().WithContext(ctx), d.loginUserID)
+	inviteeCond, inviteeArgs := signalCallInviteeParticipantCond(userID)
+
+	var rowsAffected int64
 	if nickname != "" {
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
-			Update("inviter_user_nickname", nickname).Error; err != nil {
+		n, err := updateSignalCallRecordColumn(tx, "inviter_user_nickname", nickname, "inviter_user_id = ?", userID)
+		if err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter nickname failed")
 		}
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
-			Update("invitee_user_nickname", nickname).Error; err != nil {
+		rowsAffected += n
+		n, err = updateSignalCallRecordColumn(tx, "invitee_user_nickname", nickname, inviteeCond, inviteeArgs...)
+		if err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
 		}
+		rowsAffected += n
 	}
 	// Always sync faceURL (including empty string) so a stale avatar is cleared when
 	// the user's account is deleted and their profile becomes empty.
-	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
-		Update("inviter_user_face_url", faceURL).Error; err != nil {
+	n, err := updateSignalCallRecordColumn(tx, "inviter_user_face_url", faceURL, "inviter_user_id = ?", userID)
+	if err != nil {
 		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
 	}
-	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
-		Update("invitee_user_face_url", faceURL).Error; err != nil {
+	rowsAffected += n
+	n, err = updateSignalCallRecordColumn(tx, "invitee_user_face_url", faceURL, inviteeCond, inviteeArgs...)
+	if err != nil {
 		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
 	}
+	rowsAffected += n
+
+	log.ZInfo(ctx, "lintao UpdateSignalCallRecordUserProfile",
+		"loginUserID", d.loginUserID, "userID", userID,
+		"nickname", nickname, "faceURL", faceURL, "rowsAffected", rowsAffected)
 	return nil
+}
+
+func updateSignalCallRecordColumn(tx *gorm.DB, column string, value any, query string, args ...any) (int64, error) {
+	result := tx.Model(&model_struct.LocalSignalCallRecord{}).Where(query, args...).Update(column, value)
+	return result.RowsAffected, result.Error
 }
 
 func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error) {

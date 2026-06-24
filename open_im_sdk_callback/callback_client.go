@@ -150,6 +150,10 @@ type OnSignalingListener interface {
 	// OnGroupCallStatusChanged is fired for non-invited group members when a group
 	// call starts or ends. Payload JSON: {type,status,groupID,roomID,mediaType,inviterUserID}.
 	OnGroupCallStatusChanged(groupCallStatusCallback string)
+
+	// OnLocalCallRecordProfileChanged notifies UI to refresh local call records whose
+	// display profile for friendUserID was updated (e.g. account deactivated).
+	// OnLocalCallRecordProfileChanged(friendUserID string)
 }
 
 type UploadFileCallback interface {

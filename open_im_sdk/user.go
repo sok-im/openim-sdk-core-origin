@@ -153,3 +153,8 @@ func GetUsersByNickname(callback open_im_sdk_callback.Base, operationID string, 
 func CheckNickname(callback open_im_sdk_callback.Base, operationID string, nickname, excludeUserID string) {
 	call(callback, operationID, UserForSDK.User().CheckNickname, nickname, excludeUserID)
 }
+
+// CheckUserExist 检查指定 userID 的用户是否存在，成功回调 JSON 为 bool。
+func CheckUserExist(callback open_im_sdk_callback.Base, operationID string, userID string) {
+	call(callback, operationID, UserForSDK.User().CheckUserExist, userID)
+}

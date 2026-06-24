@@ -180,7 +180,7 @@ type LocalUser struct {
 	CallRingtoneName   string `json:"callRingtoneName,omitempty"`
 	CallRingtoneCover  string `json:"callRingtoneCover,omitempty"`
 	CallRingtoneAuthor string `json:"callRingtoneAuthor,omitempty"`
-	AppLanguage        string `json:"appLanguage,omitempty"`
+	Language           string `json:"language,omitempty"`
 }
 
 type LocalUserCommand struct {

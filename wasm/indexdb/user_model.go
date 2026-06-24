@@ -62,7 +62,7 @@ func (l *LocalUsers) GetLoginUser(ctx context.Context, userID string) (*model_st
 			result.CallRingtoneName = temp.CallRingtoneName
 			result.CallRingtoneCover = temp.CallRingtoneCover
 			result.CallRingtoneAuthor = temp.CallRingtoneAuthor
-			result.AppLanguage = temp.AppLanguage
+			result.Language = temp.Language
 			return &result, err
 		} else {
 			return nil, exec.ErrType
@@ -104,7 +104,7 @@ func (l *LocalUsers) InsertLoginUser(ctx context.Context, user *model_struct.Loc
 	temp.CallRingtoneName = user.CallRingtoneName
 	temp.CallRingtoneCover = user.CallRingtoneCover
 	temp.CallRingtoneAuthor = user.CallRingtoneAuthor
-	temp.AppLanguage = user.AppLanguage
+	temp.Language = user.Language
 	_, err := exec.Exec(utils.StructToJsonString(temp))
 	return err
 }

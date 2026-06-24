@@ -168,3 +168,16 @@ func (u *User) checkNickname(ctx context.Context, nickname, excludeUserID string
 	}
 	return resp.Exists, nil
 }
+
+// checkUserExist 检查指定 userID 的用户是否存在
+func (u *User) checkUserExist(ctx context.Context, userID string) (bool, error) {
+	req := &user.CheckUserExistReq{UserID: userID}
+	resp, err := api.CheckUserExist.Invoke(ctx, req)
+	if err != nil {
+		return false, err
+	}
+	if resp == nil {
+		return false, nil
+	}
+	return resp.Exists, nil
+}

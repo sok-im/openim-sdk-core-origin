@@ -45,6 +45,7 @@ var (
 	GetUserByPhone                      = newApi[user.GetUserByPhoneReq, user.GetUserByPhoneResp]("/user/get_user_by_phone")
 	GetUsersByNickname                  = newApi[user.GetUsersByNicknameReq, user.GetUsersByNicknameResp]("/user/get_users_by_nickname")
 	CheckNickname                       = newApi[user.CheckNicknameReq, user.CheckNicknameResp]("/user/check_nickname")
+	CheckUserExist                      = newApi[user.CheckUserExistReq, user.CheckUserExistResp]("/user/check_user_exist")
 )
 
 var (

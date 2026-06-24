@@ -234,17 +234,18 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	}
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
-	tx := applySignalCallOwnerFilter(d.signalDB().WithContext(ctx), d.loginUserID)
+
 	inviteeCond, inviteeArgs := signalCallInviteeParticipantCond(userID)
+	ownerUserID := strings.TrimSpace(d.loginUserID)
 
 	var rowsAffected int64
 	if nickname != "" {
-		n, err := updateSignalCallRecordColumn(tx, "inviter_user_nickname", nickname, "inviter_user_id = ?", userID)
+		n, err := d.updateSignalCallRecordColumn(ctx, ownerUserID, "inviter_user_nickname", nickname, "inviter_user_id = ?", userID)
 		if err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter nickname failed")
 		}
 		rowsAffected += n
-		n, err = updateSignalCallRecordColumn(tx, "invitee_user_nickname", nickname, inviteeCond, inviteeArgs...)
+		n, err = d.updateSignalCallRecordColumn(ctx, ownerUserID, "invitee_user_nickname", nickname, inviteeCond, inviteeArgs...)
 		if err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
 		}
@@ -252,12 +253,12 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	}
 	// Always sync faceURL (including empty string) so a stale avatar is cleared when
 	// the user's account is deleted and their profile becomes empty.
-	n, err := updateSignalCallRecordColumn(tx, "inviter_user_face_url", faceURL, "inviter_user_id = ?", userID)
+	n, err := d.updateSignalCallRecordColumn(ctx, ownerUserID, "inviter_user_face_url", faceURL, "inviter_user_id = ?", userID)
 	if err != nil {
 		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
 	}
 	rowsAffected += n
-	n, err = updateSignalCallRecordColumn(tx, "invitee_user_face_url", faceURL, inviteeCond, inviteeArgs...)
+	n, err = d.updateSignalCallRecordColumn(ctx, ownerUserID, "invitee_user_face_url", faceURL, inviteeCond, inviteeArgs...)
 	if err != nil {
 		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
 	}
@@ -269,7 +270,14 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	return nil
 }
 
-func updateSignalCallRecordColumn(tx *gorm.DB, column string, value any, query string, args ...any) (int64, error) {
+// updateSignalCallRecordColumn runs one isolated UPDATE. Reusing the same *gorm.DB chain
+// across multiple Where().Update() calls accumulates prior WHERE clauses and can make
+// later updates match zero rows (e.g. inviter_user_id AND invitee_uid on one row).
+func (d *DataBase) updateSignalCallRecordColumn(ctx context.Context, ownerUserID, column string, value any, query string, args ...any) (int64, error) {
+	tx := d.signalDB().WithContext(ctx).Session(&gorm.Session{})
+	if ownerUserID != "" {
+		tx = tx.Where("owner_user_id = ?", ownerUserID)
+	}
 	result := tx.Model(&model_struct.LocalSignalCallRecord{}).Where(query, args...).Update(column, value)
 	return result.RowsAffected, result.Error
 }

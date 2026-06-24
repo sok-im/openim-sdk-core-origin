@@ -188,17 +188,14 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 		s.cancelInviteTimer(signalTimeoutReq.Invitation.RoomID)
 	}
 
-	/*
-		req := &rtc.SignalReq{
-			Payload: &rtc.SignalReq_Timeout{
-				Timeout: signalTimeoutReq,
-			},
-		}
-		_, err := s.signalingRequest(ctx, req)
-		if err != nil {
-			return err
-		}
-	*/
+	req := &rtc.SignalReq{
+		Payload: &rtc.SignalReq_Timeout{
+			Timeout: signalTimeoutReq,
+		},
+	}
+	if _, err := api.SignalMessageAssemble.Invoke(ctx, &rtc.SignalMessageAssembleReq{SignalReq: req}); err != nil {
+		return err
+	}
 
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
 		inviteMs, _, _, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)

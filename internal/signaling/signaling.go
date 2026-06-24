@@ -86,10 +86,10 @@ func NewSignaling(longConnMgr *interaction.LongConnMgr, loginUserID string, plat
 		longConnMgr:  longConnMgr,
 		db:           db,
 		globalConfig: globalConfig,
-		recordCh:    make(chan recordTask, 32),
-		done:        make(chan struct{}),
-		detailCache: newDetailCache(),
-		cleanupDone: make(chan struct{}),
+		recordCh:     make(chan recordTask, 32),
+		done:         make(chan struct{}),
+		detailCache:  newDetailCache(),
+		cleanupDone:  make(chan struct{}),
 	}
 	go s.recordWorker()
 	go s.roomTimingsCleanup()
@@ -314,7 +314,9 @@ func (s *Signaling) cancelInviteTimer(roomID string) {
 	}
 }
 
-// backgroundCtx 为定时器/异步协程提供带 GlobalConfig 的 context，避免 ccontext.Info panic。
+// backgroundCtx 为定时器/异步协程提供带 GlobalConfig 的 context。
+// 注意：当 globalConfig 为 nil 时返回裸 context.Background()，调用方在执行需要
+// GlobalConfig（如 signalingRequest/ccontext.Info）的操作前必须先检查 globalConfig。
 func (s *Signaling) backgroundCtx() context.Context {
 	if s.globalConfig == nil {
 		return context.Background()
@@ -330,6 +332,12 @@ func (s *Signaling) onInvitationTimeout(inv *rtc.InvitationInfo) {
 	}
 	ctx := s.backgroundCtx()
 	if inv.InviterUserID == s.loginUserID {
+		// globalConfig 为 nil 时无法构造认证 context，跳过需要网络请求的 Timeout 调用，
+		// 避免 ccontext.Info panic（interface {} is nil, not *ccontext.GlobalConfig）。
+		if s.globalConfig == nil {
+			log.ZWarn(ctx, "onInvitationTimeout: globalConfig is nil, skipping server Timeout notify", nil, "roomID", inv.RoomID)
+			return
+		}
 		if err := s.Timeout(ctx, &rtc.SignalTimeoutReq{Invitation: inv}); err != nil {
 			log.ZWarn(ctx, "Timeout request failed on local timer", err, "roomID", inv.RoomID)
 		}

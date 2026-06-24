@@ -67,6 +67,8 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			// GetUsersInfo would serve even after the friend's account is deleted.
 			if tips.FromToUserID.FromUserID == r.loginUserID && tips.FromToUserID.ToUserID != r.loginUserID {
 				r.user.UserCache.Delete(tips.FromToUserID.ToUserID)
+				// 账号注销等场景下好友关系被删除时，先刷新通话记录展示，再同步好友列表。
+				r.syncCallRecordsUserProfileForRemovedFriend(ctx, tips.FromToUserID.ToUserID)
 			}
 			if tips.FromToUserID.FromUserID == r.loginUserID {
 				return r.IncrSyncFriends(ctx)
@@ -97,7 +99,11 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			if err := r.user.SyncUserInfo(ctx, tips.UserID); err != nil {
 				log.ZWarn(ctx, "FriendInfoUpdatedNotification SyncUserInfo failed", err, "userID", tips.UserID)
 			}
-			return r.IncrSyncFriends(ctx)
+			if err := r.IncrSyncFriends(ctx); err != nil {
+				return err
+			}
+			r.syncCallRecordsUserProfile(ctx, tips.UserID)
+			return nil
 		}
 	case constant.BlackAddedNotification:
 		var tips sdkws.BlackAddedTips
@@ -130,6 +136,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			for _, friendID := range tips.FriendIDs {
 				r.user.UserCache.Delete(friendID)
 			}
+			r.syncCallRecordsUserProfileForRemovedFriend(ctx, tips.FriendIDs...)
 			return r.IncrSyncFriends(ctx)
 		}
 	default:

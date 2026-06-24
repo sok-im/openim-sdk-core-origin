@@ -782,35 +782,33 @@ func (s *Signaling) resolveInviterNickname(ctx context.Context, inv *rtc.Invitat
 }
 
 func (s *Signaling) resolveInviterFaceURL(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
+	if s.db != nil && inv != nil && inv.InviterUserID != "" {
+		friends, err := s.db.GetFriendInfoList(ctx, []string{inv.InviterUserID})
+		if err == nil && len(friends) > 0 && friends[0].FaceURL != "" {
+			return friends[0].FaceURL
+		}
+	}
 	if faceURL := extractInviterFaceURL(inv, p); faceURL != "" {
 		return faceURL
 	}
-	if s.db == nil || inv == nil || inv.InviterUserID == "" {
-		return ""
-	}
-	friends, err := s.db.GetFriendInfoList(ctx, []string{inv.InviterUserID})
-	if err != nil || len(friends) == 0 {
-		return ""
-	}
-	return friends[0].FaceURL
+	return ""
 }
 
 func (s *Signaling) resolveInviteeFaceURL(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {
 	if isGroupChatCall(inv) {
 		return s.resolveGroupFaceURL(ctx, inv, p)
 	}
+	uid := extractPrimaryInviteeUID(inv)
+	if s.db != nil && uid != "" {
+		friends, err := s.db.GetFriendInfoList(ctx, []string{uid})
+		if err == nil && len(friends) > 0 && friends[0].FaceURL != "" {
+			return friends[0].FaceURL
+		}
+	}
 	if faceURL := extractInviteeFaceURL(inv, p); faceURL != "" {
 		return faceURL
 	}
-	uid := extractPrimaryInviteeUID(inv)
-	if s.db == nil || uid == "" {
-		return ""
-	}
-	friends, err := s.db.GetFriendInfoList(ctx, []string{uid})
-	if err != nil || len(friends) == 0 {
-		return ""
-	}
-	return friends[0].FaceURL
+	return ""
 }
 
 func (s *Signaling) resolveGroupName(ctx context.Context, inv *rtc.InvitationInfo, p *rtc.ParticipantMetaData) string {

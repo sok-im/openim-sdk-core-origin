@@ -271,6 +271,12 @@ const (
 	SignalCallRoleIncoming int32 = 2 // 被叫
 )
 
+// DeactivatedUserNickname / DeactivatedUserFaceURL 为已注销账号在本地历史记录中的占位展示。
+const (
+	DeactivatedUserNickname = "Deactivated user"
+	DeactivatedUserFaceURL  = "http://13.215.203.29:10002/object/6794065114/mmexport1782219627453.jpg"
+)
+
 // SignalCallAction 本地通话记录：触发落库的信令动作。
 const (
 	SignalCallActionAccept  = "accept"

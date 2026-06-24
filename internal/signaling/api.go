@@ -193,9 +193,12 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 			Timeout: signalTimeoutReq,
 		},
 	}
-	if _, err := api.SignalMessageAssemble.Invoke(ctx, &rtc.SignalMessageAssembleReq{SignalReq: req}); err != nil {
+	resp, err := s.signalingRequest(ctx, req)
+	if err != nil {
 		return err
 	}
+
+	log.ZInfo(ctx, "Timeout success", "req", req, "resp", resp)
 
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
 		inviteMs, _, _, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)

@@ -529,6 +529,7 @@ func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
 		u.relation, u.group, u.user, u.file, u.signaling, u.info.SyncAllHistory)
 	u.relation.SetIncrSyncConversations(u.conversation.IncrSyncConversationsWithLock)
 	u.group.SetIncrSyncConversations(u.conversation.IncrSyncConversationsWithLock)
+	u.relation.SetUpdateCallRecordsUserProfile(u.signaling.UpdateCallRecordsUserProfile)
 	u.setListener(ctx)
 
 	u.run(ctx)

@@ -229,27 +229,34 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
 	tx := applySignalCallOwnerFilter(d.signalDB().WithContext(ctx), d.loginUserID)
+	inviteeCond, inviteeArgs := signalCallInviteeParticipantCond(userID)
+
 	if nickname != "" {
 		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
 			Update("inviter_user_nickname", nickname).Error; err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter nickname failed")
 		}
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
+		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where(inviteeCond, inviteeArgs...).
 			Update("invitee_user_nickname", nickname).Error; err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
 		}
 	}
-	if faceURL != "" {
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
-			Update("inviter_user_face_url", faceURL).Error; err != nil {
-			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
-		}
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
-			Update("invitee_user_face_url", faceURL).Error; err != nil {
-			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
-		}
+	// Always sync faceURL (including empty string) so a stale avatar is cleared when
+	// the user's account is deleted and their profile becomes empty.
+	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
+		Update("inviter_user_face_url", faceURL).Error; err != nil {
+		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
+	}
+	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where(inviteeCond, inviteeArgs...).
+		Update("invitee_user_face_url", faceURL).Error; err != nil {
+		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
 	}
 	return nil
+}
+
+func signalCallInviteeParticipantCond(userID string) (string, []any) {
+	pattern := "%\"" + userID + "\"%"
+	return "invitee_uid = ? OR invitee_user_ids LIKE ?", []any{userID, pattern}
 }
 
 func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error) {

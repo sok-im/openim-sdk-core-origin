@@ -239,15 +239,15 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
 		}
 	}
-	if faceURL != "" {
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
-			Update("inviter_user_face_url", faceURL).Error; err != nil {
-			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
-		}
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
-			Update("invitee_user_face_url", faceURL).Error; err != nil {
-			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
-		}
+	// Always sync faceURL (including empty string) so a stale avatar is cleared when
+	// the user's account is deleted and their profile becomes empty.
+	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
+		Update("inviter_user_face_url", faceURL).Error; err != nil {
+		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
+	}
+	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("invitee_uid = ?", userID).
+		Update("invitee_user_face_url", faceURL).Error; err != nil {
+		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
 	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
 	"github.com/openimsdk/tools/log"
 )
 
@@ -23,14 +24,15 @@ func (s *Signaling) UpdateCallRecordsUserProfile(ctx context.Context, userID, ni
 		return err
 	}
 
-	searchTokens := s.collectUserSearchTokens(ctx, userID, nickname)
-	if len(searchTokens) == 0 {
-		return nil
-	}
-
 	records, err := s.db.ListSignalCallRecordsByParticipant(ctx, userID)
 	if err != nil {
 		return err
+	}
+	s.invalidateCallRecordDetailCache(ctx, userID, records)
+
+	searchTokens := s.collectUserSearchTokens(ctx, userID, nickname)
+	if len(searchTokens) == 0 {
+		return nil
 	}
 	for _, rec := range records {
 		if rec == nil || rec.SID == "" {
@@ -44,11 +46,53 @@ func (s *Signaling) UpdateCallRecordsUserProfile(ctx context.Context, userID, ni
 			log.ZWarn(ctx, "UpdateSignalCallRecordCalleeMatchText failed", err, "sID", rec.SID, "userID", userID)
 			continue
 		}
-		if s.detailCache != nil {
-			s.detailCache.Delete(rec.SID)
-		}
+		s.invalidateCallRecordDetailCacheEntry(ctx, userID, rec.SID)
 	}
 	return nil
+}
+
+// InvalidateCallRecordDetailCacheForUser drops cached call-record details for every
+// local record that involves userID (as inviter or invitee).
+func (s *Signaling) InvalidateCallRecordDetailCacheForUser(ctx context.Context, userID string) {
+	if s.db == nil {
+		return
+	}
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return
+	}
+	records, err := s.db.ListSignalCallRecordsByParticipant(ctx, userID)
+	if err != nil {
+		log.ZWarn(ctx, "InvalidateCallRecordDetailCacheForUser ListSignalCallRecordsByParticipant failed", err, "userID", userID)
+		return
+	}
+	s.invalidateCallRecordDetailCache(ctx, userID, records)
+}
+
+func (s *Signaling) invalidateCallRecordDetailCache(ctx context.Context, userID string, records []*model_struct.LocalSignalCallRecord) {
+	if s.detailCache == nil {
+		return
+	}
+	var invalidated int
+	for _, rec := range records {
+		if rec == nil || rec.SID == "" {
+			continue
+		}
+		s.detailCache.Delete(rec.SID)
+		invalidated++
+	}
+	if invalidated > 0 {
+		log.ZInfo(ctx, "lintao invalidateCallRecordDetailCache",
+			"userID", userID, "invalidatedCount", invalidated)
+	}
+}
+
+func (s *Signaling) invalidateCallRecordDetailCacheEntry(ctx context.Context, userID, sID string) {
+	if s.detailCache == nil || strings.TrimSpace(sID) == "" {
+		return
+	}
+	s.detailCache.Delete(sID)
+	log.ZInfo(ctx, "lintao invalidateCallRecordDetailCacheEntry", "userID", userID, "sID", sID)
 }
 
 func (s *Signaling) collectUserSearchTokens(ctx context.Context, userID, fallbackNickname string) []string {

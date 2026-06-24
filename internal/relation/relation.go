@@ -31,16 +31,17 @@ func NewFriend(loginUserID string, db db_interface.DataBase, user *user.User, co
 }
 
 type Relation struct {
-	friendshipListener open_im_sdk_callback.OnFriendshipListenerSdk
-	loginUserID        string
-	db                 db_interface.DataBase
-	user               *user.User
-	friendSyncer       *syncer.Syncer[*model_struct.LocalFriend, relation.GetPaginationFriendsResp, [2]string]
-	blackSyncer        *syncer.Syncer[*model_struct.LocalBlack, syncer.NoResp, [2]string]
-	conversationCh        chan common.Cmd2Value
-	listenerForService    open_im_sdk_callback.OnListenerForService
-	relationSyncMutex     sync.Mutex
-	incrSyncConversations func(ctx context.Context) error
+	friendshipListener              open_im_sdk_callback.OnFriendshipListenerSdk
+	loginUserID                     string
+	db                              db_interface.DataBase
+	user                            *user.User
+	friendSyncer                    *syncer.Syncer[*model_struct.LocalFriend, relation.GetPaginationFriendsResp, [2]string]
+	blackSyncer                     *syncer.Syncer[*model_struct.LocalBlack, syncer.NoResp, [2]string]
+	conversationCh                  chan common.Cmd2Value
+	listenerForService              open_im_sdk_callback.OnListenerForService
+	relationSyncMutex               sync.Mutex
+	incrSyncConversations           func(ctx context.Context) error
+	invalidateCallRecordDetailCache func(ctx context.Context, userID string)
 }
 
 func (r *Relation) initSyncer() {
@@ -88,6 +89,7 @@ func (r *Relation) initSyncer() {
 						Nickname:    server.Nickname,
 					},
 				}, r.conversationCh)
+				log.ZDebug(ctx, "lintao syncer OnFriendAdded", "server", server)
 				r.syncCallRecordsUserProfile(ctx, server.FriendUserID)
 			case syncer.Delete:
 				log.ZDebug(ctx, "syncer OnFriendDeleted", "local", local)
@@ -116,6 +118,7 @@ func (r *Relation) initSyncer() {
 							Nickname:    showName,
 						},
 					}, r.conversationCh)
+					log.ZDebug(ctx, "lintao syncer OnFriendInfoChanged", "server", server)
 					r.syncCallRecordsUserProfile(ctx, server.FriendUserID)
 				}
 			}
@@ -172,4 +175,8 @@ func (r *Relation) SetListenerForService(listener open_im_sdk_callback.OnListene
 
 func (r *Relation) SetIncrSyncConversations(fn func(ctx context.Context) error) {
 	r.incrSyncConversations = fn
+}
+
+func (r *Relation) SetInvalidateCallRecordDetailCache(fn func(ctx context.Context, userID string)) {
+	r.invalidateCallRecordDetailCache = fn
 }

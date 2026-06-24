@@ -514,7 +514,7 @@ func (u *LoginMgr) login(ctx context.Context, userID, token string) error {
 
 	u.group = group.NewGroup(u.loginUserID, u.db, u.conversationCh)
 	u.third = third.NewThird(u.info.PlatformID, u.loginUserID, u.info.SystemType, u.info.LogFilePath, u.file)
-	u.signaling = sig.NewSignaling(u.longConnMgr, u.loginUserID, u.info.PlatformID, u.db)
+	u.signaling = sig.NewSignaling(u.longConnMgr, u.loginUserID, u.info.PlatformID, u.db, u.info)
 	u.crypto = icrypto.NewCrypto(u.loginUserID)
 	u.redpacket = redpacket.NewRedPacket()
 	u.virgilSecurity = ivirgil.NewVirgilSecurity()

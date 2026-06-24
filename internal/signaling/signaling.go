@@ -9,6 +9,7 @@ import (
 
 	"github.com/openimsdk/openim-sdk-core/v3/internal/interaction"
 	"github.com/openimsdk/openim-sdk-core/v3/open_im_sdk_callback"
+	"github.com/openimsdk/openim-sdk-core/v3/pkg/ccontext"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/constant"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/db_interface"
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/db/model_struct"
@@ -53,11 +54,12 @@ type inviteTimer struct {
 }
 
 type Signaling struct {
-	loginUserID string
-	platformID  int32
-	longConnMgr *interaction.LongConnMgr
-	db          db_interface.DataBase
-	listener    func() open_im_sdk_callback.OnSignalingListener
+	loginUserID  string
+	platformID   int32
+	longConnMgr  *interaction.LongConnMgr
+	db           db_interface.DataBase
+	globalConfig *ccontext.GlobalConfig
+	listener     func() open_im_sdk_callback.OnSignalingListener
 
 	// roomTimings 记录每个房间的本端时间戳（inviteMs / connectMs）。
 	// key: roomID (string) → value: *roomTiming
@@ -77,12 +79,13 @@ type Signaling struct {
 	cleanupDone chan struct{}
 }
 
-func NewSignaling(longConnMgr *interaction.LongConnMgr, loginUserID string, platformID int32, db db_interface.DataBase) *Signaling {
+func NewSignaling(longConnMgr *interaction.LongConnMgr, loginUserID string, platformID int32, db db_interface.DataBase, globalConfig *ccontext.GlobalConfig) *Signaling {
 	s := &Signaling{
-		loginUserID: loginUserID,
-		platformID:  platformID,
-		longConnMgr: longConnMgr,
-		db:          db,
+		loginUserID:  loginUserID,
+		platformID:   platformID,
+		longConnMgr:  longConnMgr,
+		db:           db,
+		globalConfig: globalConfig,
 		recordCh:    make(chan recordTask, 32),
 		done:        make(chan struct{}),
 		detailCache: newDetailCache(),
@@ -311,12 +314,21 @@ func (s *Signaling) cancelInviteTimer(roomID string) {
 	}
 }
 
+// backgroundCtx 为定时器/异步协程提供带 GlobalConfig 的 context，避免 ccontext.Info panic。
+func (s *Signaling) backgroundCtx() context.Context {
+	if s.globalConfig == nil {
+		return context.Background()
+	}
+	ctx := ccontext.WithInfo(context.Background(), s.globalConfig)
+	return ccontext.WithOperationID(ctx, fmt.Sprintf("signaling_timer_%d", time.Now().UnixNano()))
+}
+
 // onInvitationTimeout 本端邀请超时：主叫侧上报服务端；被叫侧仅本地回调与落库。
 func (s *Signaling) onInvitationTimeout(inv *rtc.InvitationInfo) {
 	if inv == nil {
 		return
 	}
-	ctx := context.Background()
+	ctx := s.backgroundCtx()
 	if inv.InviterUserID == s.loginUserID {
 		if err := s.Timeout(ctx, &rtc.SignalTimeoutReq{Invitation: inv}); err != nil {
 			log.ZWarn(ctx, "Timeout request failed on local timer", err, "roomID", inv.RoomID)

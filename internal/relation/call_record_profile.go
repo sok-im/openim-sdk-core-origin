@@ -10,6 +10,11 @@ import (
 	"github.com/openimsdk/tools/log"
 )
 
+// SyncCallRecordsUserProfile 在好友资料变更后，同步更新本地通话记录中的展示昵称与头像。
+func (r *Relation) SyncCallRecordsUserProfile(ctx context.Context, friendUserIDs ...string) {
+	r.syncCallRecordsUserProfile(ctx, friendUserIDs...)
+}
+
 // syncCallRecordsUserProfile 在好友资料变更后，同步更新本地通话记录中的展示昵称与头像。
 func (r *Relation) syncCallRecordsUserProfile(ctx context.Context, friendUserIDs ...string) {
 	log.ZDebug(ctx, "lintao syncCallRecordsUserProfile", "friendUserIDs", friendUserIDs)

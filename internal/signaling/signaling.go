@@ -75,6 +75,9 @@ type Signaling struct {
 	// detailCache 为 GetLocalSignalCallRecordDetail 提供 LRU + TTL=5min 缓存
 	detailCache *detailCache
 
+	// syncCallRecordsUserProfile 在落库后按最新好友/用户资料刷新通话记录展示名（避免信令快照覆盖）。
+	syncCallRecordsUserProfile func(ctx context.Context, userIDs ...string)
+
 	// cleanupDone 用于通知定时清理协程退出
 	cleanupDone chan struct{}
 }
@@ -147,6 +150,16 @@ func (s *Signaling) recordWorker() {
 		}
 		if err := s.db.BatchUpsertSignalCallRecords(ctx, []*model_struct.LocalSignalCallRecord{lr}); err != nil {
 			log.ZWarn(ctx, "async persistLocalCallRecord failed", err, "sID", lr.SID)
+			continue
+		}
+		log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "lr", lr)
+		if s.syncCallRecordsUserProfile != nil {
+			if uids := participantUserIDs(task.inv); len(uids) > 0 {
+				log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "uids", uids)
+				s.syncCallRecordsUserProfile(ctx, uids...)
+			}
+		} else {
+			log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile is nil")
 		}
 	}
 }
@@ -174,6 +187,10 @@ func (s *Signaling) roomTimingsCleanup() {
 
 func (s *Signaling) SetListener(listener func() open_im_sdk_callback.OnSignalingListener) {
 	s.listener = listener
+}
+
+func (s *Signaling) SetSyncCallRecordsUserProfile(fn func(ctx context.Context, userIDs ...string)) {
+	s.syncCallRecordsUserProfile = fn
 }
 
 // Close 清理异步 worker、定时器与缓存。

@@ -28,6 +28,20 @@ func (d *DataBase) BatchUpsertSignalCallRecords(ctx context.Context, records []*
 			continue
 		}
 		r.OwnerUserID = d.loginUserID
+		var existing model_struct.LocalSignalCallRecord
+		err := applySignalCallOwnerFilter(
+			d.signalDB().WithContext(ctx).Where("s_id = ?", r.SID),
+			d.loginUserID,
+		).First(&existing).Error
+		if err == nil {
+			// 已有记录时保留展示名/头像，避免异步落库覆盖好友资料同步结果。
+			r.InviterUserNickname = existing.InviterUserNickname
+			r.InviterUserFaceURL = existing.InviterUserFaceURL
+			r.InviteeUserNickname = existing.InviteeUserNickname
+			r.InviteeUserFaceURL = existing.InviteeUserFaceURL
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.WrapMsg(err, "BatchUpsertSignalCallRecords query existing failed")
+		}
 		if err := d.signalDB().WithContext(ctx).Save(r).Error; err != nil {
 			return errs.WrapMsg(err, "BatchUpsertSignalCallRecords Save failed")
 		}

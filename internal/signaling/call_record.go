@@ -352,6 +352,30 @@ func localRecordToSDK(l *model_struct.LocalSignalCallRecord) *sdk_struct.SignalC
 	}
 }
 
+func participantUserIDs(inv *rtc.InvitationInfo) []string {
+	if inv == nil {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	var out []string
+	add := func(id string) {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			return
+		}
+		if _, ok := seen[id]; ok {
+			return
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	add(inv.InviterUserID)
+	for _, uid := range inv.InviteeUserIDList {
+		add(uid)
+	}
+	return out
+}
+
 func buildInviteeIDsJSON(inv *rtc.InvitationInfo) string {
 	if inv == nil || len(inv.InviteeUserIDList) == 0 {
 		return ""

@@ -94,6 +94,27 @@ type GetLocalAllCallRecordsParams struct {
 	Keyword   string `json:"keyword"`
 }
 
+// GetLocalCallRecordsByDateParams 按自然日查询本地通话记录。
+// Date 格式 "2006-01-02"，以设备本地时区当天 00:00:00.000 ~ 23:59:59.999 为时间边界。
+type GetLocalCallRecordsByDateParams struct {
+	// Date 日期字符串，格式 "2006-01-02"（必填）
+	Date string `json:"date"`
+	// Offset 分页偏移
+	Offset int `json:"offset"`
+	// Count 每页数量，默认 20
+	Count int `json:"count"`
+	// Status 0=全部 1=已接听 2=未接通
+	Status int32 `json:"status"`
+	// Direction 0=全部 1=主叫 2=被叫-已接 3=被叫-未接
+	Direction int32 `json:"direction"`
+}
+
+// GetLocalCallRecordDatesParams 获取有通话记录的日期列表，用于日历/日期选择器高亮。
+type GetLocalCallRecordDatesParams struct {
+	// Month 可选，格式 "2006-01"；非空时只返回该月内有记录的日期；空则返回全部日期
+	Month string `json:"month"`
+}
+
 // SignalCallRecordWithDialStatus 本地查询结果。
 // sID 可作为 GetLocalSignalCallRecordDetail 入参。
 type SignalCallRecordWithDialStatus struct {

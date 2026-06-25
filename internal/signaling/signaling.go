@@ -645,12 +645,16 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			return nil
 		}
 		status := callRecordStatusFromTiming(connectMs, accepted)
+		// Use the sender's SDK-computed accept→hangup duration (seconds → ms) so
+		// both sides record the same value. When CallDuration is 0 (unavailable),
+		// persistLocalCallRecord falls back to local connectMs→endMs timing.
+		callDurationMs := req.CallDuration * 1000
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
 			constant.SignalCallActionHungUp,
-			inviteMs, connectMs, time.Now().UnixMilli(), req.CallDuration)
+			inviteMs, connectMs, time.Now().UnixMilli(), callDurationMs)
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation,
-			"status", status, "action", constant.SignalCallActionHungUp, "callDuration", req.CallDuration)
+			"status", status, "action", constant.SignalCallActionHungUp, "callDurationMs", callDurationMs)
 	}
 	return nil
 }

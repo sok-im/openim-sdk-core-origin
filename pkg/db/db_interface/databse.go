@@ -203,6 +203,9 @@ type SignalCallRecordModel interface {
 	// ListSignalCallRecordsByParticipant 列出该用户参与的全部本地通话记录（含主叫、被叫）。
 	ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error)
 	UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sID, calleeMatchText string) error
+	// GetSignalCallRecordDates 返回有通话记录的日期列表（格式 "2006-01-02"，按日期倒序）。
+	// startTime/endTime 为 Unix 毫秒，0 表示不限；可传入某月的首/末毫秒以按月筛选。
+	GetSignalCallRecordDates(ctx context.Context, startTime, endTime int64) ([]string, error)
 }
 
 type DataBase interface {

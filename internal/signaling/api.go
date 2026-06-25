@@ -256,6 +256,22 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungUpReq) error {
 	signalHungUpReq.UserID = s.loginUserID
 
+	// Capture the hangup moment before the server round-trip so the duration
+	// reflects when the user actually pressed hang up.
+	endMs := time.Now().UnixMilli()
+
+	// Peek at timing (without consuming) to derive the accept→hangup duration in
+	// seconds and embed it into the request. The server forwards this value to
+	// the peer so both sides record the same duration.
+	if signalHungUpReq.Invitation != nil && signalHungUpReq.Invitation.RoomID != "" {
+		_, connectMs, _, _ := s.peekTimingForRecord(signalHungUpReq.Invitation.RoomID)
+		if connectMs > 0 {
+			if secs := (endMs - connectMs) / 1000; secs > 0 {
+				signalHungUpReq.CallDuration = secs
+			}
+		}
+	}
+
 	req := &rtc.SignalReq{
 		Payload: &rtc.SignalReq_HungUp{
 			HungUp: signalHungUpReq,
@@ -273,15 +289,16 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
 		if ok {
 			status := callRecordStatusFromTiming(connectMs, accepted)
+			// Convert the forwarded seconds back to milliseconds for the local record.
+			callDurationMs := signalHungUpReq.CallDuration * 1000
 			s.persistLocalCallRecord(ctx,
 				signalHungUpReq.Invitation,
 				nil,
 				status,
 				constant.SignalCallActionHungUp,
-				inviteMs, connectMs, time.Now().UnixMilli(), signalHungUpReq.CallDuration)
+				inviteMs, connectMs, endMs, callDurationMs)
 			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation,
-				"status", status, "action", constant.SignalCallActionHungUp, "callDuration", signalHungUpReq.CallDuration)
-
+				"status", status, "action", constant.SignalCallActionHungUp, "callDurationMs", callDurationMs)
 		}
 	}
 	return nil
@@ -657,4 +674,95 @@ func (s *Signaling) fillInviteDefaults(invitation *rtc.InvitationInfo) {
 
 func InviteReqToJson(req *rtc.SignalInviteReq) string {
 	return jsonutil.StructToJsonString(req)
+}
+
+// GetLocalCallRecordsByDate 按自然日查询本地通话记录。
+//
+// date 格式 "2006-01-02"；以设备本地时区当天 00:00:00.000 ~ 23:59:59.999 为查询边界。
+// 支持按 Status（0=全部/1=已接听/2=未接通）和 Direction（0=全部/1=主叫/2=被叫已接/3=未接）筛选。
+func (s *Signaling) GetLocalCallRecordsByDate(ctx context.Context, params *sdk_struct.GetLocalCallRecordsByDateParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalCallRecordsByDateParams{}
+	}
+	startTime, endTime, err := dateToTimeRange(params.Date)
+	if err != nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg("invalid date: " + params.Date + "; expected format 2006-01-02")
+	}
+	if params.Count <= 0 {
+		params.Count = 20
+	}
+	total, err := s.db.CountSignalCallRecords(ctx,
+		localCallListSessionType,
+		params.Status,
+		params.Direction,
+		startTime, endTime,
+		"", "", "", "", "")
+	if err != nil {
+		return nil, err
+	}
+	list, err := s.db.SearchSignalCallRecords(ctx,
+		params.Offset, params.Count,
+		localCallListSessionType,
+		params.Status,
+		params.Direction,
+		startTime, endTime,
+		"", "", "", "", "")
+	if err != nil {
+		return nil, err
+	}
+	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
+	for _, l := range list {
+		records = append(records, localRecordToSDK(l))
+	}
+	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
+}
+
+// GetLocalCallRecordDates 返回有通话记录的日期列表（格式 "2006-01-02"，倒序）。
+//
+// 适用于日历/日期选择器：高亮显示有通话记录的日期。
+// 若 params.Month 非空（格式 "2006-01"），则只返回该自然月内有记录的日期；
+// 否则返回全部历史有记录日期。
+func (s *Signaling) GetLocalCallRecordDates(ctx context.Context, params *sdk_struct.GetLocalCallRecordDatesParams) ([]string, error) {
+	if s.db == nil {
+		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
+	}
+	if params == nil {
+		params = &sdk_struct.GetLocalCallRecordDatesParams{}
+	}
+	var startTime, endTime int64
+	if strings.TrimSpace(params.Month) != "" {
+		var err error
+		startTime, endTime, err = monthToTimeRange(params.Month)
+		if err != nil {
+			return nil, sdkerrs.ErrArgs.WrapMsg("invalid month: " + params.Month + "; expected format 2006-01")
+		}
+	}
+	return s.db.GetSignalCallRecordDates(ctx, startTime, endTime)
+}
+
+// dateToTimeRange converts "2006-01-02" to the first and last Unix millisecond of that
+// calendar day in the device's local timezone.
+func dateToTimeRange(dateStr string) (startMs, endMs int64, err error) {
+	t, parseErr := time.ParseInLocation("2006-01-02", strings.TrimSpace(dateStr), time.Local)
+	if parseErr != nil {
+		return 0, 0, parseErr
+	}
+	startMs = t.UnixMilli()
+	endMs = t.Add(24*time.Hour).UnixMilli() - 1
+	return startMs, endMs, nil
+}
+
+// monthToTimeRange converts "2006-01" to the first and last Unix millisecond of that
+// calendar month in the device's local timezone.
+func monthToTimeRange(monthStr string) (startMs, endMs int64, err error) {
+	t, parseErr := time.ParseInLocation("2006-01", strings.TrimSpace(monthStr), time.Local)
+	if parseErr != nil {
+		return 0, 0, parseErr
+	}
+	startMs = t.UnixMilli()
+	endMs = t.AddDate(0, 1, 0).UnixMilli() - 1
+	return startMs, endMs, nil
 }

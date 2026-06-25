@@ -322,6 +322,46 @@ func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userI
 	return d.listSignalCallRecordsByParticipantLocked(ctx, userID)
 }
 
+// callDateRow is the scan target for GetSignalCallRecordDates.
+type callDateRow struct {
+	CallDate string `gorm:"column:call_date"`
+}
+
+// GetSignalCallRecordDates returns distinct dates (format "2006-01-02", local timezone)
+// that have at least one call record, ordered newest first.
+// startTime/endTime are Unix milliseconds; 0 means unbounded.
+func (d *DataBase) GetSignalCallRecordDates(ctx context.Context, startTime, endTime int64) ([]string, error) {
+	d.mRWMutex.RLock()
+	defer d.mRWMutex.RUnlock()
+
+	// create_time is stored as Unix milliseconds; divide by 1000 for SQLite unixepoch.
+	// 'localtime' converts the UTC epoch to the device's local timezone so the date
+	// boundary matches what the user sees on screen.
+	tx := d.signalDB().WithContext(ctx).
+		Model(&model_struct.LocalSignalCallRecord{}).
+		Select("DISTINCT strftime('%Y-%m-%d', create_time/1000, 'unixepoch', 'localtime') AS call_date")
+	tx = applySignalCallOwnerFilter(tx, d.loginUserID)
+	tx = applyExcludeGroupCallFilter(tx)
+	if startTime > 0 {
+		tx = tx.Where("create_time >= ?", startTime)
+	}
+	if endTime > 0 {
+		tx = tx.Where("create_time <= ?", endTime)
+	}
+
+	var rows []callDateRow
+	if err := tx.Order("call_date DESC").Scan(&rows).Error; err != nil {
+		return nil, errs.WrapMsg(err, "GetSignalCallRecordDates failed")
+	}
+	dates := make([]string, 0, len(rows))
+	for _, r := range rows {
+		if r.CallDate != "" {
+			dates = append(dates, r.CallDate)
+		}
+	}
+	return dates, nil
+}
+
 func (d *DataBase) UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sID, calleeMatchText string) error {
 	sID = strings.TrimSpace(sID)
 	if sID == "" {

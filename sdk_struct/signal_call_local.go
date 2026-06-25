@@ -122,9 +122,9 @@ type SignalCallRecordWithDialStatus struct {
 	RoomID              string `json:"roomID"`
 	Status       int32 `json:"status"`
 	CreateTime   int64 `json:"createTime"`
-	// DialDuration 拨打时长（毫秒）：发起/收到邀请 → 接通；未接通时为发起 → 结束
+	// DialDuration 拨打时长（秒）：发起/收到邀请 → 接通；未接通时为发起 → 结束
 	DialDuration int64 `json:"dialDuration"`
-	// CallDuration 通话时长（毫秒）：接通 → 挂断；未接通时为 0
+	// CallDuration 通话时长（秒）：接通 → 挂断；未接通时为 0
 	CallDuration int64 `json:"callDuration"`
 	MediaType           string `json:"mediaType"`
 	SessionType         int32  `json:"sessionType"`

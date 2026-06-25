@@ -289,16 +289,16 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
 		if ok {
 			status := callRecordStatusFromTiming(connectMs, accepted)
-			// Convert the forwarded seconds back to milliseconds for the local record.
-			callDurationMs := signalHungUpReq.CallDuration * 1000
+			// Store seconds directly so local records match chat-message duration.
+			callDurationSecs := signalHungUpReq.CallDuration
 			s.persistLocalCallRecord(ctx,
 				signalHungUpReq.Invitation,
 				nil,
 				status,
 				constant.SignalCallActionHungUp,
-				inviteMs, connectMs, endMs, callDurationMs)
+				inviteMs, connectMs, endMs, callDurationSecs)
 			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", signalHungUpReq.Invitation,
-				"status", status, "action", constant.SignalCallActionHungUp, "callDurationMs", callDurationMs)
+				"status", status, "action", constant.SignalCallActionHungUp, "callDurationSecs", callDurationSecs)
 		}
 	}
 	return nil

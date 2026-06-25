@@ -44,7 +44,7 @@ type recordTask struct {
 	inviteMs     int64  // 从 roomTimings 取得
 	connectMs    int64  // 从 roomTimings 取得（0 = 未接通）
 	endMs        int64  // 通话结束时间（调用处捕获，避免异步延迟误差）
-	callDuration int64  // 客户端主动上报的通话时长（毫秒）；0 = 由时间戳推算
+	callDuration int64  // 客户端主动上报或转发的通话时长（秒）；0 = 由时间戳推算
 }
 
 // inviteTimer 本端收到/发起邀请后的超时定时器
@@ -645,16 +645,16 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 			return nil
 		}
 		status := callRecordStatusFromTiming(connectMs, accepted)
-		// Use the sender's SDK-computed accept→hangup duration (seconds → ms) so
-		// both sides record the same value. When CallDuration is 0 (unavailable),
+		// Use the sender's SDK-computed accept→hangup duration (seconds) so both
+		// sides record the same value as the chat message. When CallDuration is 0,
 		// persistLocalCallRecord falls back to local connectMs→endMs timing.
-		callDurationMs := req.CallDuration * 1000
+		callDurationSecs := req.CallDuration
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
 			constant.SignalCallActionHungUp,
-			inviteMs, connectMs, time.Now().UnixMilli(), callDurationMs)
+			inviteMs, connectMs, time.Now().UnixMilli(), callDurationSecs)
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation,
-			"status", status, "action", constant.SignalCallActionHungUp, "callDurationMs", callDurationMs)
+			"status", status, "action", constant.SignalCallActionHungUp, "callDurationSecs", callDurationSecs)
 	}
 	return nil
 }
@@ -689,7 +689,7 @@ func (s *Signaling) handleRoomParticipantDisconnected(ctx context.Context, msg *
 
 // persistLocalCallRecord 异步投递写任务，避免阻塞信令通知路径。
 // direction 由本端角色与 status 在内部统一计算，调用方勿再传入。
-// callDuration > 0 时直接用作通话时长（毫秒），否则由时间戳推算。
+// callDuration > 0 时直接用作通话时长（秒），否则由时间戳推算。
 // 群音视频通话不落本地通话记录。
 func (s *Signaling) persistLocalCallRecord(
 	ctx context.Context,

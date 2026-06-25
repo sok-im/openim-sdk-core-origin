@@ -404,9 +404,9 @@ type LocalSignalCallRecord struct {
 	// Status 见 constant.SignalCallStatus*：1=已接听 2=未接通
 	Status     int32 `gorm:"column:status;index:idx_signal_status" json:"status"`
 	CreateTime int64 `gorm:"column:create_time;index:idx_signal_create" json:"createTime"`
-	// DialDuration 拨打时长（毫秒）
+	// DialDuration 拨打时长（秒）
 	DialDuration int64 `gorm:"column:dial_duration" json:"dialDuration"`
-	// CallDuration 通话时长（毫秒），未接通为 0
+	// CallDuration 通话时长（秒），未接通为 0
 	CallDuration        int64  `gorm:"column:call_duration" json:"callDuration"`
 	MediaType           string `gorm:"column:media_type;type:varchar(32)" json:"mediaType"`
 	SessionType         int32  `gorm:"column:session_type;index:idx_signal_session" json:"sessionType"`

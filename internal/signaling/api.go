@@ -62,7 +62,7 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 	if signalInviteReq.Invitation != nil && inviteResp != nil && inviteResp.RoomID != "" {
 		signalInviteReq.Invitation.RoomID = inviteResp.RoomID
 		s.storeInviteTime(inviteResp.RoomID, inviteMs)
-		s.startInviteTimer(signalInviteReq.Invitation)
+		s.startInviteTimer(ctx, signalInviteReq.Invitation)
 		log.ZInfo(ctx, "startInviteTimer", "roomID", signalInviteReq.Invitation.RoomID)
 	}
 
@@ -105,7 +105,7 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 	if signalInviteInGroupReq.Invitation != nil && inviteInGroupResp != nil && inviteInGroupResp.RoomID != "" {
 		signalInviteInGroupReq.Invitation.RoomID = inviteInGroupResp.RoomID
 		s.storeInviteTime(inviteInGroupResp.RoomID, inviteMs)
-		s.startInviteTimer(signalInviteInGroupReq.Invitation)
+		s.startInviteTimer(ctx, signalInviteInGroupReq.Invitation)
 	}
 
 	log.ZInfo(ctx, "InviteInGroup success", "req", req, "resp", resp)
@@ -188,19 +188,17 @@ func (s *Signaling) Timeout(ctx context.Context, signalTimeoutReq *rtc.SignalTim
 		s.cancelInviteTimer(signalTimeoutReq.Invitation.RoomID)
 	}
 
-	/*
-		req := &rtc.SignalReq{
-			Payload: &rtc.SignalReq_Timeout{
-				Timeout: signalTimeoutReq,
-			},
-		}
-		resp, err := s.signalingRequest(ctx, req)
-		if err != nil {
-			return err
-		}
-	*/
+	req := &rtc.SignalReq{
+		Payload: &rtc.SignalReq_Timeout{
+			Timeout: signalTimeoutReq,
+		},
+	}
+	resp, err := s.signalingRequest(ctx, req)
+	if err != nil {
+		return err
+	}
 
-	// log.ZInfo(ctx, "Timeout success", "req", req, "resp", resp)
+	log.ZInfo(ctx, "Timeout success", "req", req, "resp", resp)
 
 	if signalTimeoutReq.Invitation != nil && signalTimeoutReq.Invitation.InviterUserID == s.loginUserID {
 		inviteMs, _, _, ok := s.popTimingForRecord(signalTimeoutReq.Invitation.RoomID)

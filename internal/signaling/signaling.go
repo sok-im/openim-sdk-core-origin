@@ -311,16 +311,17 @@ func (s *Signaling) resolveCallRecordDirection(inv *rtc.InvitationInfo, status i
 // ── 邀请超时定时器 ────────────────────────────────────────────────────────────
 
 // startInviteTimer 启动本端邀请超时定时器。超时后触发 OnInvitationTimeout 回调并写本地记录。
-func (s *Signaling) startInviteTimer(inv *rtc.InvitationInfo) {
+func (s *Signaling) startInviteTimer(ctx context.Context, inv *rtc.InvitationInfo) {
 	if inv == nil || inv.RoomID == "" || inv.Timeout <= 0 {
 		return
 	}
 
 	timeout := time.Duration(inv.Timeout) * time.Second
+	timerCtx := context.WithoutCancel(ctx)
 	it := &inviteTimer{inv: inv}
 	it.timer = time.AfterFunc(timeout, func() {
 		s.inviteTimers.Delete(inv.RoomID)
-		s.onInvitationTimeout(inv)
+		s.onInvitationTimeout(timerCtx, inv)
 	})
 	// 如已有旧定时器（如重复邀请），先停止
 	if old, loaded := s.inviteTimers.LoadAndDelete(inv.RoomID); loaded {
@@ -348,11 +349,10 @@ func (s *Signaling) backgroundCtx() context.Context {
 }
 
 // onInvitationTimeout 本端邀请超时：主叫侧上报服务端；被叫侧仅本地回调与落库。
-func (s *Signaling) onInvitationTimeout(inv *rtc.InvitationInfo) {
+func (s *Signaling) onInvitationTimeout(ctx context.Context, inv *rtc.InvitationInfo) {
 	if inv == nil {
 		return
 	}
-	ctx := s.backgroundCtx()
 	if inv.InviterUserID == s.loginUserID {
 		// globalConfig 为 nil 时无法构造认证 context，跳过需要网络请求的 Timeout 调用，
 		// 避免 ccontext.Info panic（interface {} is nil, not *ccontext.GlobalConfig）。
@@ -511,7 +511,7 @@ func (s *Signaling) handleInvite(ctx context.Context, listener open_im_sdk_callb
 			inviteMs = req.Invitation.InitiateTime
 		}
 		s.storeInviteTime(req.Invitation.RoomID, inviteMs)
-		s.startInviteTimer(req.Invitation)
+		s.startInviteTimer(ctx, req.Invitation)
 		log.ZInfo(ctx, "handleInvite startInviteTimer", "roomID", req.Invitation.RoomID)
 		log.ZDebug(ctx, "OnReceiveNewInvitation", "invitation", req)
 		listener.OnReceiveNewInvitation(jsonutil.StructToJsonString(req))
@@ -530,7 +530,7 @@ func (s *Signaling) handleInviteInGroup(ctx context.Context, listener open_im_sd
 			inviteMs = req.Invitation.InitiateTime
 		}
 		s.storeInviteTime(req.Invitation.RoomID, inviteMs)
-		s.startInviteTimer(req.Invitation)
+		s.startInviteTimer(ctx, req.Invitation)
 
 		log.ZDebug(ctx, "OnReceiveNewInvitation (group)", "invitation", req)
 		listener.OnReceiveNewInvitation(jsonutil.StructToJsonString(req))

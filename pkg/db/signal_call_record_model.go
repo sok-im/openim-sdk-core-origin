@@ -57,6 +57,13 @@ func applySignalCallOwnerFilter(tx *gorm.DB, ownerUserID string) *gorm.DB {
 	return tx.Where("owner_user_id = ?", ownerUserID)
 }
 
+func (d *DataBase) signalCallOwnerDB(ctx context.Context) *gorm.DB {
+	return applySignalCallOwnerFilter(
+		d.signalDB().WithContext(ctx).Session(&gorm.Session{NewDB: true}),
+		d.loginUserID,
+	)
+}
+
 func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
@@ -242,26 +249,29 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	}
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
-	tx := applySignalCallOwnerFilter(d.signalDB().WithContext(ctx), d.loginUserID)
 	inviteeCond, inviteeArgs := signalCallInviteeParticipantCond(userID)
 
 	if nickname != "" {
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
+		if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
+			Where("inviter_user_id = ?", userID).
 			Update("inviter_user_nickname", nickname).Error; err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter nickname failed")
 		}
-		if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where(inviteeCond, inviteeArgs...).
+		if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
+			Where(inviteeCond, inviteeArgs...).
 			Update("invitee_user_nickname", nickname).Error; err != nil {
 			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
 		}
 	}
 	// Always sync faceURL (including empty string) so a stale avatar is cleared when
 	// the user's account is deleted and their profile becomes empty.
-	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where("inviter_user_id = ?", userID).
+	if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
+		Where("inviter_user_id = ?", userID).
 		Update("inviter_user_face_url", faceURL).Error; err != nil {
 		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
 	}
-	if err := tx.Model(&model_struct.LocalSignalCallRecord{}).Where(inviteeCond, inviteeArgs...).
+	if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
+		Where(inviteeCond, inviteeArgs...).
 		Update("invitee_user_face_url", faceURL).Error; err != nil {
 		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
 	}

@@ -89,6 +89,8 @@ func (r *Relation) initSyncer() {
 						Nickname:    server.Nickname,
 					},
 				}, r.conversationCh)
+				log.ZDebug(ctx, "lintao syncer OnFriendAdded syncCallRecordsUserProfile", "userID", server.FriendUserID)
+
 				r.syncCallRecordsUserProfile(ctx, server.FriendUserID)
 			case syncer.Delete:
 				log.ZDebug(ctx, "syncer OnFriendDeleted", "local", local)
@@ -117,6 +119,7 @@ func (r *Relation) initSyncer() {
 							Nickname:    showName,
 						},
 					}, r.conversationCh)
+					log.ZDebug(ctx, "lintao syncer OnFriendInfoChanged syncCallRecordsUserProfile", "userID", server.FriendUserID)
 					r.syncCallRecordsUserProfile(ctx, server.FriendUserID)
 				}
 			}

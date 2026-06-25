@@ -57,13 +57,6 @@ func applySignalCallOwnerFilter(tx *gorm.DB, ownerUserID string) *gorm.DB {
 	return tx.Where("owner_user_id = ?", ownerUserID)
 }
 
-func (d *DataBase) signalCallOwnerDB(ctx context.Context) *gorm.DB {
-	return applySignalCallOwnerFilter(
-		d.signalDB().WithContext(ctx).Session(&gorm.Session{NewDB: true}),
-		d.loginUserID,
-	)
-}
-
 func (d *DataBase) SearchSignalCallRecords(ctx context.Context, offset, count int, sessionType int32, status int32, direction int32, startTime, endTime int64, keyword, userName, inviteeNickname, inviterUserID, peerUserID string) ([]*model_struct.LocalSignalCallRecord, error) {
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
@@ -249,38 +242,74 @@ func (d *DataBase) UpdateSignalCallRecordUserProfile(ctx context.Context, userID
 	}
 	d.mRWMutex.Lock()
 	defer d.mRWMutex.Unlock()
-	inviteeCond, inviteeArgs := signalCallInviteeParticipantCond(userID)
 
-	if nickname != "" {
-		if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
-			Where("inviter_user_id = ?", userID).
-			Update("inviter_user_nickname", nickname).Error; err != nil {
-			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter nickname failed")
-		}
-		if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
-			Where(inviteeCond, inviteeArgs...).
-			Update("invitee_user_nickname", nickname).Error; err != nil {
-			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee nickname failed")
-		}
+	records, err := d.listSignalCallRecordsByParticipantLocked(ctx, userID)
+	if err != nil {
+		return err
 	}
-	// Always sync faceURL (including empty string) so a stale avatar is cleared when
-	// the user's account is deleted and their profile becomes empty.
-	if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
-		Where("inviter_user_id = ?", userID).
-		Update("inviter_user_face_url", faceURL).Error; err != nil {
-		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile inviter faceURL failed")
-	}
-	if err := d.signalCallOwnerDB(ctx).Model(&model_struct.LocalSignalCallRecord{}).
-		Where(inviteeCond, inviteeArgs...).
-		Update("invitee_user_face_url", faceURL).Error; err != nil {
-		return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile invitee faceURL failed")
+	db := d.signalDB().WithContext(ctx)
+	for _, rec := range records {
+		if rec == nil || rec.SID == "" {
+			continue
+		}
+		if !applyCallRecordUserProfileFields(rec, userID, nickname, faceURL) {
+			continue
+		}
+		if err := db.Save(rec).Error; err != nil {
+			return errs.WrapMsg(err, "UpdateSignalCallRecordUserProfile save failed", "sID", rec.SID)
+		}
 	}
 	return nil
 }
 
-func signalCallInviteeParticipantCond(userID string) (string, []any) {
+func applyCallRecordUserProfileFields(rec *model_struct.LocalSignalCallRecord, userID, nickname, faceURL string) bool {
+	changed := false
+	if callRecordUserIsInviter(rec, userID) {
+		if nickname != "" && rec.InviterUserNickname != nickname {
+			rec.InviterUserNickname = nickname
+			changed = true
+		}
+		if rec.InviterUserFaceURL != faceURL {
+			rec.InviterUserFaceURL = faceURL
+			changed = true
+		}
+	}
+	if callRecordUserIsInvitee(rec, userID) {
+		if nickname != "" && rec.InviteeUserNickname != nickname {
+			rec.InviteeUserNickname = nickname
+			changed = true
+		}
+		if rec.InviteeUserFaceURL != faceURL {
+			rec.InviteeUserFaceURL = faceURL
+			changed = true
+		}
+	}
+	return changed
+}
+
+func callRecordUserIsInviter(rec *model_struct.LocalSignalCallRecord, userID string) bool {
+	return rec != nil && rec.InviterUserID == userID
+}
+
+func callRecordUserIsInvitee(rec *model_struct.LocalSignalCallRecord, userID string) bool {
+	if rec == nil || userID == "" {
+		return false
+	}
+	if rec.InviteeUID == userID {
+		return true
+	}
+	return strings.Contains(rec.InviteeUserIDsJSON, "\""+userID+"\"")
+}
+
+func (d *DataBase) listSignalCallRecordsByParticipantLocked(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error) {
 	pattern := "%\"" + userID + "\"%"
-	return "invitee_uid = ? OR invitee_user_ids LIKE ?", []any{userID, pattern}
+	var list []*model_struct.LocalSignalCallRecord
+	err := applySignalCallOwnerFilter(
+		d.signalDB().WithContext(ctx).
+			Where("inviter_user_id = ? OR invitee_uid = ? OR invitee_user_ids LIKE ?", userID, userID, pattern),
+		d.loginUserID,
+	).Find(&list).Error
+	return list, errs.WrapMsg(err, "listSignalCallRecordsByParticipantLocked failed")
 }
 
 func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userID string) ([]*model_struct.LocalSignalCallRecord, error) {
@@ -290,14 +319,7 @@ func (d *DataBase) ListSignalCallRecordsByParticipant(ctx context.Context, userI
 	}
 	d.mRWMutex.RLock()
 	defer d.mRWMutex.RUnlock()
-	pattern := "%\"" + userID + "\"%"
-	var list []*model_struct.LocalSignalCallRecord
-	err := applySignalCallOwnerFilter(
-		d.signalDB().WithContext(ctx).
-			Where("inviter_user_id = ? OR invitee_uid = ? OR invitee_user_ids LIKE ?", userID, userID, pattern),
-		d.loginUserID,
-	).Find(&list).Error
-	return list, errs.WrapMsg(err, "ListSignalCallRecordsByParticipant failed")
+	return d.listSignalCallRecordsByParticipantLocked(ctx, userID)
 }
 
 func (d *DataBase) UpdateSignalCallRecordCalleeMatchText(ctx context.Context, sID, calleeMatchText string) error {

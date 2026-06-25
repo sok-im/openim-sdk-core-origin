@@ -73,6 +73,24 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 		return
 	}
 
+	serverFriends, serverFriendsErr := r.getDesignatedFriends(ctx, []string{userID})
+	if serverFriendsErr == nil {
+		for _, sf := range serverFriends {
+			local := ServerFriendToLocalFriend(sf)
+			if local != nil && local.FriendUserID == userID {
+				log.ZDebug(ctx, "lintao syncCallRecordUserProfile server-friend", "userID", userID)
+				r.applyCallRecordUserProfile(ctx, userID, local.ConversationShowName(), local.FaceURL, "server-friend")
+				return
+			}
+		}
+		// 服务端好友已删除但本地仍残留时，按注销处理，避免 server-user 旧资料覆盖。
+		if r.hasLocalFriend(ctx, userID) {
+			log.ZDebug(ctx, "lintao syncCallRecordUserProfile former-friend", "userID", userID)
+			r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
+			return
+		}
+	}
+
 	if serverUser, err := r.user.GetSingleUserFromServer(ctx, userID); err == nil && serverUser != nil {
 		showName := serverUser.DisplayName()
 		faceURL := serverUser.FaceURL
@@ -91,17 +109,7 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 			"loginUserID", r.loginUserID, "friendUserID", userID)
 	}
 
-	serverFriends, err := r.getDesignatedFriends(ctx, []string{userID})
-	if err == nil {
-		for _, sf := range serverFriends {
-			local := ServerFriendToLocalFriend(sf)
-			if local != nil && local.FriendUserID == userID {
-				log.ZDebug(ctx, "lintao syncCallRecordUserProfile server-friend", "userID", userID)
-				r.applyCallRecordUserProfile(ctx, userID, local.ConversationShowName(), local.FaceURL, "server-friend")
-				return
-			}
-		}
-		// 服务端已无好友关系时，不信任本地残留好友表，按已删除/注销处理。
+	if serverFriendsErr == nil {
 		r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
 		return
 	}
@@ -119,6 +127,22 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 
 	log.ZDebug(ctx, "lintao syncCallRecordUserProfile no friend found", "userID", userID)
 	r.applyCallRecordUserProfile(ctx, userID, constant.DeactivatedUserNickname, constant.DeactivatedUserFaceURL, "deactivated")
+}
+
+func (r *Relation) hasLocalFriend(ctx context.Context, userID string) bool {
+	if r.db == nil {
+		return false
+	}
+	friends, err := r.db.GetFriendInfoList(ctx, []string{userID})
+	if err != nil {
+		return false
+	}
+	for _, f := range friends {
+		if f != nil && f.FriendUserID == userID {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Relation) syncCallRecordLoginUserProfile(ctx context.Context) {

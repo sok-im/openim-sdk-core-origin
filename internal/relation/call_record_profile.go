@@ -68,15 +68,31 @@ func (r *Relation) syncCallRecordUserProfileForRemovedFriend(ctx context.Context
 }
 
 func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string) {
-	if serverUser, err := r.user.GetSingleUserFromServer(ctx, userID); err == nil && serverUser != nil {
-		r.applyCallRecordUserProfile(ctx, userID, serverUser.DisplayName(), serverUser.FaceURL, "server-user")
+	if userID == r.loginUserID {
+		r.syncCallRecordLoginUserProfile(ctx)
 		return
-	} else if err != nil && !sdkerrs.ErrUserIDNotFound.Is(errs.Unwrap(err)) {
+	}
+
+	if serverUser, err := r.user.GetSingleUserFromServer(ctx, userID); err == nil && serverUser != nil {
+		showName := serverUser.DisplayName()
+		faceURL := serverUser.FaceURL
+		if showName == constant.DeactivatedUserNickname || faceURL == constant.DeactivatedUserFaceURL {
+			r.applyCallRecordUserProfile(ctx, userID, showName, faceURL, "server-user-deactivated")
+			return
+		}
+		r.applyCallRecordUserProfile(ctx, userID, showName, faceURL, "server-user")
+		return
+	} else if err != nil {
+		if sdkerrs.ErrUserIDNotFound.Is(errs.Unwrap(err)) {
+			r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
+			return
+		}
 		log.ZWarn(ctx, "lintao syncCallRecordUserProfile GetSingleUserFromServer failed", err,
 			"loginUserID", r.loginUserID, "friendUserID", userID)
 	}
 
-	if serverFriends, err := r.getDesignatedFriends(ctx, []string{userID}); err == nil {
+	serverFriends, err := r.getDesignatedFriends(ctx, []string{userID})
+	if err == nil {
 		for _, sf := range serverFriends {
 			local := ServerFriendToLocalFriend(sf)
 			if local != nil && local.FriendUserID == userID {
@@ -85,6 +101,9 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 				return
 			}
 		}
+		// 服务端已无好友关系时，不信任本地残留好友表，按已删除/注销处理。
+		r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
+		return
 	}
 
 	friends, err := r.db.GetFriendInfoList(ctx, []string{userID})
@@ -100,6 +119,14 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 
 	log.ZDebug(ctx, "lintao syncCallRecordUserProfile no friend found", "userID", userID)
 	r.applyCallRecordUserProfile(ctx, userID, constant.DeactivatedUserNickname, constant.DeactivatedUserFaceURL, "deactivated")
+}
+
+func (r *Relation) syncCallRecordLoginUserProfile(ctx context.Context) {
+	user, err := r.db.GetLoginUser(ctx, r.loginUserID)
+	if err != nil || user == nil {
+		return
+	}
+	r.applyCallRecordUserProfile(ctx, r.loginUserID, user.DisplayName(), user.FaceURL, "login-user")
 }
 
 func (r *Relation) applyCallRecordUserProfile(ctx context.Context, userID, showName, faceURL, source string) {

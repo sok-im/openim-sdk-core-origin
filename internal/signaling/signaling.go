@@ -114,7 +114,7 @@ func (s *Signaling) recordWorker() {
 		if s.db == nil || task.inv == nil {
 			continue
 		}
-		ctx := context.Background()
+		ctx := s.backgroundCtx()
 
 		calleeText := s.composeCalleeMatchText(ctx, task.inv, task.participant)
 		inviteeNickname := s.resolveInviteeNickname(ctx, task.inv, task.participant)
@@ -159,7 +159,7 @@ func (s *Signaling) recordWorker() {
 		log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "lr", lr)
 
 		if s.syncCallRecordsUserProfile != nil {
-			if uids := participantUserIDs(task.inv); len(uids) > 0 {
+			if uids := peerParticipantUserIDs(s.loginUserID, task.inv); len(uids) > 0 {
 				log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "uids", uids)
 				s.syncCallRecordsUserProfile(ctx, uids...)
 			}

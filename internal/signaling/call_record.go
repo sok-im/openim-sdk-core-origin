@@ -13,25 +13,25 @@ import (
 
 // callRecordConfig 构建本地通话记录所需的全部参数。
 type callRecordConfig struct {
-	inv              *rtc.InvitationInfo
-	status           int32 // constant.SignalCallStatus*
-	direction        int32 // constant.SignalCallDirection*
-	action           string // constant.SignalCallAction*
-	inviteMs         int64
-	connectMs        int64
-	endMs            int64
+	inv       *rtc.InvitationInfo
+	status    int32  // constant.SignalCallStatus*
+	direction int32  // constant.SignalCallDirection*
+	action    string // constant.SignalCallAction*
+	inviteMs  int64
+	connectMs int64
+	endMs     int64
 	// callDuration: 客户端主动上报的通话时长（毫秒）。>0 时直接使用，不再从时间戳推算，
 	// 用于保证主/被叫双端记录时长一致。
-	callDuration     int64
-	calleeMatchText  string
-	inviteeNickname  string
-	inviteeUID       string
-	inviteeFaceURL   string
-	inviteeIDsJSON   string
-	inviterNickname  string
-	inviterFaceURL   string
-	groupName        string
-	ownerUserID      string
+	callDuration    int64
+	calleeMatchText string
+	inviteeNickname string
+	inviteeUID      string
+	inviteeFaceURL  string
+	inviteeIDsJSON  string
+	inviterNickname string
+	inviterFaceURL  string
+	groupName       string
+	ownerUserID     string
 }
 
 // newLocalSignalCallRecord 根据 callRecordConfig 生成本地通话记录，并计算拨打时长与通话时长。
@@ -372,6 +372,23 @@ func participantUserIDs(inv *rtc.InvitationInfo) []string {
 	add(inv.InviterUserID)
 	for _, uid := range inv.InviteeUserIDList {
 		add(uid)
+	}
+	return out
+}
+
+// peerParticipantUserIDs 返回除登录用户外的通话参与方 ID。
+// 落库后资料同步只需刷新对端；本端展示在 persist 时已从本地用户表解析。
+func peerParticipantUserIDs(loginUserID string, inv *rtc.InvitationInfo) []string {
+	loginUserID = strings.TrimSpace(loginUserID)
+	uids := participantUserIDs(inv)
+	if loginUserID == "" {
+		return uids
+	}
+	out := make([]string, 0, len(uids))
+	for _, uid := range uids {
+		if uid != loginUserID {
+			out = append(out, uid)
+		}
 	}
 	return out
 }

@@ -14,6 +14,8 @@
 
 package constant
 
+import "strings"
+
 const (
 	CmdSyncData           = "syncData"
 	CmdSyncFlag           = "syncFlag"
@@ -273,9 +275,25 @@ const (
 
 // DeactivatedUserNickname / DeactivatedUserFaceURL 为已注销账号在本地历史记录中的占位展示。
 const (
-	DeactivatedUserNickname = "Deactivated user"
-	DeactivatedUserFaceURL  = "http://13.215.203.29:10002/object/6794065114/mmexport1782219627453.jpg"
+	DeactivatedUserNickname   = "Deactivated user"
+	DeactivatedUserNicknameZh = "已注销的用户"
+	DeactivatedUserFaceURL    = "http://13.215.203.29:10002/object/6794065114/mmexport1782219627453.jpg"
 )
+
+// DeactivatedUserNicknameForLanguage 按用户语言返回已注销账号展示昵称，默认英文。
+func DeactivatedUserNicknameForLanguage(language string) string {
+	lang := strings.ToLower(strings.TrimSpace(language))
+	if strings.HasPrefix(lang, "zh") {
+		return DeactivatedUserNicknameZh
+	}
+	return DeactivatedUserNickname
+}
+
+// IsDeactivatedUserNickname 判断昵称是否为已注销账号占位（含中英文）。
+func IsDeactivatedUserNickname(name string) bool {
+	name = strings.TrimSpace(name)
+	return name == DeactivatedUserNickname || name == DeactivatedUserNicknameZh
+}
 
 // SignalCallAction 本地通话记录：触发落库的信令动作。
 const (

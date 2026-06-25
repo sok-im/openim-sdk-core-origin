@@ -17,19 +17,19 @@ func (r *Relation) SyncCallRecordsUserProfile(ctx context.Context, friendUserIDs
 
 // syncCallRecordsUserProfile 在好友资料变更后，同步更新本地通话记录中的展示昵称与头像。
 func (r *Relation) syncCallRecordsUserProfile(ctx context.Context, friendUserIDs ...string) {
-	log.ZDebug(ctx, "lintao syncCallRecordsUserProfile", "friendUserIDs", friendUserIDs)
+	log.ZDebug(ctx, "syncCallRecordsUserProfile", "friendUserIDs", friendUserIDs)
 	r.syncCallRecordsUserProfileWithMode(ctx, false, friendUserIDs...)
 }
 
 // syncCallRecordsUserProfileForRemovedFriend 在好友关系被删除（含对方注销账号）后刷新通话记录展示。
 func (r *Relation) syncCallRecordsUserProfileForRemovedFriend(ctx context.Context, friendUserIDs ...string) {
-	log.ZDebug(ctx, "lintao syncCallRecordsUserProfileForRemovedFriend", "friendUserIDs", friendUserIDs)
+	log.ZDebug(ctx, "syncCallRecordsUserProfileForRemovedFriend", "friendUserIDs", friendUserIDs)
 	r.syncCallRecordsUserProfileWithMode(ctx, true, friendUserIDs...)
 }
 
 func (r *Relation) syncCallRecordsUserProfileWithMode(ctx context.Context, friendRemoved bool, friendUserIDs ...string) {
 	if r.db == nil || len(friendUserIDs) == 0 {
-		log.ZDebug(ctx, "lintao syncCallRecordsUserProfileWithMode db is nil or friendUserIDs is empty", "friendUserIDs", friendUserIDs)
+		log.ZDebug(ctx, "syncCallRecordsUserProfileWithMode db is nil or friendUserIDs is empty", "friendUserIDs", friendUserIDs)
 		return
 	}
 	ids := make([]string, 0, len(friendUserIDs))
@@ -39,16 +39,16 @@ func (r *Relation) syncCallRecordsUserProfileWithMode(ctx context.Context, frien
 		}
 	}
 	if len(ids) == 0 {
-		log.ZDebug(ctx, "lintao syncCallRecordsUserProfileWithMode ids is empty", "friendUserIDs", friendUserIDs)
+		log.ZDebug(ctx, "syncCallRecordsUserProfileWithMode ids is empty", "friendUserIDs", friendUserIDs)
 		return
 	}
 
 	for _, userID := range ids {
 		if friendRemoved {
-			log.ZDebug(ctx, "lintao syncCallRecordsUserProfileForRemovedFriend", "userID", userID)
+			log.ZDebug(ctx, "syncCallRecordsUserProfileForRemovedFriend", "userID", userID)
 			r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
 		} else {
-			log.ZDebug(ctx, "lintao syncCallRecordsUserProfile", "userID", userID)
+			log.ZDebug(ctx, "syncCallRecordsUserProfile", "userID", userID)
 			r.syncCallRecordUserProfile(ctx, userID)
 		}
 	}
@@ -59,12 +59,12 @@ func (r *Relation) syncCallRecordUserProfileForRemovedFriend(ctx context.Context
 	if serverUser, err := r.user.GetSingleUserFromServer(ctx, userID); err == nil && serverUser != nil {
 		showName := serverUser.DisplayName()
 		if constant.IsDeactivatedUserNickname(showName) || serverUser.FaceURL == constant.DeactivatedUserFaceURL {
-			log.ZDebug(ctx, "lintao syncCallRecordUserProfileForRemovedFriend serverUser is deactivated", "userID", userID)
+			log.ZDebug(ctx, "syncCallRecordUserProfileForRemovedFriend serverUser is deactivated", "userID", userID)
 			r.applyCallRecordUserProfile(ctx, userID, deactivatedNickname, serverUser.FaceURL, "server-user")
 			return
 		}
 	}
-	log.ZDebug(ctx, "lintao syncCallRecordUserProfileForRemovedFriend serverUser is not deactivated", "userID", userID)
+	log.ZDebug(ctx, "syncCallRecordUserProfileForRemovedFriend serverUser is not deactivated", "userID", userID)
 	r.applyCallRecordUserProfile(ctx, userID, deactivatedNickname, constant.DeactivatedUserFaceURL, "deactivated")
 }
 
@@ -79,14 +79,14 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 		for _, sf := range serverFriends {
 			local := ServerFriendToLocalFriend(sf)
 			if local != nil && local.FriendUserID == userID {
-				log.ZDebug(ctx, "lintao syncCallRecordUserProfile server-friend", "userID", userID)
+				log.ZDebug(ctx, "syncCallRecordUserProfile server-friend", "userID", userID)
 				r.applyCallRecordUserProfile(ctx, userID, local.ConversationShowName(), local.FaceURL, "server-friend")
 				return
 			}
 		}
 		// 服务端好友已删除但本地仍残留时，按注销处理，避免 server-user 旧资料覆盖。
 		if r.hasLocalFriend(ctx, userID) {
-			log.ZDebug(ctx, "lintao syncCallRecordUserProfile former-friend", "userID", userID)
+			log.ZDebug(ctx, "syncCallRecordUserProfile former-friend", "userID", userID)
 			r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
 			return
 		}
@@ -106,7 +106,7 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 			r.syncCallRecordUserProfileForRemovedFriend(ctx, userID)
 			return
 		}
-		log.ZWarn(ctx, "lintao syncCallRecordUserProfile GetSingleUserFromServer failed", err,
+		log.ZWarn(ctx, "syncCallRecordUserProfile GetSingleUserFromServer failed", err,
 			"loginUserID", r.loginUserID, "friendUserID", userID)
 	}
 
@@ -119,14 +119,14 @@ func (r *Relation) syncCallRecordUserProfile(ctx context.Context, userID string)
 	if err == nil {
 		for _, f := range friends {
 			if f != nil && f.FriendUserID == userID {
-				log.ZDebug(ctx, "lintao syncCallRecordUserProfile local-friend", "userID", userID)
+				log.ZDebug(ctx, "syncCallRecordUserProfile local-friend", "userID", userID)
 				r.applyCallRecordUserProfile(ctx, userID, f.ConversationShowName(), f.FaceURL, "local-friend")
 				return
 			}
 		}
 	}
 
-	log.ZDebug(ctx, "lintao syncCallRecordUserProfile no friend found", "userID", userID)
+	log.ZDebug(ctx, "syncCallRecordUserProfile no friend found", "userID", userID)
 	r.applyCallRecordUserProfile(ctx, userID, r.deactivatedUserNickname(ctx), constant.DeactivatedUserFaceURL, "deactivated")
 }
 
@@ -173,18 +173,18 @@ func (r *Relation) applyCallRecordUserProfile(ctx context.Context, userID, showN
 	var err error
 	if r.updateCallRecordsUserProfile != nil {
 		err = r.updateCallRecordsUserProfile(ctx, userID, showName, faceURL)
-		log.ZDebug(ctx, "lintao applyCallRecordUserProfile updateCallRecordsUserProfile", "userID", userID, "showName", showName, "faceURL", faceURL)
+		log.ZDebug(ctx, "applyCallRecordUserProfile updateCallRecordsUserProfile", "userID", userID, "showName", showName, "faceURL", faceURL)
 	} else {
 		err = r.db.UpdateSignalCallRecordUserProfile(ctx, userID, showName, faceURL)
-		log.ZDebug(ctx, "lintao applyCallRecordUserProfile updateSignalCallRecordUserProfile", "userID", userID, "showName", showName, "faceURL", faceURL)
+		log.ZDebug(ctx, "applyCallRecordUserProfile updateSignalCallRecordUserProfile", "userID", userID, "showName", showName, "faceURL", faceURL)
 	}
 	if err != nil {
-		log.ZWarn(ctx, "lintao syncCallRecordsUserProfile update call record profile failed", err,
+		log.ZWarn(ctx, "syncCallRecordsUserProfile update call record profile failed", err,
 			"loginUserID", r.loginUserID, "friendUserID", userID,
 			"source", source, "showName", showName, "faceURL", faceURL)
 		return
 	}
-	log.ZDebug(ctx, "lintao syncCallRecordsUserProfile update call record profile ok",
+	log.ZDebug(ctx, "syncCallRecordsUserProfile update call record profile ok",
 		"loginUserID", r.loginUserID, "friendUserID", userID,
 		"source", source, "showName", showName, "faceURL", faceURL)
 }

@@ -149,22 +149,22 @@ func (s *Signaling) recordWorker() {
 			continue
 		}
 
-		log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "lr", lr)
+		log.ZDebug(ctx, "recordWorker syncCallRecordsUserProfile", "lr", lr)
 
 		if err := s.db.BatchUpsertSignalCallRecords(ctx, []*model_struct.LocalSignalCallRecord{lr}); err != nil {
 			log.ZWarn(ctx, "async persistLocalCallRecord failed", err, "sID", lr.SID)
 			continue
 		}
 
-		log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "lr", lr)
+		log.ZDebug(ctx, "recordWorker syncCallRecordsUserProfile", "lr", lr)
 
 		if s.syncCallRecordsUserProfile != nil {
 			if uids := peerParticipantUserIDs(s.loginUserID, task.inv); len(uids) > 0 {
-				log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile", "uids", uids)
+				log.ZDebug(ctx, "recordWorker syncCallRecordsUserProfile", "uids", uids)
 				s.syncCallRecordsUserProfile(ctx, uids...)
 			}
 		} else {
-			log.ZDebug(ctx, "lintao recordWorker syncCallRecordsUserProfile is nil")
+			log.ZDebug(ctx, "recordWorker syncCallRecordsUserProfile is nil")
 		}
 	}
 }

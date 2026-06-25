@@ -521,7 +521,7 @@ func (s *Signaling) GetLocalAllCallRecords(ctx context.Context, params *sdk_stru
 	records := make([]*sdk_struct.SignalCallRecordWithDialStatus, 0, len(list))
 	for _, l := range list {
 		records = append(records, localRecordToSDK(l))
-		log.ZInfo(ctx, "lintao GetLocalAllCallRecords", "record", localRecordToSDK(l))
+		log.ZInfo(ctx, "GetLocalAllCallRecords", "record", localRecordToSDK(l))
 	}
 	return &sdk_struct.GetLocalCallRecordsResp{Total: total, Records: records}, nil
 }

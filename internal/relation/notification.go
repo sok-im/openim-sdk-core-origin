@@ -68,7 +68,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			if tips.FromToUserID.FromUserID == r.loginUserID && tips.FromToUserID.ToUserID != r.loginUserID {
 				r.user.UserCache.Delete(tips.FromToUserID.ToUserID)
 				// 账号注销等场景下好友关系被删除时，先刷新通话记录展示，再同步好友列表。
-				log.ZDebug(ctx, "lintao FriendDeletedNotification syncCallRecordsUserProfileForRemovedFriend", "userID", tips.FromToUserID.ToUserID)
+				log.ZDebug(ctx, "FriendDeletedNotification syncCallRecordsUserProfileForRemovedFriend", "userID", tips.FromToUserID.ToUserID)
 				r.syncCallRecordsUserProfileForRemovedFriend(ctx, tips.FromToUserID.ToUserID)
 			}
 			if tips.FromToUserID.FromUserID == r.loginUserID {
@@ -103,7 +103,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			if err := r.IncrSyncFriends(ctx); err != nil {
 				return err
 			}
-			log.ZDebug(ctx, "lintao FriendInfoUpdatedNotification syncCallRecordsUserProfile", "userID", tips.UserID)
+			log.ZDebug(ctx, "FriendInfoUpdatedNotification syncCallRecordsUserProfile", "userID", tips.UserID)
 			r.syncCallRecordsUserProfile(ctx, tips.UserID)
 			return nil
 		}
@@ -138,7 +138,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			for _, friendID := range tips.FriendIDs {
 				r.user.UserCache.Delete(friendID)
 			}
-			log.ZDebug(ctx, "lintao FriendsInfoUpdateNotification syncCallRecordsUserProfileForRemovedFriend delete userCache", "friendIDs", tips.FriendIDs)
+			log.ZDebug(ctx, "FriendsInfoUpdateNotification syncCallRecordsUserProfileForRemovedFriend delete userCache", "friendIDs", tips.FriendIDs)
 			r.syncCallRecordsUserProfileForRemovedFriend(ctx, tips.FriendIDs...)
 			return r.IncrSyncFriends(ctx)
 		}

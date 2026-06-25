@@ -222,6 +222,14 @@ func (s *Signaling) Close() {
 
 // ── 房间时间戳辅助 ────────────────────────────────────────────────────────────
 
+// callTalkDurationSecs returns accept→end talk duration in whole seconds (0 if not connected).
+func callTalkDurationSecs(connectMs, endMs int64) int64 {
+	if connectMs <= 0 || endMs <= connectMs {
+		return 0
+	}
+	return (endMs - connectMs) / 1000
+}
+
 func (s *Signaling) storeInviteTime(roomID string, ms int64) {
 	t := &roomTiming{inviteMs: ms, createdAt: time.Now()}
 	s.roomTimings.Store(roomID, t)
@@ -644,15 +652,17 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		if !ok {
 			return nil
 		}
+		endMs := time.Now().UnixMilli()
 		status := callRecordStatusFromTiming(connectMs, accepted)
-		// Use the sender's SDK-computed accept→hangup duration (seconds) so both
-		// sides record the same value as the chat message. When CallDuration is 0,
-		// persistLocalCallRecord falls back to local connectMs→endMs timing.
-		callDurationSecs := req.CallDuration
+		// Prefer local accept→end timing so waiting time is never included.
+		callDurationSecs := callTalkDurationSecs(connectMs, endMs)
+		if callDurationSecs == 0 && req.CallDuration > 0 {
+			callDurationSecs = req.CallDuration
+		}
 		s.persistLocalCallRecord(ctx, req.Invitation, nil,
 			status,
 			constant.SignalCallActionHungUp,
-			inviteMs, connectMs, time.Now().UnixMilli(), callDurationSecs)
+			inviteMs, connectMs, endMs, callDurationSecs)
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation,
 			"status", status, "action", constant.SignalCallActionHungUp, "callDurationSecs", callDurationSecs)
 	}

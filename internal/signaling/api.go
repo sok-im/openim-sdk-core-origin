@@ -255,6 +255,8 @@ func (s *Signaling) Cancel(ctx context.Context, signalCancelReq *rtc.SignalCance
 // 若 connectMs=0（被叫未接通即挂断），记录为未接通；否则记录为已接听。
 func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungUpReq) error {
 	signalHungUpReq.UserID = s.loginUserID
+	// Ignore any app-layer duration; SDK derives talk time from accept→hangup only.
+	signalHungUpReq.CallDuration = 0
 
 	// Capture the hangup moment before the server round-trip so the duration
 	// reflects when the user actually pressed hang up.
@@ -265,11 +267,7 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 	// the peer so both sides record the same duration.
 	if signalHungUpReq.Invitation != nil && signalHungUpReq.Invitation.RoomID != "" {
 		_, connectMs, _, _ := s.peekTimingForRecord(signalHungUpReq.Invitation.RoomID)
-		if connectMs > 0 {
-			if secs := (endMs - connectMs) / 1000; secs > 0 {
-				signalHungUpReq.CallDuration = secs
-			}
-		}
+		signalHungUpReq.CallDuration = callTalkDurationSecs(connectMs, endMs)
 	}
 
 	req := &rtc.SignalReq{
@@ -289,8 +287,7 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 		inviteMs, connectMs, accepted, ok := s.popTimingForRecord(signalHungUpReq.Invitation.RoomID)
 		if ok {
 			status := callRecordStatusFromTiming(connectMs, accepted)
-			// Store seconds directly so local records match chat-message duration.
-			callDurationSecs := signalHungUpReq.CallDuration
+			callDurationSecs := callTalkDurationSecs(connectMs, endMs)
 			s.persistLocalCallRecord(ctx,
 				signalHungUpReq.Invitation,
 				nil,

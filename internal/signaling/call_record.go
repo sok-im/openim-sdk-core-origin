@@ -56,12 +56,8 @@ func newLocalSignalCallRecord(cfg callRecordConfig) *model_struct.LocalSignalCal
 	var dialDuration, callDuration int64
 	if cfg.connectMs > 0 {
 		dialDuration = (cfg.connectMs - inviteMs) / 1000
-		if cfg.callDuration > 0 {
-			// 挂断方上报或转发的精确时长（秒），优先于本地时间戳推算，确保双端一致。
-			callDuration = cfg.callDuration
-		} else {
-			callDuration = (cfg.endMs - cfg.connectMs) / 1000
-		}
+		// Always derive talk time from accept→end timestamps so waiting time is excluded.
+		callDuration = (cfg.endMs - cfg.connectMs) / 1000
 	} else {
 		dialDuration = (cfg.endMs - inviteMs) / 1000
 	}

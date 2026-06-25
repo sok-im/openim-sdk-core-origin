@@ -70,6 +70,10 @@ func SignalingGetLocalCallRecordsByUserName(callback open_im_sdk_callback.Base, 
 	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsByUserName, req)
 }
 
+func SignalingGetLocalCallRecordsByDate(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Signaling().GetLocalCallRecordsByDate, req)
+}
+
 func SignalingSearchLocalCallRecords(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().SearchLocalSignalCallRecords, req)
 }

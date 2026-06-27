@@ -285,6 +285,13 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 			}
 			g.listener().OnGroupCallParticipantCountUpdated(utils.StructToJsonString(detail))
 			return nil
+		case constant.GroupCallParticipantDeclinedNotification: // 1528
+			var detail sdkws.GroupCallParticipantDeclinedTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			g.listener().OnGroupCallParticipantDeclined(utils.StructToJsonString(detail))
+			return nil
 		case constant.GroupBurnDurationSetNotification: // 1524
 			var detail sdkws.GroupBurnDurationSetTips
 			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {

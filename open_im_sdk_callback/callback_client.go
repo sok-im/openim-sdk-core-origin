@@ -54,6 +54,9 @@ type OnGroupListener interface {
 	// changes during an ongoing group call (someone joined or left). The payload is a
 	// JSON-serialised GroupCallParticipantCountUpdatedTips.
 	OnGroupCallParticipantCountUpdated(groupCallParticipantCountUpdatedTips string)
+	// OnGroupCallParticipantDeclined fires when an invitee rejects/times out or the
+	// inviter cancels during a group call. actionType: "reject" | "timeout" | "cancel".
+	OnGroupCallParticipantDeclined(groupCallParticipantDeclinedTips string)
 	// OnGroupBurnDurationSet durationSecs: message disappear duration in seconds; 0 means turned off
 	OnGroupBurnDurationSet(groupBurnDurationSetTips string)
 	// OnGroupFaceURLSet fired when a group avatar is changed

@@ -104,6 +104,7 @@ const (
 	GroupCallStartedNotification                    = 1522
 	GroupCallEndedNotification                      = 1523
 	GroupCallParticipantCountUpdatedNotification    = 1527
+	GroupCallParticipantDeclinedNotification        = 1528
 	GroupBurnDurationSetNotification                = 1524
 	GroupFaceURLSetNotification              = 1525
 	GroupNeedVerificationSetNotification     = 1526

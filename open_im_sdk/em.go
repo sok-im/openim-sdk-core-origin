@@ -98,6 +98,10 @@ func (e *emptyGroupListener) OnGroupCallParticipantCountUpdated(groupCallPartici
 	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupCallParticipantCountUpdatedTips", groupCallParticipantCountUpdatedTips)
 }
 
+func (e *emptyGroupListener) OnGroupCallParticipantDeclined(groupCallParticipantDeclinedTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupCallParticipantDeclinedTips", groupCallParticipantDeclinedTips)
+}
+
 func (e *emptyGroupListener) OnGroupBurnDurationSet(groupBurnDurationSetTips string) {
 	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupBurnDurationSetTips", groupBurnDurationSetTips)
 }

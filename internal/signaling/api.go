@@ -10,6 +10,7 @@ import (
 	"github.com/openimsdk/openim-sdk-core/v3/pkg/sdkerrs"
 	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
 	"github.com/openimsdk/protocol/rtc"
+	"github.com/openimsdk/tools/errs"
 	"github.com/openimsdk/tools/log"
 	"github.com/openimsdk/tools/utils/jsonutil"
 )
@@ -124,7 +125,6 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 
 	if signalAcceptReq.Invitation != nil && signalAcceptReq.Invitation.RoomID != "" {
 		s.cancelInviteTimer(signalAcceptReq.Invitation.RoomID)
-		s.storeConnectTime(signalAcceptReq.Invitation.RoomID, time.Now().UnixMilli())
 	}
 
 	req := &rtc.SignalReq{
@@ -134,7 +134,35 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 	}
 	resp, err := s.signalingRequest(ctx, req)
 	if err != nil {
+		log.ZWarn(ctx, "Accept: signalingRequest failed", err, "roomID", signalAcceptReq.Invitation.GetRoomID())
+
+		// Ghost-call guard: if the server rejected because the invitation no longer
+		// exists (concurrent HungUp/Cancel reached the server before this Accept),
+		// clean up local timing state and fire OnInvitationCancelled so the app
+		// dismisses the call UI immediately without waiting for a subsequent
+		// signaling notification.
+		//
+		// errs.ErrRecordNotFound is returned by handleAccept when the invitation was
+		// deleted between the initial DB read and the final re-check (server Fix 1).
+		// We do NOT fire the callback for transient network/auth errors; those leave
+		// the UI in place so the user can retry or wait for the server's delayed
+		// re-send (server Fix 2).
+		if signalAcceptReq.Invitation != nil && errs.ErrRecordNotFound.Is(err) {
+			s.popTimingForRecord(signalAcceptReq.Invitation.RoomID)
+			log.ZWarn(ctx, "Accept: call already ended; firing OnInvitationCancelled to dismiss call UI",
+				nil, "roomID", signalAcceptReq.Invitation.RoomID)
+			if listener := s.listener(); listener != nil {
+				listener.OnInvitationCancelled(jsonutil.StructToJsonString(signalAcceptReq.Invitation))
+			}
+		}
 		return nil, err
+	}
+
+	if signalAcceptReq.Invitation != nil && signalAcceptReq.Invitation.RoomID != "" {
+		// Record connect time only after the server confirms accept. Storing it
+		// before the RPC completes caused false "answered" records when the peer
+		// hung up during accept and the server rejected the request.
+		s.storeConnectTime(signalAcceptReq.Invitation.RoomID, time.Now().UnixMilli())
 	}
 
 	log.ZInfo(ctx, "Accept success", "req", req, "resp", resp)

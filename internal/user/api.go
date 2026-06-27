@@ -143,9 +143,12 @@ func (u *User) SetGroupInviteSetting(ctx context.Context, groupInviteSetting int
 
 // SetUserMsgBurnDuration 设置用户全局阅后即焚时长（秒），0 表示关闭。
 func (u *User) SetUserMsgBurnDuration(ctx context.Context, msgBurnDuration int32) error {
-	return u.setUserMsgBurnDuration(ctx, &userPb.SetUserMsgBurnDurationReq{
+	if err := u.setUserMsgBurnDuration(ctx, &userPb.SetUserMsgBurnDurationReq{
 		MsgBurnDuration: msgBurnDuration,
-	})
+	}); err != nil {
+		return err
+	}
+	return u.SyncLoginUserInfo(ctx)
 }
 
 // SetDeleteAccountInterval 设置删除账号等待间隔（秒）；0 表示使用系统默认（18 个月）。对应 HTTP POST /user/set_delete_account_interval。

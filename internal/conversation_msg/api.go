@@ -60,6 +60,15 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 	conversationID := c.getConversationIDBySessionType(sourceID, int(sessionType))
 	lc, err := c.db.GetConversation(ctx, conversationID)
 	if err == nil {
+		if sessionType == constant.SingleChatType && lc.LatestMsgSendTime == 0 && !lc.IsPrivateChat && lc.BurnDuration == 0 {
+			c.applyLoginUserBurnToSingleChatConversation(ctx, lc)
+			if lc.IsPrivateChat && lc.BurnDuration > 0 {
+				_ = c.db.UpdateColumnsConversation(ctx, lc.ConversationID, map[string]interface{}{
+					"is_private_chat": true,
+					"burn_duration":   lc.BurnDuration,
+				})
+			}
+		}
 		return lc, nil
 	} else {
 		var newConversation model_struct.LocalConversation
@@ -77,6 +86,7 @@ func (c *Conversation) GetOneConversation(ctx context.Context, sessionType int32
 			if friendInfo, err := c.relation.Db().GetFriendInfoByFriendUserID(ctx, sourceID); err == nil {
 				newConversation.IsPinned = friendInfo.IsPinned
 			}
+			c.applyLoginUserBurnToSingleChatConversation(ctx, &newConversation)
 			log.ZInfo(ctx, " GetOneConversation", "conversation", newConversation)
 
 		case constant.WriteGroupChatType, constant.ReadGroupChatType:

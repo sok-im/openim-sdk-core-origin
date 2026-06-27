@@ -181,6 +181,7 @@ type LocalUser struct {
 	CallRingtoneCover  string `json:"callRingtoneCover,omitempty"`
 	CallRingtoneAuthor string `json:"callRingtoneAuthor,omitempty"`
 	Language           string `json:"language,omitempty"`
+	MsgBurnDuration    int32  `json:"msgBurnDuration,omitempty"`
 }
 
 type LocalUserCommand struct {

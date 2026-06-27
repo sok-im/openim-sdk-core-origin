@@ -196,6 +196,8 @@ type LocalUser struct {
 	CallRingtoneAuthor string `gorm:"column:call_ringtone_author;type:varchar(255)" json:"callRingtoneAuthor"`
 	// Language 用户应用语言（如 zh-CN、en-US）
 	Language string `gorm:"column:language;type:varchar(32)" json:"language"`
+	// MsgBurnDuration 用户全局消息阅后即焚时长（秒）；0 表示关闭
+	MsgBurnDuration int32 `gorm:"column:msg_burn_duration;default:0" json:"msgBurnDuration"`
 }
 
 type LocalBlack struct {

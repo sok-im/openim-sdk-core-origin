@@ -95,6 +95,9 @@ func (r *Relation) initSyncer() {
 			case syncer.Delete:
 				log.ZDebug(ctx, "syncer OnFriendDeleted", "local", local)
 				r.friendshipListener.OnFriendDeleted(*local)
+				if local != nil && local.FriendUserID != "" {
+					r.syncCallRecordsUserProfileForRemovedFriend(ctx, local.FriendUserID)
+				}
 			case syncer.Update:
 				r.friendshipListener.OnFriendInfoChanged(*server)
 				if local.Nickname != server.Nickname || local.FaceURL != server.FaceURL || local.Remark != server.Remark ||

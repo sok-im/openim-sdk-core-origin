@@ -61,18 +61,26 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 			return err
 		}
 		if tips.FromToUserID != nil {
+			fromID := tips.FromToUserID.FromUserID
+			toID := tips.FromToUserID.ToUserID
 			// When the login user removed a friend (FromUserID == self), the friend's
 			// UserCache entry must be evicted immediately. IncrSyncFriends only updates
 			// the friend DB; it does not touch UserCache, leaving stale data that
 			// GetUsersInfo would serve even after the friend's account is deleted.
-			if tips.FromToUserID.FromUserID == r.loginUserID && tips.FromToUserID.ToUserID != r.loginUserID {
-				r.user.UserCache.Delete(tips.FromToUserID.ToUserID)
-				// 账号注销等场景下好友关系被删除时，先刷新通话记录展示，再同步好友列表。
-				log.ZDebug(ctx, "FriendDeletedNotification syncCallRecordsUserProfileForRemovedFriend", "userID", tips.FromToUserID.ToUserID)
-				r.syncCallRecordsUserProfileForRemovedFriend(ctx, tips.FromToUserID.ToUserID)
-			}
-			if tips.FromToUserID.FromUserID == r.loginUserID {
+			if fromID == r.loginUserID && toID != r.loginUserID {
+				r.user.UserCache.Delete(toID)
+				log.ZDebug(ctx, "FriendDeletedNotification syncCallRecordsUserProfileForRemovedFriend", "userID", toID)
+				r.syncCallRecordsUserProfileForRemovedFriend(ctx, toID)
 				return r.IncrSyncFriends(ctx)
+			}
+			// When the peer removed the friendship (e.g. account deletion), refresh
+			// call-record display. Do not IncrSyncFriends: local friend row may still
+			// exist until server-side reversal cleanup completes.
+			if toID == r.loginUserID && fromID != r.loginUserID {
+				r.user.UserCache.Delete(fromID)
+				log.ZDebug(ctx, "FriendDeletedNotification peer removed syncCallRecordsUserProfileForRemovedFriend", "userID", fromID)
+				r.syncCallRecordsUserProfileForRemovedFriend(ctx, fromID)
+				return nil
 			}
 		}
 	case constant.FriendRemarkSetNotification:

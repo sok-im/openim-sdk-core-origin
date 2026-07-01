@@ -33,8 +33,8 @@ const friendFullNameMatchSQL = "first_name LIKE ? OR last_name LIKE ? OR (first_
 
 func applyFriendProfileSearch(tx *gorm.DB, keyword string) *gorm.DB {
 	pattern := "%" + keyword + "%"
-	profileCond := "remark LIKE ? OR name LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?"
-	args := []interface{}{pattern, pattern, pattern, pattern, pattern}
+	profileCond := "remark LIKE ? OR name LIKE ? OR friend_first_name LIKE ? OR friend_last_name LIKE ? OR (friend_first_name || ' ' || friend_last_name) LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?"
+	args := []interface{}{pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern}
 
 	tokens := strings.Fields(keyword)
 	if len(tokens) > 1 {

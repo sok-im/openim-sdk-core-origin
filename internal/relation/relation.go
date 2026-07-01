@@ -63,21 +63,15 @@ func (r *Relation) initSyncer() {
 			switch state {
 			case syncer.Insert:
 				r.friendshipListener.OnFriendAdded(*server)
-				if server.Remark != "" {
-					server.Nickname = server.Remark
-				} else if server.FirstName != "" || server.LastName != "" {
-					server.Nickname = server.FirstName + " " + server.LastName
-				} else {
-					server.Nickname = server.Nickname
-				}
-				log.ZInfo(ctx, " syncer notice", "server", server, "local", local)
+				showName := server.ConversationShowName()
+				log.ZInfo(ctx, " syncer notice", "server", server, "local", local, "showName", showName)
 				_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
 					Action: constant.UpdateConFaceUrlAndNickName,
 					Args: common.SourceIDAndSessionType{
 						SourceID:    server.FriendUserID,
 						SessionType: constant.SingleChatType,
 						FaceURL:     server.FaceURL,
-						Nickname:    server.Nickname,
+						Nickname:    showName,
 					},
 				}, r.conversationCh)
 				_ = common.TriggerCmdUpdateMessage(ctx, common.UpdateMessageNode{
@@ -86,7 +80,7 @@ func (r *Relation) initSyncer() {
 						SessionType: constant.SingleChatType,
 						UserID:      server.FriendUserID,
 						FaceURL:     server.FaceURL,
-						Nickname:    server.Nickname,
+						Nickname:    showName,
 					},
 				}, r.conversationCh)
 				log.ZDebug(ctx, "syncer OnFriendAdded syncCallRecordsUserProfile", "userID", server.FriendUserID)
@@ -101,7 +95,8 @@ func (r *Relation) initSyncer() {
 			case syncer.Update:
 				r.friendshipListener.OnFriendInfoChanged(*server)
 				if local.Nickname != server.Nickname || local.FaceURL != server.FaceURL || local.Remark != server.Remark ||
-					local.FirstName != server.FirstName || local.LastName != server.LastName {
+					local.FirstName != server.FirstName || local.LastName != server.LastName ||
+					local.FriendFirstName != server.FriendFirstName || local.FriendLastName != server.FriendLastName {
 					showName := server.ConversationShowName()
 					log.ZInfo(ctx, " syncer notice", "server", server, "local", local, "showName", showName)
 					_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{

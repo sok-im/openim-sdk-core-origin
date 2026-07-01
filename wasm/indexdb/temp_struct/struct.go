@@ -152,8 +152,10 @@ type LocalBlack struct {
 type LocalFriend struct {
 	OwnerUserID    string `json:"ownerUserID,omitempty"`
 	FriendUserID   string `json:"friendUserID,omitempty"`
-	Remark         string `json:"remark,omitempty"`
-	CreateTime     int64  `json:"createTime,omitempty"`
+	Remark          string `json:"remark,omitempty"`
+	FriendFirstName string `json:"friendFirstName,omitempty"`
+	FriendLastName  string `json:"friendLastName,omitempty"`
+	CreateTime      int64  `json:"createTime,omitempty"`
 	AddSource      int32  `json:"addSource,omitempty"`
 	OperatorUserID string `json:"operatorUserID,omitempty"`
 	Nickname       string `json:"nickname,omitempty"`

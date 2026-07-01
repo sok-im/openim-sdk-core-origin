@@ -59,8 +59,10 @@ func (i *Friend) UpdateFriend(ctx context.Context, friend *model_struct.LocalFri
 	tempLocalFriend := temp_struct.LocalFriend{
 		OwnerUserID:    friend.OwnerUserID,
 		FriendUserID:   friend.FriendUserID,
-		Remark:         friend.Remark,
-		CreateTime:     friend.CreateTime,
+		Remark:          friend.Remark,
+		FriendFirstName: friend.FriendFirstName,
+		FriendLastName:  friend.FriendLastName,
+		CreateTime:      friend.CreateTime,
 		AddSource:      friend.AddSource,
 		OperatorUserID: friend.OperatorUserID,
 		Nickname:       friend.Nickname,

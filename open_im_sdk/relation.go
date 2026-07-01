@@ -56,6 +56,11 @@ func UpdateFriends(callback open_im_sdk_callback.Base, operationID string, req s
 	call(callback, operationID, UserForSDK.Relation().UpdateFriends, req)
 }
 
+// SetFriendName sets the owner's custom firstName/lastName for a friend; req is JSON (SetFriendNameReq).
+func SetFriendName(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Relation().SetFriendName, req)
+}
+
 func DeleteFriend(callback open_im_sdk_callback.Base, operationID string, friendUserID string) {
 	call(callback, operationID, UserForSDK.Relation().DeleteFriend, friendUserID)
 }

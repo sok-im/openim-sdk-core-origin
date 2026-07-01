@@ -85,6 +85,11 @@ func (r *Relation) updateFriends(ctx context.Context, req *relation.UpdateFriend
 	return api.UpdateFriends.Execute(ctx, req)
 }
 
+func (r *Relation) setFriendName(ctx context.Context, req *relation.SetFriendNameReq) error {
+	req.OwnerUserID = r.loginUserID
+	return api.SetFriendName.Execute(ctx, req)
+}
+
 func (r *Relation) addBlack(ctx context.Context, req *relation.AddBlackReq) error {
 	req.OwnerUserID = r.loginUserID
 	return api.AddBlack.Execute(ctx, req)

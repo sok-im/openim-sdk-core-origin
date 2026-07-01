@@ -447,6 +447,23 @@ func (r *Relation) UpdateFriends(ctx context.Context, req *relation.UpdateFriend
 	return r.IncrSyncFriends(ctx)
 }
 
+// SetFriendName sets the owner's custom firstName/lastName for a friend and syncs local data.
+func (r *Relation) SetFriendName(ctx context.Context, req *relation.SetFriendNameReq) error {
+	req.OwnerUserID = r.loginUserID
+	if err := r.setFriendName(ctx, req); err != nil {
+		return err
+	}
+
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+
+	if err := r.IncrSyncFriends(ctx); err != nil {
+		return err
+	}
+	r.syncConversationShowNameForFriend(ctx, req.FriendUserID, "")
+	return nil
+}
+
 func (r *Relation) GetFriendApplicationUnhandledCount(ctx context.Context, req *sdk.GetSelfUnhandledApplyCountReq) (int32, error) {
 	return r.getSelfUnhandledApplyCount(ctx, req.Time)
 }

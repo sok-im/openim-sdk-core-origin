@@ -25,13 +25,15 @@ func ServerFriendRequestToLocalFriendRequest(info *sdkws.FriendRequest) *model_s
 
 func ServerFriendToLocalFriend(info *sdkws.FriendInfo) *model_struct.LocalFriend {
 	local := &model_struct.LocalFriend{
-		OwnerUserID:    info.OwnerUserID,
-		Remark:         info.Remark,
-		CreateTime:     info.CreateTime,
-		AddSource:      info.AddSource,
-		OperatorUserID: info.OperatorUserID,
-		Ex:             info.Ex,
-		IsPinned:       info.IsPinned,
+		OwnerUserID:     info.OwnerUserID,
+		Remark:          info.Remark,
+		FriendFirstName: info.FriendFirstName,
+		FriendLastName:  info.FriendLastName,
+		CreateTime:      info.CreateTime,
+		AddSource:       info.AddSource,
+		OperatorUserID:  info.OperatorUserID,
+		Ex:              info.Ex,
+		IsPinned:        info.IsPinned,
 	}
 	if info.FriendUser != nil {
 		local.FriendUserID = info.FriendUser.UserID

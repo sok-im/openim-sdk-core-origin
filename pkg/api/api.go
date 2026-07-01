@@ -62,6 +62,7 @@ var (
 	GetDesignatedFriends         = newApi[relation.GetDesignatedFriendsReq, relation.GetDesignatedFriendsResp]("/friend/get_designated_friends")
 	AddFriendResponse            = newApi[relation.RespondFriendApplyReq, relation.RespondFriendApplyResp]("/friend/add_friend_response")
 	SetFriendRemark              = newApi[relation.SetFriendRemarkReq, relation.SetFriendRemarkResp]("/friend/set_friend_remark")
+	SetFriendName                = newApi[relation.SetFriendNameReq, relation.SetFriendNameResp]("/friend/set_friend_name")
 	UpdateFriends                = newApi[relation.UpdateFriendsReq, relation.UpdateFriendsResp]("/friend/update_friends")
 	GetIncrementalFriends        = newApi[relation.GetIncrementalFriendsReq, relation.GetIncrementalFriendsResp]("/friend/get_incremental_friends")
 	GetFullFriendUserIDs         = newApi[relation.GetFullFriendUserIDsReq, relation.GetFullFriendUserIDsResp]("/friend/get_full_friend_user_ids")

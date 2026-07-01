@@ -26,8 +26,10 @@ import (
 type LocalFriend struct {
 	OwnerUserID    string `gorm:"column:owner_user_id;primary_key;type:varchar(64)" json:"ownerUserID"`
 	FriendUserID   string `gorm:"column:friend_user_id;primary_key;type:varchar(64)" json:"userID"`
-	Remark         string `gorm:"column:remark;type:varchar(255)" json:"remark"`
-	CreateTime     int64  `gorm:"column:create_time" json:"createTime"`
+	Remark          string `gorm:"column:remark;type:varchar(255)" json:"remark"`
+	FriendFirstName string `gorm:"column:friend_first_name;type:varchar(255)" json:"friendFirstName"`
+	FriendLastName  string `gorm:"column:friend_last_name;type:varchar(255)" json:"friendLastName"`
+	CreateTime      int64  `gorm:"column:create_time" json:"createTime"`
 	AddSource      int32  `gorm:"column:add_source" json:"addSource"`
 	OperatorUserID string `gorm:"column:operator_user_id;type:varchar(64)" json:"operatorUserID"`
 	Nickname       string `gorm:"column:name;type:varchar;type:varchar(255)" json:"nickname"`
@@ -56,13 +58,16 @@ func (u *LocalUser) DisplayName() string {
 }
 
 // ConversationShowName is the single-chat session list title for this friend:
-// remark, else firstName+lastName (trimmed), else nickname.
+// remark, else owner-set friendFirstName+friendLastName, else profile firstName+lastName, else nickname.
 func (f *LocalFriend) ConversationShowName() string {
 	if f == nil {
 		return ""
 	}
 	if f.Remark != "" {
 		return f.Remark
+	}
+	if name := UserDisplayName(f.FriendFirstName, f.FriendLastName, ""); name != "" {
+		return name
 	}
 	return UserDisplayName(f.FirstName, f.LastName, f.Nickname)
 }

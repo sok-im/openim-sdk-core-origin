@@ -188,13 +188,21 @@ OPENIM_CORE_GIT_COMMIT ?= $(shell git -C "$(ROOT_DIR)" rev-parse --short HEAD 2>
 OPENIM_CORE_BUILD_STAMP ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 OPENIM_LDFLAGS_VERSION := -X 'github.com/openimsdk/openim-sdk-core/v3/version.GitCommit=$(OPENIM_CORE_GIT_COMMIT)' -X 'github.com/openimsdk/openim-sdk-core/v3/version.BuildStamp=$(OPENIM_CORE_BUILD_STAMP)'
 
+# x86_64 Go under Rosetta on Apple Silicon can crash during gomobile/gobind (macOS 14.5+).
+UNAME_M := $(shell uname -m)
+GOHOST_ARCH := $(shell go env GOHOSTARCH 2>/dev/null)
+GOMOBILE_ENV :=
+ifneq ($(UNAME_M),$(GOHOST_ARCH))
+GOMOBILE_ENV := GODEBUG=asyncpreemptoff=1
+endif
+
 ## ios: Build the iOS framework
 .PHONY: ios
 ios:
 	go get golang.org/x/mobile
 	rm -rf build/ open_im_sdk/t_friend_sdk.go open_im_sdk/t_group_sdk.go  open_im_sdk/ws_wrapper/
 	@echo "openim-sdk-core xcframework: git=$(OPENIM_CORE_GIT_COMMIT) stamp=$(OPENIM_CORE_BUILD_STAMP) dirty=$(shell git diff --quiet 2>/dev/null && echo no || echo YES)"
-	GOARCH=arm64 gomobile bind -v -trimpath -ldflags="-s -w $(OPENIM_LDFLAGS_VERSION)" -o build/OpenIMCore.xcframework -target=ios ./open_im_sdk/ ./open_im_sdk_callback/
+	$(GOMOBILE_ENV) gomobile bind -v -trimpath -ldflags="-s -w $(OPENIM_LDFLAGS_VERSION)" -o build/OpenIMCore.xcframework -target=ios ./open_im_sdk/ ./open_im_sdk_callback/
 
 ## android: Build the Android library
 # Note: to build an AAR on Windows, gomobile, Android Studio, and the NDK must be installed.
@@ -205,7 +213,7 @@ ios:
 android:
 	go get golang.org/x/mobile/bind
 	@echo "openim-sdk-core AAR: git=$(OPENIM_CORE_GIT_COMMIT) stamp=$(OPENIM_CORE_BUILD_STAMP) dirty=$(shell git diff --quiet 2>/dev/null && echo no || echo YES)"
-	gomobile bind -v -trimpath -ldflags="-s -w $(OPENIM_LDFLAGS_VERSION)" -o ./open_im_sdk.aar -target=android -androidapi 21 ./open_im_sdk/ ./open_im_sdk_callback/
+	$(GOMOBILE_ENV) gomobile bind -v -trimpath -ldflags="-s -w $(OPENIM_LDFLAGS_VERSION)" -o ./open_im_sdk.aar -target=android -androidapi 21 ./open_im_sdk/ ./open_im_sdk_callback/
 	@test -f ./open_im_sdk.aar || (echo "error: ./open_im_sdk.aar 未生成" >&2 && exit 1)
 	@test -f ./open_im_sdk-sources.jar || (echo "error: ./open_im_sdk-sources.jar 未生成（请升级 golang.org/x/mobile/cmd/gomobile，bind 应与 AAR 同目录产出 -sources.jar）" >&2 && exit 1)
 	@echo "Android 产物已就绪: open_im_sdk.aar + open_im_sdk-sources.jar"

@@ -250,6 +250,7 @@ func registerFunc() {
 	js.Global().Set("signalingInvite", js.FuncOf(wrapperSignaling.SignalingInvite))
 	js.Global().Set("signalingInviteInGroup", js.FuncOf(wrapperSignaling.SignalingInviteInGroup))
 	js.Global().Set("signalingAccept", js.FuncOf(wrapperSignaling.SignalingAccept))
+	js.Global().Set("signalingJoin", js.FuncOf(wrapperSignaling.SignalingJoin))
 	js.Global().Set("signalingReject", js.FuncOf(wrapperSignaling.SignalingReject))
 	js.Global().Set("signalingCancel", js.FuncOf(wrapperSignaling.SignalingCancel))
 	js.Global().Set("signalingTimeout", js.FuncOf(wrapperSignaling.SignalingTimeout))

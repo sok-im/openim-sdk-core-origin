@@ -27,6 +27,15 @@ type ServiceNotificationContent struct {
 	SubType    int32  `json:"subType,omitempty"`
 }
 
+// WalletActionNotificationContent 红包/转账动作通知（领取、接收、过期等文案提示）。
+type WalletActionNotificationContent struct {
+	Text           string `json:"text"`
+	BizID          string `json:"bizID,omitempty"`
+	DetailURL      string `json:"detailURL,omitempty"`
+	SenderUserID   string `json:"senderUserID,omitempty"`
+	ReceiverUserID string `json:"receiverUserID,omitempty"`
+}
+
 // PaymentNotificationContent SOK 钱包通知卡片内容。
 type PaymentNotificationContent struct {
 	Title           string                     `json:"title"`

@@ -860,6 +860,60 @@ func (c *Conversation) SendPaymentNotification(ctx context.Context, req *api.Sen
 	return c.sendPaymentNotificationToServer(ctx, req)
 }
 
+func (c *Conversation) NotifyRedPacketClaimed(ctx context.Context, req *api.WalletDualPartyNotifyReq) (*api.WalletNotifyResp, error) {
+	if err := validateWalletDualPartyNotifyReq(req); err != nil {
+		return nil, err
+	}
+	return api.NotifyRedPacketClaimed.Invoke(ctx, req)
+}
+
+func (c *Conversation) NotifyTransferReceived(ctx context.Context, req *api.WalletDualPartyNotifyReq) (*api.WalletNotifyResp, error) {
+	if err := validateWalletDualPartyNotifyReq(req); err != nil {
+		return nil, err
+	}
+	return api.NotifyTransferReceived.Invoke(ctx, req)
+}
+
+func (c *Conversation) NotifyRedPacketExpired(ctx context.Context, req *api.WalletExpiredNotifyReq) (*api.WalletNotifyResp, error) {
+	if err := validateWalletExpiredNotifyReq(req); err != nil {
+		return nil, err
+	}
+	return api.NotifyRedPacketExpired.Invoke(ctx, req)
+}
+
+func (c *Conversation) NotifyTransferExpired(ctx context.Context, req *api.WalletExpiredNotifyReq) (*api.WalletNotifyResp, error) {
+	if err := validateWalletExpiredNotifyReq(req); err != nil {
+		return nil, err
+	}
+	return api.NotifyTransferExpired.Invoke(ctx, req)
+}
+
+func validateWalletDualPartyNotifyReq(req *api.WalletDualPartyNotifyReq) error {
+	if req == nil {
+		return sdkerrs.ErrArgs.WrapMsg("req is nil")
+	}
+	if req.SenderUserID == "" || req.ReceiverUserID == "" || req.BizID == "" {
+		return sdkerrs.ErrArgs.WrapMsg("senderUserID, receiverUserID and bizID are required")
+	}
+	if req.ReceiverText == "" || req.SenderText == "" {
+		return sdkerrs.ErrArgs.WrapMsg("receiverText and senderText are required")
+	}
+	return nil
+}
+
+func validateWalletExpiredNotifyReq(req *api.WalletExpiredNotifyReq) error {
+	if req == nil {
+		return sdkerrs.ErrArgs.WrapMsg("req is nil")
+	}
+	if req.SenderUserID == "" || req.BizID == "" {
+		return sdkerrs.ErrArgs.WrapMsg("senderUserID and bizID are required")
+	}
+	if req.Text == "" {
+		return sdkerrs.ErrArgs.WrapMsg("text is required")
+	}
+	return nil
+}
+
 func (c *Conversation) TypingStatusUpdate(ctx context.Context, recvID, msgTip string) error {
 	return c.typingStatusUpdate(ctx, recvID, msgTip)
 }

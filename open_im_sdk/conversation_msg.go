@@ -174,6 +174,26 @@ func SendPaymentNotification(callback open_im_sdk_callback.Base, operationID str
 	call(callback, operationID, UserForSDK.Conversation().SendPaymentNotification, req)
 }
 
+// NotifyRedPacketClaimed 通知红包已被领取；req 为 JSON，字段见 api.WalletDualPartyNotifyReq。
+func NotifyRedPacketClaimed(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().NotifyRedPacketClaimed, req)
+}
+
+// NotifyTransferReceived 通知转账已被接收；req 为 JSON，字段见 api.WalletDualPartyNotifyReq。
+func NotifyTransferReceived(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().NotifyTransferReceived, req)
+}
+
+// NotifyRedPacketExpired 通知红包已过期；req 为 JSON，字段见 api.WalletExpiredNotifyReq。
+func NotifyRedPacketExpired(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().NotifyRedPacketExpired, req)
+}
+
+// NotifyTransferExpired 通知转账已过期；req 为 JSON，字段见 api.WalletExpiredNotifyReq。
+func NotifyTransferExpired(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().NotifyTransferExpired, req)
+}
+
 func TypingStatusUpdate(callback open_im_sdk_callback.Base, operationID string, recvID string, msgTip string) {
 	call(callback, operationID, UserForSDK.Conversation().TypingStatusUpdate, recvID, msgTip)
 }

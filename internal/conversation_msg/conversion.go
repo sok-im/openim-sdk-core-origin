@@ -168,6 +168,13 @@ func parseNotificationDetail(msg *sdk_struct.MsgStruct) error {
 			return err
 		}
 		msg.PaymentNotificationElem = &detail
+	case constant.RedPacketClaimNotification, constant.TransferReceiveNotification,
+		constant.RedPacketExpiredNotification, constant.TransferExpiredNotification:
+		detail := sdk_struct.WalletActionNotificationContent{}
+		if err := utils.JsonStringToStruct(notification.Detail, &detail); err != nil {
+			return err
+		}
+		msg.WalletActionNotificationElem = &detail
 	}
 	return nil
 }
@@ -243,7 +250,9 @@ func msgHandleByContentType(msg *sdk_struct.MsgStruct) (err error) {
 		t := sdk_struct.CardElem{}
 		err = utils.JsonStringToStruct(msg.Content, &t)
 		msg.CardElem = &t
-	case constant.ServiceNotification, constant.PaymentNotification, constant.OANotification:
+	case constant.ServiceNotification, constant.PaymentNotification, constant.OANotification,
+		constant.RedPacketClaimNotification, constant.TransferReceiveNotification,
+		constant.RedPacketExpiredNotification, constant.TransferExpiredNotification:
 		err = parseNotificationDetail(msg)
 	default:
 		t := sdk_struct.NotificationElem{}

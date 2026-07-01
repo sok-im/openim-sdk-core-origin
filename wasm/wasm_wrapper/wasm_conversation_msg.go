@@ -225,6 +225,26 @@ func (w *WrapperConMsg) SendPaymentNotification(_ js.Value, args []js.Value) int
 	return event_listener.NewCaller(open_im_sdk.SendPaymentNotification, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperConMsg) NotifyRedPacketClaimed(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.NotifyRedPacketClaimed, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperConMsg) NotifyTransferReceived(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.NotifyTransferReceived, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperConMsg) NotifyRedPacketExpired(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.NotifyRedPacketExpired, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperConMsg) NotifyTransferExpired(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.NotifyTransferExpired, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperConMsg) TypingStatusUpdate(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.TypingStatusUpdate, callback, &args).AsyncCallWithCallback()

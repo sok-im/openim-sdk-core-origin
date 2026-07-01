@@ -238,6 +238,7 @@ type MsgStruct struct {
 	NotificationElem          *NotificationElem          `json:"notificationElem,omitempty"`
 	ServiceNotificationElem   *ServiceNotificationContent `json:"serviceNotificationElem,omitempty"`
 	PaymentNotificationElem   *PaymentNotificationContent `json:"paymentNotificationElem,omitempty"`
+	WalletActionNotificationElem *WalletActionNotificationContent `json:"walletActionNotificationElem,omitempty"`
 	AdvancedTextElem          *AdvancedTextElem          `json:"advancedTextElem,omitempty"`
 	TypingElem       *TypingElem            `json:"typingElem,omitempty"`
 	AttachedInfoElem *AttachedInfoElem      `json:"attachedInfoElem,omitempty"`

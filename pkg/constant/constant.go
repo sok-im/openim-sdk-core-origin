@@ -116,6 +116,10 @@ const (
 	BusinessNotification = 2001
 	ServiceNotification  = 2002
 	PaymentNotification  = 2003
+	RedPacketClaimNotification   = 2004
+	TransferReceiveNotification    = 2005
+	RedPacketExpiredNotification   = 2006
+	TransferExpiredNotification    = 2007
 
 	RevokeNotification = 2101
 

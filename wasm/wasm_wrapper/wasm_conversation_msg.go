@@ -245,6 +245,11 @@ func (w *WrapperConMsg) NotifyTransferExpired(_ js.Value, args []js.Value) inter
 	return event_listener.NewCaller(open_im_sdk.NotifyTransferExpired, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperConMsg) GetLinkPreview(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetLinkPreview, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperConMsg) TypingStatusUpdate(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.TypingStatusUpdate, callback, &args).AsyncCallWithCallback()

@@ -111,6 +111,7 @@ func registerFunc() {
 	js.Global().Set("notifyTransferReceived", js.FuncOf(wrapperConMsg.NotifyTransferReceived))
 	js.Global().Set("notifyRedPacketExpired", js.FuncOf(wrapperConMsg.NotifyRedPacketExpired))
 	js.Global().Set("notifyTransferExpired", js.FuncOf(wrapperConMsg.NotifyTransferExpired))
+	js.Global().Set("getLinkPreview", js.FuncOf(wrapperConMsg.GetLinkPreview))
 	js.Global().Set("typingStatusUpdate", js.FuncOf(wrapperConMsg.TypingStatusUpdate))
 	js.Global().Set("deleteMessageFromLocalStorage", js.FuncOf(wrapperConMsg.DeleteMessageFromLocalStorage))
 	js.Global().Set("deleteMessage", js.FuncOf(wrapperConMsg.DeleteMessage))

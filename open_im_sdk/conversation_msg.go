@@ -194,6 +194,11 @@ func NotifyTransferExpired(callback open_im_sdk_callback.Base, operationID strin
 	call(callback, operationID, UserForSDK.Conversation().NotifyTransferExpired, req)
 }
 
+// GetLinkPreview 获取链接预览；req 为 JSON，字段见 api.LinkPreviewReq（url 必填）。
+func GetLinkPreview(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().GetLinkPreview, req)
+}
+
 func TypingStatusUpdate(callback open_im_sdk_callback.Base, operationID string, recvID string, msgTip string) {
 	call(callback, operationID, UserForSDK.Conversation().TypingStatusUpdate, recvID, msgTip)
 }

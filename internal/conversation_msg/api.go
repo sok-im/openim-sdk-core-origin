@@ -888,6 +888,17 @@ func (c *Conversation) NotifyTransferExpired(ctx context.Context, req *api.Walle
 	return api.NotifyTransferExpired.Invoke(ctx, req)
 }
 
+// GetLinkPreview fetches Open Graph / meta preview for a URL via POST /link/preview.
+func (c *Conversation) GetLinkPreview(ctx context.Context, req *api.LinkPreviewReq) (*api.LinkPreviewResp, error) {
+	if req == nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg("req is nil")
+	}
+	if strings.TrimSpace(req.URL) == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("url is required")
+	}
+	return api.LinkPreview.Invoke(ctx, req)
+}
+
 func validateWalletDualPartyNotifyReq(req *api.WalletDualPartyNotifyReq) error {
 	if req == nil {
 		return sdkerrs.ErrArgs.WrapMsg("req is nil")

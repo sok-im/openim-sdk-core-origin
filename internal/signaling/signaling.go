@@ -502,6 +502,8 @@ func (s *Signaling) handleSignalingNotification(ctx context.Context, msg *sdkws.
 		return s.handleHungUp(ctx, listener, payload.HungUp)
 	case *rtc.SignalReq_Timeout:
 		return s.handleTimeout(ctx, listener, payload.Timeout)
+	case *rtc.SignalReq_Join:
+		return s.handleJoin(ctx, listener, payload.Join)
 	default:
 		log.ZWarn(ctx, "unhandled signaling payload type", nil, "type", fmt.Sprintf("%T", signalReq.Payload))
 		return nil
@@ -666,6 +668,35 @@ func (s *Signaling) handleHungUp(ctx context.Context, listener open_im_sdk_callb
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation,
 			"status", status, "action", constant.SignalCallActionHungUp, "callDurationSecs", callDurationSecs)
 	}
+	return nil
+}
+
+// handleJoin 通话中成员收到新参与者加入通知（群聊主动加入 ongoing call）。
+func (s *Signaling) handleJoin(ctx context.Context, listener open_im_sdk_callback.OnSignalingListener, req *rtc.SignalJoinReq) error {
+	if req.Invitation == nil {
+		return nil
+	}
+	// 加入者本端已通过 Join() 拿到 token，服务端不会推送给自己；此处兜底跳过。
+	if req.UserID == s.loginUserID {
+		return nil
+	}
+
+	participants := make([]*rtc.ParticipantMetaData, 0, 1)
+	if req.Participant != nil {
+		participants = append(participants, req.Participant)
+	} else if req.UserID != "" {
+		participants = append(participants, &rtc.ParticipantMetaData{
+			UserInfo: &sdkws.PublicUserInfo{UserID: req.UserID},
+		})
+	}
+
+	connectedReq := &rtc.SignalOnRoomParticipantConnectedReq{
+		Invitation:  req.Invitation,
+		Participant: participants,
+		GroupID:     req.Invitation.GroupID,
+	}
+	log.ZDebug(ctx, "OnRoomParticipantConnected (join)", "req", connectedReq)
+	listener.OnRoomParticipantConnected(jsonutil.StructToJsonString(connectedReq))
 	return nil
 }
 

@@ -175,6 +175,30 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 	return &rtc.SignalAcceptResp{}, nil
 }
 
+// Join 群成员主动加入进行中的群通话（无需事先被邀请）。
+func (s *Signaling) Join(ctx context.Context, signalJoinReq *rtc.SignalJoinReq) (*rtc.SignalJoinResp, error) {
+	signalJoinReq.UserID = s.loginUserID
+	signalJoinReq.OpUserPlatformID = s.platformID
+
+	req := &rtc.SignalReq{
+		Payload: &rtc.SignalReq_Join{
+			Join: signalJoinReq,
+		},
+	}
+	resp, err := s.signalingRequest(ctx, req)
+	if err != nil {
+		log.ZError(ctx, "Join failed", err, "roomID", signalJoinReq.Invitation.GetRoomID())
+		return nil, err
+	}
+
+	log.ZInfo(ctx, "Join success", "req", req, "resp", resp)
+
+	if joinResp := resp.GetJoin(); joinResp != nil {
+		return joinResp, nil
+	}
+	return &rtc.SignalJoinResp{}, nil
+}
+
 // Reject 被叫侧拒接：取消超时定时器，写未拨通记录（direction 由 persist 内按本端角色推导）。
 func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejectReq) error {
 	signalRejectReq.UserID = s.loginUserID

@@ -14,6 +14,10 @@ func SignalingAccept(callback open_im_sdk_callback.Base, operationID string, sig
 	call(callback, operationID, UserForSDK.Signaling().Accept, signalAcceptReq)
 }
 
+func SignalingJoin(callback open_im_sdk_callback.Base, operationID string, signalJoinReq string) {
+	call(callback, operationID, UserForSDK.Signaling().Join, signalJoinReq)
+}
+
 func SignalingReject(callback open_im_sdk_callback.Base, operationID string, signalRejectReq string) {
 	call(callback, operationID, UserForSDK.Signaling().Reject, signalRejectReq)
 }

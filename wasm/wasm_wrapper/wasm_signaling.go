@@ -48,6 +48,11 @@ func (w *WrapperSignaling) SignalingAccept(_ js.Value, args []js.Value) interfac
 	return event_listener.NewCaller(open_im_sdk.SignalingAccept, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperSignaling) SignalingJoin(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SignalingJoin, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperSignaling) SignalingReject(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SignalingReject, callback, &args).AsyncCallWithCallback()

@@ -140,3 +140,21 @@ func (i *SignalCallRecords) UpdateSignalCallRecordCalleeMatchText(ctx context.Co
 	_, err := exec.Exec(sID, calleeMatchText, i.loginUserID)
 	return err
 }
+
+func (i *SignalCallRecords) GetSignalCallRecordDates(ctx context.Context, startTime, endTime int64) ([]string, error) {
+	gList, err := exec.Exec(startTime, endTime, i.loginUserID)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := gList.(string); ok {
+		if v == "" {
+			return nil, nil
+		}
+		var result []string
+		if err := utils.JsonStringToStruct(v, &result); err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return nil, exec.ErrType
+}

@@ -199,6 +199,28 @@ func (s *Signaling) Join(ctx context.Context, signalJoinReq *rtc.SignalJoinReq) 
 	return &rtc.SignalJoinResp{}, nil
 }
 
+// Heartbeat 通话进行中周期性上报，请求服务端为本端刷新通话状态 TTL。
+// 服务端通话状态（Redis）默认 1 分钟过期，若通话时长超过该窗口且不续期，
+// 用户会被误判为空闲，第三方即可向该用户发起新呼叫。
+// 通话双方需各自调用本方法；服务端只续期发送方自己的状态，不会替对端续期。
+// 建议客户端在接通后按小于服务端 TTL 的间隔（如 20~30s）循环调用。
+func (s *Signaling) Heartbeat(ctx context.Context, roomID string) error {
+	req := &rtc.SignalReq{
+		Payload: &rtc.SignalReq_Heartbeat{
+			Heartbeat: &rtc.SignalHeartbeatReq{
+				UserID: s.loginUserID,
+				RoomID: roomID,
+			},
+		},
+	}
+	if _, err := s.signalingRequest(ctx, req); err != nil {
+		log.ZWarn(ctx, "Heartbeat failed", err, "roomID", roomID)
+		return err
+	}
+	log.ZDebug(ctx, "Heartbeat success", "roomID", roomID)
+	return nil
+}
+
 // Reject 被叫侧拒接：取消超时定时器，写未拨通记录（direction 由 persist 内按本端角色推导）。
 func (s *Signaling) Reject(ctx context.Context, signalRejectReq *rtc.SignalRejectReq) error {
 	signalRejectReq.UserID = s.loginUserID

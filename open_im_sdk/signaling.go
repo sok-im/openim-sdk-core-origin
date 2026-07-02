@@ -34,6 +34,12 @@ func SignalingHungUp(callback open_im_sdk_callback.Base, operationID string, sig
 	call(callback, operationID, UserForSDK.Signaling().HungUp, signalHungUpReq)
 }
 
+// SignalingHeartbeat 通话进行中周期性调用，为本端刷新服务端通话状态 TTL，
+// 避免长通话（超过服务端默认 1 分钟过期窗口）被误判为空闲。参数为通话 roomID。
+func SignalingHeartbeat(callback open_im_sdk_callback.Base, operationID string, roomID string) {
+	call(callback, operationID, UserForSDK.Signaling().Heartbeat, roomID)
+}
+
 func SignalingGetTokenByRoomID(callback open_im_sdk_callback.Base, operationID string, signalGetTokenByRoomIDReq string) {
 	call(callback, operationID, UserForSDK.Signaling().GetTokenByRoomID, signalGetTokenByRoomIDReq)
 }

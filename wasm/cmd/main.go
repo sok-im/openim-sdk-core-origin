@@ -255,6 +255,7 @@ func registerFunc() {
 	js.Global().Set("signalingCancel", js.FuncOf(wrapperSignaling.SignalingCancel))
 	js.Global().Set("signalingTimeout", js.FuncOf(wrapperSignaling.SignalingTimeout))
 	js.Global().Set("signalingHungUp", js.FuncOf(wrapperSignaling.SignalingHungUp))
+	js.Global().Set("signalingHeartbeat", js.FuncOf(wrapperSignaling.SignalingHeartbeat))
 	js.Global().Set("signalingGetRoomByGroupID", js.FuncOf(wrapperSignaling.SignalingGetRoomByGroupID))
 	js.Global().Set("signalingGetTokenByRoomID", js.FuncOf(wrapperSignaling.SignalingGetTokenByRoomID))
 	js.Global().Set("signalingGetInvitationRecords", js.FuncOf(wrapperSignaling.SignalingGetInvitationRecords))

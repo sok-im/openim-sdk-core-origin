@@ -80,31 +80,31 @@ type LocalPartConversation struct {
 }
 
 type LocalGroup struct {
-	GroupID                string `json:"groupID,omitempty"`
-	GroupName              string `json:"groupName,omitempty"`
-	Notification           string `json:"notification,omitempty"`
-	Introduction           string `json:"introduction,omitempty"`
-	FaceURL                string `json:"faceURL,omitempty"`
-	CreateTime             uint32 `json:"createTime,omitempty"`
-	Status                 int32  `json:"status,omitempty"`
-	CreatorUserID          string `json:"creatorUserID,omitempty"`
-	GroupType              int32  `json:"groupType,omitempty"`
-	OwnerUserID            string `json:"ownerUserID,omitempty"`
-	MemberCount            int32  `json:"memberCount,omitempty"`
-	Ex                     string `json:"ex,omitempty"`
-	AttachedInfo           string `json:"attachedInfo,omitempty"`
-	NeedVerification       int32  `json:"needVerification,omitempty"`
-	LookMemberInfo         int32  `json:"lookMemberInfo,omitempty"`
-	ApplyMemberFriend      int32  `json:"applyMemberFriend,omitempty"`
-	NotificationUpdateTime uint32 `json:"notificationUpdateTime,omitempty"`
-	NotificationUserID     string `json:"notificationUserID,omitempty"`
-	AllowSendMsg           int32  `json:"allowSendMsg,omitempty"`
-	AllowPinMsg            int32  `json:"allowPinMsg,omitempty"`
-	AllowAddMember         int32  `json:"allowAddMember,omitempty"`
-	AllowEditGroupInfo     int32  `json:"allowEditGroupInfo,omitempty"`
-	MsgBurnDuration        int32  `json:"msgBurnDuration,omitempty"`
-	AllowBurn              int32                  `json:"allowBurn,omitempty"`
-	EnableInviteLink       int32                  `json:"enableInviteLink,omitempty"`
+	GroupID                string                `json:"groupID,omitempty"`
+	GroupName              string                `json:"groupName,omitempty"`
+	Notification           string                `json:"notification,omitempty"`
+	Introduction           string                `json:"introduction,omitempty"`
+	FaceURL                string                `json:"faceURL,omitempty"`
+	CreateTime             uint32                `json:"createTime,omitempty"`
+	Status                 int32                 `json:"status,omitempty"`
+	CreatorUserID          string                `json:"creatorUserID,omitempty"`
+	GroupType              int32                 `json:"groupType,omitempty"`
+	OwnerUserID            string                `json:"ownerUserID,omitempty"`
+	MemberCount            int32                 `json:"memberCount,omitempty"`
+	Ex                     string                `json:"ex,omitempty"`
+	AttachedInfo           string                `json:"attachedInfo,omitempty"`
+	NeedVerification       int32                 `json:"needVerification,omitempty"`
+	LookMemberInfo         int32                 `json:"lookMemberInfo,omitempty"`
+	ApplyMemberFriend      int32                 `json:"applyMemberFriend,omitempty"`
+	NotificationUpdateTime uint32                `json:"notificationUpdateTime,omitempty"`
+	NotificationUserID     string                `json:"notificationUserID,omitempty"`
+	AllowSendMsg           int32                 `json:"allowSendMsg,omitempty"`
+	AllowPinMsg            int32                 `json:"allowPinMsg,omitempty"`
+	AllowAddMember         int32                 `json:"allowAddMember,omitempty"`
+	AllowEditGroupInfo     int32                 `json:"allowEditGroupInfo,omitempty"`
+	MsgBurnDuration        int32                 `json:"msgBurnDuration,omitempty"`
+	AllowBurn              int32                 `json:"allowBurn,omitempty"`
+	EnableInviteLink       int32                 `json:"enableInviteLink,omitempty"`
 	InviteLink             *LocalGroupInviteLink `json:"inviteLink,omitempty"`
 }
 
@@ -150,21 +150,22 @@ type LocalBlack struct {
 }
 
 type LocalFriend struct {
-	OwnerUserID    string `json:"ownerUserID,omitempty"`
-	FriendUserID   string `json:"friendUserID,omitempty"`
+	OwnerUserID     string `json:"ownerUserID,omitempty"`
+	FriendUserID    string `json:"friendUserID,omitempty"`
 	Remark          string `json:"remark,omitempty"`
+	Note            string `json:"note,omitempty"`
 	FriendFirstName string `json:"friendFirstName,omitempty"`
 	FriendLastName  string `json:"friendLastName,omitempty"`
 	CreateTime      int64  `json:"createTime,omitempty"`
-	AddSource      int32  `json:"addSource,omitempty"`
-	OperatorUserID string `json:"operatorUserID,omitempty"`
-	Nickname       string `json:"nickname,omitempty"`
-	FirstName      string `json:"firstName,omitempty"`
-	LastName       string `json:"lastName,omitempty"`
-	FaceURL        string `json:"faceURL,omitempty"`
-	Ex             string `json:"ex,omitempty"`
-	AttachedInfo   string `json:"attachedInfo,omitempty"`
-	IsPinned       bool   `json:"isPinned,omitempty"`
+	AddSource       int32  `json:"addSource,omitempty"`
+	OperatorUserID  string `json:"operatorUserID,omitempty"`
+	Nickname        string `json:"nickname,omitempty"`
+	FirstName       string `json:"firstName,omitempty"`
+	LastName        string `json:"lastName,omitempty"`
+	FaceURL         string `json:"faceURL,omitempty"`
+	Ex              string `json:"ex,omitempty"`
+	AttachedInfo    string `json:"attachedInfo,omitempty"`
+	IsPinned        bool   `json:"isPinned,omitempty"`
 }
 
 type LocalUser struct {

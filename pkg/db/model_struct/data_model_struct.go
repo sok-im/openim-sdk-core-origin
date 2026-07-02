@@ -27,6 +27,7 @@ type LocalFriend struct {
 	OwnerUserID    string `gorm:"column:owner_user_id;primary_key;type:varchar(64)" json:"ownerUserID"`
 	FriendUserID   string `gorm:"column:friend_user_id;primary_key;type:varchar(64)" json:"userID"`
 	Remark          string `gorm:"column:remark;type:varchar(255)" json:"remark"`
+	Note            string `gorm:"column:note;type:varchar(255)" json:"note"`
 	FriendFirstName string `gorm:"column:friend_first_name;type:varchar(255)" json:"friendFirstName"`
 	FriendLastName  string `gorm:"column:friend_last_name;type:varchar(255)" json:"friendLastName"`
 	CreateTime      int64  `gorm:"column:create_time" json:"createTime"`

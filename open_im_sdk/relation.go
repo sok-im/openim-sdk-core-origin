@@ -61,6 +61,12 @@ func SetFriendName(callback open_im_sdk_callback.Base, operationID string, req s
 	call(callback, operationID, UserForSDK.Relation().SetFriendName, req)
 }
 
+// SetFriendNote sets the owner's private note for a friend; req is JSON (relation.SetFriendNoteReq).
+// The note is independent of remark and does not affect the friend's display name.
+func SetFriendNote(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Relation().SetFriendNote, req)
+}
+
 func DeleteFriend(callback open_im_sdk_callback.Base, operationID string, friendUserID string) {
 	call(callback, operationID, UserForSDK.Relation().DeleteFriend, friendUserID)
 }

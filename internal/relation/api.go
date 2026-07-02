@@ -464,6 +464,21 @@ func (r *Relation) SetFriendName(ctx context.Context, req *relation.SetFriendNam
 	return nil
 }
 
+// SetFriendNote sets the owner's private note for a friend and syncs local data.
+// The note is independent of remark and does not affect the friend's display name
+// in conversations or group chats.
+func (r *Relation) SetFriendNote(ctx context.Context, req *relation.SetFriendNoteReq) error {
+	req.OwnerUserID = r.loginUserID
+	if err := r.setFriendNote(ctx, req); err != nil {
+		return err
+	}
+
+	r.relationSyncMutex.Lock()
+	defer r.relationSyncMutex.Unlock()
+
+	return r.IncrSyncFriends(ctx)
+}
+
 func (r *Relation) GetFriendApplicationUnhandledCount(ctx context.Context, req *sdk.GetSelfUnhandledApplyCountReq) (int32, error) {
 	return r.getSelfUnhandledApplyCount(ctx, req.Time)
 }

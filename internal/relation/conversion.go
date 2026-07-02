@@ -27,6 +27,7 @@ func ServerFriendToLocalFriend(info *sdkws.FriendInfo) *model_struct.LocalFriend
 	local := &model_struct.LocalFriend{
 		OwnerUserID:     info.OwnerUserID,
 		Remark:          info.Remark,
+		Note:            info.Note,
 		FriendFirstName: info.FriendFirstName,
 		FriendLastName:  info.FriendLastName,
 		CreateTime:      info.CreateTime,

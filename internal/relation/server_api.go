@@ -90,6 +90,11 @@ func (r *Relation) setFriendName(ctx context.Context, req *relation.SetFriendNam
 	return api.SetFriendName.Execute(ctx, req)
 }
 
+func (r *Relation) setFriendNote(ctx context.Context, req *relation.SetFriendNoteReq) error {
+	req.OwnerUserID = r.loginUserID
+	return api.SetFriendNote.Execute(ctx, req)
+}
+
 func (r *Relation) addBlack(ctx context.Context, req *relation.AddBlackReq) error {
 	req.OwnerUserID = r.loginUserID
 	return api.AddBlack.Execute(ctx, req)

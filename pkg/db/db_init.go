@@ -169,6 +169,10 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 	if err = db.AutoMigrate(
 		&model_struct.LocalAppSDKVersion{},
 		&model_struct.LocalConversationSyncedMaxSeq{},
+		// Run on every startup so additive column changes (e.g. the friend `note`
+		// column) are applied to pre-existing tables. AutoMigrate only adds
+		// missing columns and never drops data, so this is safe for upgrades.
+		&model_struct.LocalFriend{},
 	); err != nil {
 		return err
 	}

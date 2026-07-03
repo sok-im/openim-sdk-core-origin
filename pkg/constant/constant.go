@@ -113,13 +113,15 @@ const (
 	ConversationPrivateChatNotification = 1701
 	ClearConversationNotification       = 1703
 
+	// 钱包动作通知（红包/转账）
+	RedPacketClaimNotification   = 1801
+	TransferReceiveNotification  = 1802
+	RedPacketExpiredNotification = 1803
+	TransferExpiredNotification  = 1804
+
 	BusinessNotification = 2001
 	ServiceNotification  = 2002
 	PaymentNotification  = 2003
-	RedPacketClaimNotification   = 2004
-	TransferReceiveNotification    = 2005
-	RedPacketExpiredNotification   = 2006
-	TransferExpiredNotification    = 2007
 
 	RevokeNotification = 2101
 

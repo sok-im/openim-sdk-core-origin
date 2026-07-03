@@ -262,9 +262,13 @@ func (u *User) GetUsersInfo(ctx context.Context, userIDs []string) ([]*sdk_struc
 		}
 		log.ZDebug(ctx, "GetConversationByUserID", "conversation", conversation)
 
+		// Use ConversationShowName for friends so remark / friendFirstName+friendLastName
+		// take priority over the profile name. Without this, a concurrent GetUsersInfo
+		// call can overwrite the show_name that syncConversationShowNameForFriend just
+		// wrote with the profile firstName+lastName.
 		var showname string
-		if friend, ok := friendMap[userInfo.UserID]; ok && friend.Remark != "" {
-			showname = friend.Remark
+		if friend, ok := friendMap[userInfo.UserID]; ok {
+			showname = friend.ConversationShowName()
 		} else if userInfo.FirstName != "" || userInfo.LastName != "" {
 			showname = userInfo.FirstName + " " + userInfo.LastName
 		} else {

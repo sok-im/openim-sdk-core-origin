@@ -179,14 +179,13 @@ func (r *Relation) syncConversationShowNameForFriend(ctx context.Context, friend
 			"conversationID", conversationID, "friendUserID", friendUserID)
 		return
 	}
-	log.ZInfo(ctx, "syncConversationShowNameForFriend success", "friendUserID", friendUserID, "remark", remark)
+	log.ZInfo(ctx, "syncConversationShowNameForFriend success", "friendUserID", friendUserID, "showName", showName, "conversationID", conversationID)
 	// Notify the conversation list listener so the UI refreshes immediately.
 	_ = common.TriggerCmdUpdateConversation(ctx, common.UpdateConNode{
 		ConID:  conversationID,
 		Action: constant.ConChange,
 		Args:   []string{conversationID},
 	}, r.conversationCh)
-	log.ZInfo(ctx, "syncConversationShowNameForFriend trigger conversation change", "friendUserID", friendUserID, "remark", remark)
 }
 
 func (r *Relation) GetFriendApplicationListAsRecipient(ctx context.Context, req *sdk.GetFriendApplicationListAsRecipientReq) ([]*model_struct.LocalFriendRequest, error) {

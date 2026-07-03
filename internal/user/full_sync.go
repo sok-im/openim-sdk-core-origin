@@ -63,6 +63,15 @@ func (u *User) SyncUserInfo(ctx context.Context, userID string) error {
 	u.UserCache.Store(userID, newUser)
 
 	newShowName := newUser.DisplayName()
+	if friend, err := u.GetFriendInfoByFriendUserID(ctx, userID); err == nil && friend != nil {
+		// Keep profile fields on the friend row current so ConversationShowName's
+		// fallback tier reflects the latest server data.
+		friend.FirstName = newUser.FirstName
+		friend.LastName = newUser.LastName
+		friend.Nickname = newUser.Nickname
+		friend.FaceURL = newUser.FaceURL
+		newShowName = friend.ConversationShowName()
+	}
 	changed := !hasOld ||
 		oldUser.FaceURL != newUser.FaceURL ||
 		oldUser.Nickname != newUser.Nickname ||

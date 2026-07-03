@@ -92,7 +92,15 @@ func (r *Relation) setFriendName(ctx context.Context, req *relation.SetFriendNam
 
 func (r *Relation) setFriendNote(ctx context.Context, req *relation.SetFriendNoteReq) error {
 	req.OwnerUserID = r.loginUserID
-	return api.SetFriendNote.Execute(ctx, req)
+	// /friend/set_note was merged into /friend/set_friend_name; forward as a
+	// note-only SetFriendNameReq so the server applies the correct notification
+	// semantics (FriendsInfoUpdateNotification, no group nickname refresh).
+	note := req.GetNote()
+	return api.SetFriendName.Execute(ctx, &relation.SetFriendNameReq{
+		OwnerUserID:  req.OwnerUserID,
+		FriendUserID: req.FriendUserID,
+		Note:         &note,
+	})
 }
 
 func (r *Relation) addBlack(ctx context.Context, req *relation.AddBlackReq) error {

@@ -448,6 +448,10 @@ func (r *Relation) UpdateFriends(ctx context.Context, req *relation.UpdateFriend
 }
 
 // SetFriendName sets the owner's custom firstName/lastName for a friend and syncs local data.
+// firstName/lastName/note are all optional (proto3 optional): a nil field is left
+// untouched server-side, so a single call can update only the name, only the note,
+// or both. The note is the owner's private remark (independent of remark) and does
+// not affect the friend's display name; passing it here is equivalent to SetFriendNote.
 func (r *Relation) SetFriendName(ctx context.Context, req *relation.SetFriendNameReq) error {
 	req.OwnerUserID = r.loginUserID
 	if err := r.setFriendName(ctx, req); err != nil {

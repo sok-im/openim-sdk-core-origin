@@ -56,13 +56,17 @@ func UpdateFriends(callback open_im_sdk_callback.Base, operationID string, req s
 	call(callback, operationID, UserForSDK.Relation().UpdateFriends, req)
 }
 
-// SetFriendName sets the owner's custom firstName/lastName for a friend; req is JSON (SetFriendNameReq).
+// SetFriendName sets the owner's custom firstName/lastName (and optionally note)
+// for a friend; req is JSON (SetFriendNameReq). firstName/lastName/note are all
+// optional: omit a field to leave it unchanged, e.g. {"friendUserID":"x","note":"vip"}
+// updates only the note. Passing note here is equivalent to calling SetFriendNote.
 func SetFriendName(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Relation().SetFriendName, req)
 }
 
 // SetFriendNote sets the owner's private note for a friend; req is JSON (relation.SetFriendNoteReq).
 // The note is independent of remark and does not affect the friend's display name.
+// Implemented via /friend/set_friend_name (the former /friend/set_note route was merged there).
 func SetFriendNote(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Relation().SetFriendNote, req)
 }

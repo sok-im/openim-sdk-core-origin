@@ -74,6 +74,16 @@ func (w *WrapperFriend) UpdateFriends(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.UpdateFriends, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperFriend) SetFriendName(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetFriendName, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperFriend) SetFriendNote(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetFriendNote, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperFriend) DeleteFriend(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.DeleteFriend, callback, &args).AsyncCallWithCallback()

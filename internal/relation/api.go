@@ -444,7 +444,19 @@ func (r *Relation) UpdateFriends(ctx context.Context, req *relation.UpdateFriend
 	r.relationSyncMutex.Lock()
 	defer r.relationSyncMutex.Unlock()
 
-	return r.IncrSyncFriends(ctx)
+	if err := r.IncrSyncFriends(ctx); err != nil {
+		return err
+	}
+	// remark / friendFirstName / friendLastName all affect the single-chat show_name.
+	// After IncrSyncFriends the local friend row already holds the new values, so pass
+	// "" to let syncConversationShowNameForFriend recompute via ConversationShowName()
+	// (remark > friendFirstName+friendLastName > profile name > nickname).
+	if req.Remark != nil || req.FriendFirstName != nil || req.FriendLastName != nil {
+		for _, friendUserID := range req.FriendUserIDs {
+			r.syncConversationShowNameForFriend(ctx, friendUserID, "")
+		}
+	}
+	return nil
 }
 
 // SetFriendName sets the owner's custom firstName/lastName for a friend and syncs local data.

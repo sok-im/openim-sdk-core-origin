@@ -906,11 +906,8 @@ func (c *Conversation) batchAddFaceURLAndName(ctx context.Context, conversations
 
 			if v, ok := friends[conversation.UserID]; ok {
 				conversation.FaceURL = v.FaceURL
-				if v.Nickname != "" {
-					conversation.ShowName = v.Nickname
-				} else {
-					conversation.ShowName = v.FirstName + " " + v.LastName
-				}
+				// Nickname is precomputed as ConversationShowName() in batchGetUserNameAndFaceURL.
+				conversation.ShowName = v.Nickname
 			} else if v, ok := users[conversation.UserID]; ok {
 				conversation.FaceURL = v.FaceURL
 				if v.FirstName != "" || v.LastName != "" {

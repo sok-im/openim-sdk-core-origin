@@ -90,7 +90,16 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 		}
 		if tips.FromToUserID != nil {
 			if tips.FromToUserID.FromUserID == r.loginUserID {
-				return r.IncrSyncFriends(ctx)
+				friendUserID := tips.FromToUserID.ToUserID
+				if err := r.IncrSyncFriends(ctx); err != nil {
+					return err
+				}
+				// Remark/friendFirstName/friendLastName changes must refresh the single-chat
+				// show_name immediately. IncrSyncFriends alone may skip the syncer Update
+				// notice when local data already matches (e.g. cross-device race), leaving
+				// the conversation list stale until the next message arrives.
+				r.syncConversationShowNameForFriend(ctx, friendUserID, "")
+				return nil
 			}
 		}
 	case constant.FriendInfoUpdatedNotification:

@@ -169,11 +169,11 @@ func (d *DataBase) initDB(ctx context.Context, logLevel int) error {
 	if err = db.AutoMigrate(
 		&model_struct.LocalAppSDKVersion{},
 		&model_struct.LocalConversationSyncedMaxSeq{},
-		// Run on every startup so additive column changes (e.g. the friend `note`
-		// column) are applied to pre-existing tables. AutoMigrate only adds
-		// missing columns and never drops data, so this is safe for upgrades.
-		&model_struct.LocalFriend{},
 	); err != nil {
+		return err
+	}
+
+	if err = runFriendSchemaMigrations(ctx, db); err != nil {
 		return err
 	}
 
@@ -224,6 +224,45 @@ func (d *DataBase) initSignalDB(ctx context.Context, zLogLevel logger.LogLevel) 
 		return err
 	}
 	return backfillSignalCallRecordOwnerAndPurgeForeign(ctx, d.signalConn, d.loginUserID)
+}
+
+func runFriendSchemaMigrations(ctx context.Context, db *gorm.DB) error {
+	if err := db.WithContext(ctx).AutoMigrate(&model_struct.LocalFriend{}); err != nil {
+		return err
+	}
+
+	var tableCount int64
+	if err := db.WithContext(ctx).Raw(
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='local_friends'`,
+	).Scan(&tableCount).Error; err != nil {
+		return err
+	}
+	if tableCount == 0 {
+		return nil
+	}
+
+	type columnDef struct {
+		name string
+		ddl  string
+	}
+	for _, col := range []columnDef{
+		{"note", "ALTER TABLE local_friends ADD COLUMN note varchar(255) DEFAULT ''"},
+		{"friend_first_name", "ALTER TABLE local_friends ADD COLUMN friend_first_name varchar(255) DEFAULT ''"},
+		{"friend_last_name", "ALTER TABLE local_friends ADD COLUMN friend_last_name varchar(255) DEFAULT ''"},
+	} {
+		var colCount int64
+		if err := db.WithContext(ctx).Raw(
+			`SELECT COUNT(*) FROM pragma_table_info('local_friends') WHERE name = ?`, col.name,
+		).Scan(&colCount).Error; err != nil {
+			return err
+		}
+		if colCount == 0 {
+			if err := db.WithContext(ctx).Exec(col.ddl).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func runSignalCallSchemaMigrations(ctx context.Context, db *gorm.DB, loginUserID string) error {

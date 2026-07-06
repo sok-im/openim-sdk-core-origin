@@ -57,9 +57,10 @@ func (i *Friend) GetFriendListCount(ctx context.Context) (int64, error) {
 
 func (i *Friend) UpdateFriend(ctx context.Context, friend *model_struct.LocalFriend) error {
 	tempLocalFriend := temp_struct.LocalFriend{
-		OwnerUserID:    friend.OwnerUserID,
-		FriendUserID:   friend.FriendUserID,
+		OwnerUserID:     friend.OwnerUserID,
+		FriendUserID:    friend.FriendUserID,
 		Remark:          friend.Remark,
+		Note:            friend.Note,
 		FriendFirstName: friend.FriendFirstName,
 		FriendLastName:  friend.FriendLastName,
 		CreateTime:      friend.CreateTime,

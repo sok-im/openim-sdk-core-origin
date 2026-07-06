@@ -32,6 +32,11 @@ import (
 
 var ctx context.Context
 
+var (
+	integrationReady      bool
+	integrationSkipReason string
+)
+
 func init() {
 	fmt.Println("------------------------>>>>>>>>>>>>>>>>>>> test init func <<<<<<<<<<<<<<<<<<<------------------------")
 	rand.Seed(time.Now().UnixNano())
@@ -40,30 +45,42 @@ func init() {
 	config.DataDir = "./"
 	configData, err := json.Marshal(config)
 	if err != nil {
-		panic(err)
+		integrationSkipReason = err.Error()
+		return
 	}
 	isInit := open_im_sdk.InitSDK(listner, "test", string(configData))
 	if !isInit {
-		panic("init sdk failed")
+		integrationSkipReason = "init sdk failed"
+		return
 	}
 	ctx = open_im_sdk.UserForSDK.Context()
 	ctx = ccontext.WithOperationID(ctx, "initOperationID_"+strconv.Itoa(int(time.Now().UnixMilli())))
 	token, err := GetUserToken(ctx, UserID, PlatformID, Secret, config)
 	if err != nil {
-		panic(err)
+		integrationSkipReason = err.Error()
+		return
 	}
 	if err := open_im_sdk.UserForSDK.Login(ctx, UserID, token); err != nil {
-		panic(err)
+		integrationSkipReason = err.Error()
+		return
 	}
-	ch := make(chan error)
+	ch := make(chan error, 1)
 	open_im_sdk.UserForSDK.SetConversationListener(&onConversationListener{ctx: ctx, ch: ch})
 	open_im_sdk.UserForSDK.SetGroupListener(&onGroupListener{ctx: ctx})
 	open_im_sdk.UserForSDK.SetAdvancedMsgListener(&onAdvancedMsgListener{ctx: ctx})
 	open_im_sdk.UserForSDK.SetFriendshipListener(&onFriendshipListener{ctx: ctx})
 	open_im_sdk.UserForSDK.SetUserListener(&onUserListener{ctx: ctx})
-	if err := <-ch; err != nil {
-		panic(err)
+	select {
+	case err := <-ch:
+		if err != nil {
+			integrationSkipReason = err.Error()
+			return
+		}
+	case <-time.After(30 * time.Second):
+		integrationSkipReason = "timed out waiting for SDK connection"
+		return
 	}
+	integrationReady = true
 }
 
 func getConf(APIADDR, WSADDR string) sdk_struct.IMConfig {

@@ -9,6 +9,7 @@ import (
 )
 
 func TestUpload(t *testing.T) {
+	t.Skip("manual integration test requiring local file and live server")
 	conf := &ccontext.GlobalConfig{
 		UserID: `4931176757`,
 		Token:  `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiI0OTMxMTc2NzU3IiwiUGxhdGZvcm1JRCI6MSwiZXhwIjoxNzA3MTE0MjIyLCJuYmYiOjE2OTkzMzc5MjIsImlhdCI6MTY5OTMzODIyMn0.AyNvrMGEdXD5rkvn7ZLHCNs-lNbDCb2otn97yLXia5Y`,

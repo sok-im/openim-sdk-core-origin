@@ -88,6 +88,7 @@ func (r *Relation) doNotification(ctx context.Context, msg *sdkws.MsgData) error
 		if err := utils.UnmarshalNotificationElem(msg.Content, &tips); err != nil {
 			return err
 		}
+		log.ZDebug(ctx, "FriendRemarkSetNotification", "tips", tips, "loginUserID", r.loginUserID)	
 		if tips.FromToUserID != nil {
 			if tips.FromToUserID.FromUserID == r.loginUserID {
 				friendUserID := tips.FromToUserID.ToUserID

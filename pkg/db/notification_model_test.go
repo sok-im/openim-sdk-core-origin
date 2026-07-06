@@ -9,10 +9,11 @@ import (
 
 func Test_BatchInsertNotificationSeq(t *testing.T) {
 	ctx := context.Background()
-	db, err := NewDataBase(ctx, "1695766238", "./", 6)
+	db, err := NewDataBase(ctx, "1695766238", t.TempDir(), 6)
 	if err != nil {
-		return
+		t.Fatal(err)
 	}
+	defer func() { _ = db.Close(ctx) }()
 	// log.ZError(ctx, "DB err test", nil, "key", "vale")
 	notificationSeqs := []*model_struct.NotificationSeqs{
 		{

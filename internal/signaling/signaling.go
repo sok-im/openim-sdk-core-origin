@@ -618,13 +618,33 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 	if datautil.Contain(s.loginUserID, req.Invitation.InviteeUserIDList...) {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
+		// 竞态兜底：本端已接听（Accept 成功、connectMs 已记录）后又收到主叫 Cancel。
+		// 此时本端已进入通话页面，OnInvitationCancelled 会被通话页忽略，导致界面无法
+		// 关闭、通话持续计时。改用 OnHangUp 通知上层结束并关闭通话页，并按已接听落库。
+		// 正常情况下服务端会将“已接听后的取消”转发为 HungUp（见服务端 handleCancel），
+		// 本分支用于覆盖残余竞态或旧版本服务端。
+		if inviteMs, connectMs, accepted, ok := s.peekTimingForRecord(req.Invitation.RoomID); ok &&
+			callRecordStatusFromTiming(connectMs, accepted) == constant.SignalCallStatusAnswered {
+			s.popTiming(req.Invitation.RoomID)
+			hungUpReq := &rtc.SignalHungUpReq{
+				Invitation: req.Invitation,
+				UserID:     req.Invitation.InviterUserID,
+			}
+			log.ZInfo(ctx, "OnHangUp (cancel after local accept)", "cancel", req)
+			listener.OnHangUp(jsonutil.StructToJsonString(hungUpReq))
+
+			endMs := time.Now().UnixMilli()
+			s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
+				constant.SignalCallStatusAnswered,
+				constant.SignalCallActionHungUp,
+				inviteMs, connectMs, endMs, callTalkDurationSecs(connectMs, endMs))
+			log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusAnswered, "action", constant.SignalCallActionHungUp)
+			return nil
+		}
+
 		log.ZDebug(ctx, "OnInvitationCancelled", "cancel", req)
 		listener.OnInvitationCancelled(jsonutil.StructToJsonString(req))
 
-		// 主叫挂断时服务端可能同时推送 Cancel + HungUp；已接听则仅由 HungUp 落库，避免两条未接记录。
-		if _, connectMs, accepted, _ := s.peekTimingForRecord(req.Invitation.RoomID); callRecordStatusFromTiming(connectMs, accepted) == constant.SignalCallStatusAnswered {
-			return nil
-		}
 		inviteMs, _, _, ok := s.popTimingForRecord(req.Invitation.RoomID)
 		if !ok {
 			return nil

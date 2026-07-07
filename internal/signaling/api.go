@@ -125,6 +125,9 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 
 	if signalAcceptReq.Invitation != nil && signalAcceptReq.Invitation.RoomID != "" {
 		s.cancelInviteTimer(signalAcceptReq.Invitation.RoomID)
+		// 在 RPC 发出前标记“接听在途”，以便万一主叫的 Cancel 通知先于本端 Accept
+		// 响应到达时，handleCancel 也能据此改走 OnHangUp 关闭通话页。
+		s.markAccepting(signalAcceptReq.Invitation.RoomID)
 	}
 
 	req := &rtc.SignalReq{

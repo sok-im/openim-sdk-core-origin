@@ -31,6 +31,7 @@ type roomTiming struct {
 	inviteMs  int64     // 本端发起或收到邀请的毫秒时间戳（写入后只读）
 	connectMs int64     // 接通时的毫秒时间戳（0 = 尚未接通）
 	accepted  bool      // 本端已执行 Accept 或对端接听通知已到达（主叫侧）
+	accepting bool      // 被叫已点击接听、Accept 请求在途（RPC 返回前即置位，仅用于 UI 回调判定）
 	createdAt time.Time // 条目创建时间，用于定期清理（写入后只读）
 }
 
@@ -233,6 +234,31 @@ func callTalkDurationSecs(connectMs, endMs int64) int64 {
 func (s *Signaling) storeInviteTime(roomID string, ms int64) {
 	t := &roomTiming{inviteMs: ms, createdAt: time.Now()}
 	s.roomTimings.Store(roomID, t)
+}
+
+// markAccepting 在被叫点击接听、Accept RPC 发出前置位 accepting，
+// 用于覆盖“Cancel 通知先于本端 Accept 响应到达”的纯客户端竞态。
+// 仅影响 handleCancel 的 UI 回调判定，不参与通话记录状态（避免误记已接听）。
+func (s *Signaling) markAccepting(roomID string) {
+	if v, ok := s.roomTimings.Load(roomID); ok {
+		t := v.(*roomTiming)
+		t.mu.Lock()
+		t.accepting = true
+		t.mu.Unlock()
+		return
+	}
+	s.roomTimings.Store(roomID, &roomTiming{accepting: true, createdAt: time.Now()})
+}
+
+// isAccepting 返回本端是否正处于“接听在途”状态。
+func (s *Signaling) isAccepting(roomID string) bool {
+	if v, ok := s.roomTimings.Load(roomID); ok {
+		t := v.(*roomTiming)
+		t.mu.Lock()
+		defer t.mu.Unlock()
+		return t.accepting
+	}
+	return false
 }
 
 func (s *Signaling) storeConnectTime(roomID string, ms int64) {
@@ -618,21 +644,54 @@ func (s *Signaling) handleCancel(ctx context.Context, listener open_im_sdk_callb
 	if datautil.Contain(s.loginUserID, req.Invitation.InviteeUserIDList...) {
 		s.cancelInviteTimer(req.Invitation.RoomID)
 
+		// 竞态兜底：本端已接听或正在接听时又收到主叫 Cancel。
+		// 正常情况下服务端会把“已接听后的取消”原子判定并转发为 HungUp（见服务端
+		// handleCancel），此分支覆盖两类残余竞态：
+		//   1) 本端 Accept 已成功（connectMs 已记录）；
+		//   2) 本端已点击接听、Accept 请求在途（accepting 置位），且 Cancel 通知先于
+		//      Accept 响应到达本端。
+		// 两种情况下本端都已进入/正在进入通话页，OnInvitationCancelled 会被通话页忽略，
+		// 需改用 OnHangUp 结束并关闭通话页。
+		inviteMs, connectMs, accepted, ok := s.peekTimingForRecord(req.Invitation.RoomID)
+		if ok && (callRecordStatusFromTiming(connectMs, accepted) == constant.SignalCallStatusAnswered ||
+			s.isAccepting(req.Invitation.RoomID)) {
+			s.popTiming(req.Invitation.RoomID)
+			hungUpReq := &rtc.SignalHungUpReq{
+				Invitation: req.Invitation,
+				UserID:     req.Invitation.InviterUserID,
+			}
+			log.ZInfo(ctx, "OnHangUp (cancel after local accept/accepting)", "cancel", req)
+			listener.OnHangUp(jsonutil.StructToJsonString(hungUpReq))
+
+			endMs := time.Now().UnixMilli()
+			if connectMs > 0 {
+				s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
+					constant.SignalCallStatusAnswered,
+					constant.SignalCallActionHungUp,
+					inviteMs, connectMs, endMs, callTalkDurationSecs(connectMs, endMs))
+				log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusAnswered, "action", constant.SignalCallActionHungUp)
+			} else {
+				// 正在接听但媒体尚未接通即被取消：按未接通落库。
+				s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
+					constant.SignalCallStatusNotConnected,
+					constant.SignalCallActionCancel,
+					inviteMs, 0, endMs, 0)
+				log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
+			}
+			return nil
+		}
+
 		log.ZDebug(ctx, "OnInvitationCancelled", "cancel", req)
 		listener.OnInvitationCancelled(jsonutil.StructToJsonString(req))
 
-		// 主叫挂断时服务端可能同时推送 Cancel + HungUp；已接听则仅由 HungUp 落库，避免两条未接记录。
-		if _, connectMs, accepted, _ := s.peekTimingForRecord(req.Invitation.RoomID); callRecordStatusFromTiming(connectMs, accepted) == constant.SignalCallStatusAnswered {
-			return nil
-		}
-		inviteMs, _, _, ok := s.popTimingForRecord(req.Invitation.RoomID)
-		if !ok {
+		cancelInviteMs, _, _, cancelOK := s.popTimingForRecord(req.Invitation.RoomID)
+		if !cancelOK {
 			return nil
 		}
 		s.persistLocalCallRecord(ctx, req.Invitation, req.Participant,
 			constant.SignalCallStatusNotConnected,
 			constant.SignalCallActionCancel,
-			inviteMs, 0, time.Now().UnixMilli(), 0)
+			cancelInviteMs, 0, time.Now().UnixMilli(), 0)
 		log.ZInfo(ctx, "persistLocalCallRecord", "Invitation", req.Invitation, "status", constant.SignalCallStatusNotConnected, "action", constant.SignalCallActionCancel)
 	}
 	return nil

@@ -182,6 +182,10 @@ func (c *Conversation) doNotification(ctx context.Context, msg *sdkws.MsgData) e
 	case constant.HasReadReceipt: // 2200
 		return c.doReadDrawing(ctx, msg)
 	}
+	// 通知会话类消息（1801-1804、2002-2003 等）同时以 IsSendMsg 落库展示，会话与 UI 由 doMsgNew 处理。
+	if pConstant.IsNotificationSessionContentType(msg.ContentType) {
+		return nil
+	}
 	return errs.New("unknown tips type", "contentType", msg.ContentType).Wrap()
 }
 

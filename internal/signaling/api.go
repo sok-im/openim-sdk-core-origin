@@ -405,6 +405,11 @@ func (s *Signaling) GetSignalInvitationInfoStartApp(ctx context.Context, req *rt
 	return api.GetSignalInvitationInfoStartApp.Invoke(ctx, req)
 }
 
+// IsCallEndedByRoomID reports whether the call for the given room has ended.
+func (s *Signaling) IsCallEndedByRoomID(ctx context.Context, roomID string) (*rtc.IsCallEndedByRoomIDResp, error) {
+	return api.IsCallEndedByRoomID.Invoke(ctx, &rtc.IsCallEndedByRoomIDReq{RoomID: roomID})
+}
+
 // GetSignalInvitationRecords 调用服务端历史接口（与本地通话记录独立）。
 func (s *Signaling) GetSignalInvitationRecords(ctx context.Context, req *rtc.GetSignalInvitationRecordsReq) (*rtc.GetSignalInvitationRecordsResp, error) {
 	return api.GetSignalInvitationRecords.Invoke(ctx, req)

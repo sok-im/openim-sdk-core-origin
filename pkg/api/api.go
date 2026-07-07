@@ -171,6 +171,7 @@ var (
 	SignalGetTokenByRoomID          = newApi[rtc.SignalGetTokenByRoomIDReq, rtc.SignalGetTokenByRoomIDResp]("/rtc/signal_get_token_by_room_id")
 	SignalGetRooms                  = newApi[rtc.SignalGetRoomsReq, rtc.SignalGetRoomsResp]("/rtc/signal_get_rooms")
 	GetSignalInvitationInfo         = newApi[rtc.GetSignalInvitationInfoReq, rtc.GetSignalInvitationInfoResp]("/rtc/get_signal_invitation_info")
+	IsCallEndedByRoomID             = newApi[rtc.IsCallEndedByRoomIDReq, rtc.IsCallEndedByRoomIDResp]("/rtc/is_call_ended_by_room_id")
 	GetSignalInvitationInfoStartApp = newApi[rtc.GetSignalInvitationInfoStartAppReq, rtc.GetSignalInvitationInfoStartAppResp]("/rtc/get_signal_invitation_info_start_app")
 	SignalSendCustomSignal          = newApi[rtc.SignalSendCustomSignalReq, rtc.SignalSendCustomSignalResp]("/rtc/signal_send_custom_signal")
 	SignalNotifyGroupCallEnded      = newApi[rtc.SignalNotifyGroupCallEndedReq, rtc.SignalNotifyGroupCallEndedResp]("/rtc/signal_notify_group_call_ended")

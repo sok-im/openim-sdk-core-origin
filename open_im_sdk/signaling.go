@@ -48,6 +48,10 @@ func SignalingGetRoomByGroupID(callback open_im_sdk_callback.Base, operationID s
 	call(callback, operationID, UserForSDK.Signaling().GetRoomByGroupID, groupID)
 }
 
+func SignalingIsCallEndedByRoomID(callback open_im_sdk_callback.Base, operationID string, roomID string) {
+	call(callback, operationID, UserForSDK.Signaling().IsCallEndedByRoomID, roomID)
+}
+
 func SignalingGetInvitationInfoStartApp(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Signaling().GetSignalInvitationInfoStartApp, req)
 }

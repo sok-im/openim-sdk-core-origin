@@ -759,6 +759,7 @@ func InviteReqToJson(req *rtc.SignalInviteReq) string {
 //
 // date 格式 "2006-01-02"；以设备本地时区当天 00:00:00.000 ~ 23:59:59.999 为查询边界。
 // 支持按 Status（0=全部/1=已接听/2=未接通）和 Direction（0=全部/1=主叫/2=被叫已接/3=未接）筛选。
+// Count：0 默认 20；-1 返回该日期全部记录。
 func (s *Signaling) GetLocalCallRecordsByDate(ctx context.Context, params *sdk_struct.GetLocalCallRecordsByDateParams) (*sdk_struct.GetLocalCallRecordsResp, error) {
 	if s.db == nil {
 		return nil, sdkerrs.ErrSdkInternal.WrapMsg("db not initialized")
@@ -770,7 +771,7 @@ func (s *Signaling) GetLocalCallRecordsByDate(ctx context.Context, params *sdk_s
 	if err != nil {
 		return nil, sdkerrs.ErrArgs.WrapMsg("invalid date: " + params.Date + "; expected format 2006-01-02")
 	}
-	if params.Count <= 0 {
+	if params.Count == 0 {
 		params.Count = 20
 	}
 	total, err := s.db.CountSignalCallRecords(ctx,

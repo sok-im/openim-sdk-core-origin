@@ -101,7 +101,7 @@ type GetLocalCallRecordsByDateParams struct {
 	Date string `json:"date"`
 	// Offset 分页偏移
 	Offset int `json:"offset"`
-	// Count 每页数量，默认 20
+	// Count 每页数量；0 默认 20；-1 返回该日期全部记录
 	Count int `json:"count"`
 	// Status 0=全部 1=已接听 2=未接通
 	Status int32 `json:"status"`

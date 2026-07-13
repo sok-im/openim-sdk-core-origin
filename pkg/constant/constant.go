@@ -113,6 +113,7 @@ const (
 
 	ConversationPrivateChatNotification = 1701
 	ClearConversationNotification       = 1703
+	ConversationE2EENotification        = 1705
 
 	// 钱包动作通知（红包/转账）
 	RedPacketClaimNotification   = 1801

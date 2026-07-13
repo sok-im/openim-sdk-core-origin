@@ -171,6 +171,13 @@ func (c *Conversation) doNotification(ctx context.Context, msg *sdkws.MsgData) e
 		return c.DoConversationChangedNotification(ctx, msg)
 	case constant.ConversationPrivateChatNotification: // 1701
 		return c.DoConversationIsPrivateChangedNotification(ctx, msg)
+	case constant.ConversationE2EENotification: // 1705
+		// 创建单聊会话 E2EE 信令：仅落库/透传，不触发专用 Listener 回调。
+		var detail sdkws.ConversationSetPrivateTips
+		if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+			return err
+		}
+		return nil
 	case constant.BusinessNotification:
 		return c.doBusinessNotification(ctx, msg)
 	case constant.RevokeNotification: // 2101

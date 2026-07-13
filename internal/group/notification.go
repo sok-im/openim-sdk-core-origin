@@ -317,6 +317,13 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 			}
 			g.listener().OnGroupNeedVerificationSet(utils.StructToJsonString(detail))
 			return nil
+		case constant.GroupE2EENotification: // 1529
+			// 建群 E2EE 信令：仅落库/透传，不触发 OnGroupListener 回调。
+			var detail sdkws.GroupCreatedTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			return nil
 		default:
 			return errs.New("unknown tips type", "contentType", msg.ContentType).Wrap()
 		}

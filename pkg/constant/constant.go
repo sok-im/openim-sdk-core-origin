@@ -108,6 +108,7 @@ const (
 	GroupBurnDurationSetNotification                = 1524
 	GroupFaceURLSetNotification              = 1525
 	GroupNeedVerificationSetNotification     = 1526
+	GroupE2EENotification                    = 1529
 	GroupNotificationEnd                     = 1599
 
 	ConversationPrivateChatNotification = 1701

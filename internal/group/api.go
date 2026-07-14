@@ -774,6 +774,14 @@ func (g *Group) GetGroupMute(ctx context.Context, req *sdk_params_callback.GetGr
 	return g.getGroupMute(ctx, &group.GetGroupMuteReq{GroupID: req.GroupID})
 }
 
+func (g *Group) SetGroupBlock(ctx context.Context, req *sdk_params_callback.SetGroupBlockReq) error {
+	return g.setGroupBlock(ctx, &group.SetGroupBlockReq{GroupID: req.GroupID, Block: req.Block})
+}
+
+func (g *Group) GetGroupBlock(ctx context.Context, req *sdk_params_callback.GetGroupBlockReq) (*group.GetGroupBlockResp, error) {
+	return g.getGroupBlock(ctx, &group.GetGroupBlockReq{GroupID: req.GroupID})
+}
+
 func (g *Group) PinGroup(ctx context.Context, req *sdk_params_callback.PinGroupReq) error {
 	if err := g.pinGroup(ctx, &group.PinGroupReq{GroupID: req.GroupID}); err != nil {
 		return err

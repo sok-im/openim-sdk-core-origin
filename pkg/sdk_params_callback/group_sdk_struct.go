@@ -77,6 +77,16 @@ type GetGroupMuteReq struct {
 	GroupID string `json:"groupID"`
 }
 
+// SetGroupBlockReq 对应 group.SetGroupBlockReq：屏蔽该群聊天消息推送。
+type SetGroupBlockReq struct {
+	GroupID string `json:"groupID"`
+	Block   bool   `json:"block"`
+}
+
+type GetGroupBlockReq struct {
+	GroupID string `json:"groupID"`
+}
+
 type PinGroupReq struct {
 	GroupID string `json:"groupID"`
 }

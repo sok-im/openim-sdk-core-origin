@@ -304,6 +304,16 @@ func (w *WrapperGroup) GetGroupMute(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.GetGroupMute, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperGroup) SetGroupBlock(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetGroupBlock, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperGroup) GetGroupBlock(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetGroupBlock, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperGroup) PinGroup(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.PinGroup, callback, &args).AsyncCallWithCallback()

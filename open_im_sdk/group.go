@@ -255,6 +255,16 @@ func GetGroupMute(callback open_im_sdk_callback.Base, operationID, req string) {
 	call(callback, operationID, UserForSDK.Group().GetGroupMute, req)
 }
 
+// SetGroupBlock 屏蔽/取消屏蔽该群聊天消息推送；req 为 JSON，字段见 sdk_params_callback.SetGroupBlockReq。
+func SetGroupBlock(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Group().SetGroupBlock, req)
+}
+
+// GetGroupBlock 查询当前用户对该群的屏蔽状态；req 为 JSON，字段见 sdk_params_callback.GetGroupBlockReq。
+func GetGroupBlock(callback open_im_sdk_callback.Base, operationID, req string) {
+	call(callback, operationID, UserForSDK.Group().GetGroupBlock, req)
+}
+
 // PinGroup 将群会话置顶；req 为 JSON，字段见 sdk_params_callback.PinGroupReq。
 func PinGroup(callback open_im_sdk_callback.Base, operationID, req string) {
 	call(callback, operationID, UserForSDK.Group().PinGroup, req)

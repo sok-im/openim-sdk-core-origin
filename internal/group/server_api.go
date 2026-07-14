@@ -265,6 +265,10 @@ func (g *Group) getGroupBlock(ctx context.Context, req *group.GetGroupBlockReq) 
 	return api.GetGroupBlock.Invoke(ctx, req)
 }
 
+func (g *Group) getBlockGroup(ctx context.Context, req *group.GetBlockGroupReq) (*group.GetBlockGroupResp, error) {
+	return api.GetBlockGroup.Invoke(ctx, req)
+}
+
 func (g *Group) pinGroup(ctx context.Context, req *group.PinGroupReq) error {
 	return api.PinGroup.Execute(ctx, req)
 }

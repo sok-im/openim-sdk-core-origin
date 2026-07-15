@@ -129,6 +129,7 @@ var (
 	GetGroupMute                      = newApi[group.GetGroupMuteReq, group.GetGroupMuteResp]("/group/get_mute")
 	SetGroupBlock                     = newApi[group.SetGroupBlockReq, group.SetGroupBlockResp]("/group/set_block")
 	GetGroupBlock                     = newApi[group.GetGroupBlockReq, group.GetGroupBlockResp]("/group/get_block")
+	GetBlockGroup                     = newApi[group.GetBlockGroupReq, group.GetBlockGroupResp]("/group/get_block_group")
 	PinGroup                          = newApi[group.PinGroupReq, group.PinGroupResp]("/group/pin")
 	UnpinGroup                        = newApi[group.UnpinGroupReq, group.UnpinGroupResp]("/group/unpin")
 )

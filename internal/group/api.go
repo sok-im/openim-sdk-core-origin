@@ -782,6 +782,10 @@ func (g *Group) GetGroupBlock(ctx context.Context, req *sdk_params_callback.GetG
 	return g.getGroupBlock(ctx, &group.GetGroupBlockReq{GroupID: req.GroupID})
 }
 
+func (g *Group) GetBlockGroup(ctx context.Context, _ *sdk_params_callback.GetBlockGroupReq) (*group.GetBlockGroupResp, error) {
+	return g.getBlockGroup(ctx, &group.GetBlockGroupReq{})
+}
+
 func (g *Group) PinGroup(ctx context.Context, req *sdk_params_callback.PinGroupReq) error {
 	if err := g.pinGroup(ctx, &group.PinGroupReq{GroupID: req.GroupID}); err != nil {
 		return err

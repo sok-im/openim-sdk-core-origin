@@ -190,6 +190,7 @@ func registerFunc() {
 	js.Global().Set("getGroupMute", js.FuncOf(wrapperGroup.GetGroupMute))
 	js.Global().Set("setGroupBlock", js.FuncOf(wrapperGroup.SetGroupBlock))
 	js.Global().Set("getGroupBlock", js.FuncOf(wrapperGroup.GetGroupBlock))
+	js.Global().Set("getBlockGroup", js.FuncOf(wrapperGroup.GetBlockGroup))
 	js.Global().Set("pinGroup", js.FuncOf(wrapperGroup.PinGroup))
 	js.Global().Set("unpinGroup", js.FuncOf(wrapperGroup.UnpinGroup))
 

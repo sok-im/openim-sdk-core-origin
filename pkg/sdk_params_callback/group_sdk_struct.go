@@ -87,6 +87,8 @@ type GetGroupBlockReq struct {
 	GroupID string `json:"groupID"`
 }
 
+type GetBlockGroupReq struct{}
+
 type PinGroupReq struct {
 	GroupID string `json:"groupID"`
 }

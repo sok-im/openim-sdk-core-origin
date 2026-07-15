@@ -204,6 +204,10 @@ func (o *onAdvancedMsgListener) OnNewRecvMessageRevoked(messageRevoked string) {
 	log.ZInfo(o.ctx, "OnNewRecvMessageRevoked", "messageRevoked", messageRevoked)
 }
 
+func (o *onAdvancedMsgListener) OnReactionUpdated(reactionUpdated string) {
+	log.ZInfo(o.ctx, "OnReactionUpdated", "reactionUpdated", reactionUpdated)
+}
+
 func (o *onAdvancedMsgListener) OnRecvMessageExtensionsChanged(msgID string, reactionExtensionList string) {
 	log.ZInfo(o.ctx, "OnRecvMessageExtensionsChanged", "msgID", msgID, "reactionExtensionList", reactionExtensionList)
 }

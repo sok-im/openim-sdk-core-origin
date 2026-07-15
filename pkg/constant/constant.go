@@ -129,6 +129,9 @@ const (
 
 	DeleteMsgsNotification = 2102
 
+	// MsgReactionUpdatedNotification 消息表情反应聚合快照更新（与 protocol/constant 2103 对齐）
+	MsgReactionUpdatedNotification = 2103
+
 	HasReadReceipt = 2200
 
 	NotificationEnd = 5000

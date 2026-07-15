@@ -168,6 +168,22 @@ func ReportSpam(callback open_im_sdk_callback.Base, operationID string, req stri
 	call(callback, operationID, UserForSDK.Conversation().ReportSpam, req)
 }
 
+// SetMessageReaction 设置/切换/取消表情反应；req 为 JSON，字段与 SetMessageReactionReq 一致：
+// conversationID、clientMsgID、emoji、action(add|remove)。
+func SetMessageReaction(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().SetMessageReaction, req)
+}
+
+// GetMessageReactions 查询单条消息反应聚合；req 为 JSON：conversationID、clientMsgID、detail(可选)。
+func GetMessageReactions(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().GetMessageReactions, req)
+}
+
+// BatchGetMessageReactions 批量查询反应聚合；req 为 JSON：conversationID、clientMsgIDs、detail(可选)。
+func BatchGetMessageReactions(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().BatchGetMessageReactions, req)
+}
+
 // SendPaymentNotification 发送钱包/支付通知；req 为 JSON，字段见 api.SendPaymentNotificationReq。
 // sendUserID 须为已注册的通知账号；使用当前登录用户 Token 即可。
 func SendPaymentNotification(callback open_im_sdk_callback.Base, operationID string, req string) {

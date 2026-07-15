@@ -186,6 +186,8 @@ func (c *Conversation) doNotification(ctx context.Context, msg *sdkws.MsgData) e
 		return c.doClearConversations(ctx, msg)
 	case constant.DeleteMsgsNotification:
 		return c.doDeleteMsgs(ctx, msg)
+	case constant.MsgReactionUpdatedNotification: // 2103
+		return c.doReactionUpdated(ctx, msg)
 	case constant.HasReadReceipt: // 2200
 		return c.doReadDrawing(ctx, msg)
 	}

@@ -220,6 +220,21 @@ func (w *WrapperConMsg) ReportSpam(_ js.Value, args []js.Value) interface{} {
 	return event_listener.NewCaller(open_im_sdk.ReportSpam, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperConMsg) SetMessageReaction(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.SetMessageReaction, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperConMsg) GetMessageReactions(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetMessageReactions, callback, &args).AsyncCallWithCallback()
+}
+
+func (w *WrapperConMsg) BatchGetMessageReactions(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.BatchGetMessageReactions, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperConMsg) SendPaymentNotification(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.SendPaymentNotification, callback, &args).AsyncCallWithCallback()

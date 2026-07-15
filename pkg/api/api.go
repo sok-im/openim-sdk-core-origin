@@ -90,6 +90,9 @@ var (
 	GetServerTime                    = newApi[msg.GetServerTimeReq, msg.GetServerTimeResp]("/msg/get_server_time")
 	ReportSpam                       = newApi[msg.ReportSpamReq, msg.ReportSpamResp]("/msg/report_spam")
 	GetSpamReports                   = newApi[msg.GetSpamReportsReq, msg.GetSpamReportsResp]("/msg/get_spam_reports")
+	SetMessageReaction               = newApi[msg.SetMessageReactionReq, msg.SetMessageReactionResp]("/msg/set_reactions")
+	GetMessageReactions              = newApi[msg.GetMessageReactionsReq, msg.GetMessageReactionsResp]("/msg/get_reactions")
+	BatchGetMessageReactions         = newApi[msg.BatchGetMessageReactionsReq, msg.BatchGetMessageReactionsResp]("/msg/batch_get_reactions")
 )
 
 var (

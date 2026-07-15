@@ -136,6 +136,10 @@ func (a AdvancedMsgCallback) OnRecvMessageRevoked(msgID string) {
 func (a AdvancedMsgCallback) OnNewRecvMessageRevoked(messageRevoked string) {
 	a.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(messageRevoked).SendMessage()
 }
+
+func (a AdvancedMsgCallback) OnReactionUpdated(reactionUpdated string) {
+	a.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(reactionUpdated).SendMessage()
+}
 func (a AdvancedMsgCallback) OnRecvMessageModified(message string) {
 	a.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(message).SendMessage()
 }

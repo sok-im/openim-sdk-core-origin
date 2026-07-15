@@ -91,6 +91,8 @@ type OnAdvancedMsgListener interface {
 	OnRecvC2CReadReceipt(msgReceiptList string)
 	OnRecvGroupReadReceipt(groupMsgReceiptList string)
 	OnNewRecvMessageRevoked(messageRevoked string)
+	// OnReactionUpdated MessageReactionUpdatedTips JSON（MsgReactionUpdatedNotification=2103）
+	OnReactionUpdated(reactionUpdated string)
 	OnRecvOfflineNewMessage(message string)
 	OnMsgDeleted(message string)
 	OnRecvOnlineOnlyMessage(message string)

@@ -65,6 +65,18 @@ func (c *Conversation) reportSpamToServer(ctx context.Context, req *pbMsg.Report
 	return api.ReportSpam.Invoke(ctx, req)
 }
 
+func (c *Conversation) setMessageReactionToServer(ctx context.Context, req *pbMsg.SetMessageReactionReq) (*pbMsg.SetMessageReactionResp, error) {
+	return api.SetMessageReaction.Invoke(ctx, req)
+}
+
+func (c *Conversation) getMessageReactionsFromServer(ctx context.Context, req *pbMsg.GetMessageReactionsReq) (*pbMsg.GetMessageReactionsResp, error) {
+	return api.GetMessageReactions.Invoke(ctx, req)
+}
+
+func (c *Conversation) batchGetMessageReactionsFromServer(ctx context.Context, req *pbMsg.BatchGetMessageReactionsReq) (*pbMsg.BatchGetMessageReactionsResp, error) {
+	return api.BatchGetMessageReactions.Invoke(ctx, req)
+}
+
 func (c *Conversation) getHasReadAndMaxSeqsFromServer(ctx context.Context, conversationIDs ...string) (*pbMsg.GetConversationsHasReadAndMaxSeqResp, error) {
 	req := pbMsg.GetConversationsHasReadAndMaxSeqReq{UserID: c.loginUserID, ConversationIDs: conversationIDs}
 	return api.GetConversationsHasReadAndMaxSeq.Invoke(ctx, &req)

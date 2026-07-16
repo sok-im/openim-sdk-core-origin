@@ -158,9 +158,11 @@ type OnSignalingListener interface {
 
 	// OnReceiveCustomSignal is fired when the server forwards a peer's custom
 	// signal (e.g. E2EE key-exchange control messages sent via SendCustomSignal).
-	// Payload JSON: {roomID,senderUserID,senderPlatformID,serverSeq,customInfo}.
-	// The server never decrypts customInfo; the app is responsible for verifying
-	// the sender and decrypting any MLS ciphertext it carries.
+	// Payload JSON: {roomID,senderUserID,senderPlatformID,serverSeq,messageID,customInfo}.
+	// customInfo is always an opaque JSON string (never re-encoded as an object) so
+	// Android/iOS/Go observe an identical wire type; messageID is surfaced at the top
+	// level for dedupe/ack. The server never decrypts customInfo; the app verifies the
+	// sender and decrypts any MLS ciphertext it carries.
 	OnReceiveCustomSignal(customSignalCallback string)
 }
 

@@ -474,8 +474,18 @@ func (s *Signaling) handleCustomSignalNotification(ctx context.Context, msg *sdk
 	if err := jsonutil.JsonUnmarshal(msg.Content, &payload); err != nil {
 		return err
 	}
+	// Non-"groupCallStatus" payloads are peer custom signals forwarded by the
+	// server's SignalSendCustomSignal (e.g. E2EE key-exchange control messages).
+	// The server never decrypts customInfo; forward the raw JSON to the app which
+	// verifies the sender and decrypts any MLS ciphertext itself.
 	if payload.Type != groupCallStatusPayloadType {
-		log.ZDebug(ctx, "ignore unknown custom signal payload", "type", payload.Type)
+		listener := s.listener()
+		if listener == nil {
+			log.ZWarn(ctx, "signaling listener is nil, skipping custom signal", nil)
+			return nil
+		}
+		log.ZDebug(ctx, "OnReceiveCustomSignal", "roomID", payload.RoomID)
+		listener.OnReceiveCustomSignal(string(msg.Content))
 		return nil
 	}
 	if payload.GroupID == "" || payload.RoomID == "" {

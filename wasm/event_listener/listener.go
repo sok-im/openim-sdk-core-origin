@@ -516,6 +516,10 @@ func (s SignalingCallback) OnGroupCallStatusChanged(groupCallStatusCallback stri
 	s.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupCallStatusCallback).SendMessage()
 }
 
+func (s SignalingCallback) OnReceiveCustomSignal(customSignalCallback string) {
+	s.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(customSignalCallback).SendMessage()
+}
+
 func NewSignalingCallback(callback *js.Value) *SignalingCallback {
 	return &SignalingCallback{CallbackWriter: NewEventData(callback)}
 }

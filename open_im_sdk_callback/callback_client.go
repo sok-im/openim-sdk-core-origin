@@ -155,6 +155,13 @@ type OnSignalingListener interface {
 	// OnGroupCallStatusChanged is fired for non-invited group members when a group
 	// call starts or ends. Payload JSON: {type,status,groupID,roomID,mediaType,inviterUserID}.
 	OnGroupCallStatusChanged(groupCallStatusCallback string)
+
+	// OnReceiveCustomSignal is fired when the server forwards a peer's custom
+	// signal (e.g. E2EE key-exchange control messages sent via SendCustomSignal).
+	// Payload JSON: {roomID,senderUserID,senderPlatformID,serverSeq,customInfo}.
+	// The server never decrypts customInfo; the app is responsible for verifying
+	// the sender and decrypting any MLS ciphertext it carries.
+	OnReceiveCustomSignal(customSignalCallback string)
 }
 
 type UploadFileCallback interface {

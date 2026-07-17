@@ -63,7 +63,8 @@ type OnGroupListener interface {
 	OnGroupFaceURLSet(groupFaceURLSetTips string)
 	// OnGroupNeedVerificationSet needVerification: 0/1=approval required, 2=no approval
 	OnGroupNeedVerificationSet(groupNeedVerificationSetTips string)
-	// OnGroupPermissionChanged changedFields: allowSendMsg / allowAddMember / allowPinMsg / allowMemberBurn
+	// OnGroupPermissionChanged changedFields: map of changed API fields to new values
+	// (allowSendMsg / allowAddMember / allowPinMsg / allowMemberBurn → 0|1)
 	OnGroupPermissionChanged(groupPermissionChangedTips string)
 }
 type OnFriendshipListener interface {

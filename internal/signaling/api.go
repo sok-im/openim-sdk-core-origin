@@ -29,11 +29,16 @@ func (s *Signaling) signalingRequest(ctx context.Context, req *rtc.SignalReq) (*
 	return &resp, nil
 }
 
-// Invite 主叫侧发起邀请：记录拨打开始时间，启动超时定时器。
-// 注意：服务端可能在响应中返回与请求不同的 roomID（如 "room-xxx" 格式）。
-// 必须在拿到响应后用服务端 roomID 更新 invitation，再落表和启动定时器，
-// 否则后续 Accept/HungUp 通知携带服务端 roomID，无法命中定时器和时间戳，
-// 导致超时定时器永不取消，进而产生多余的 timeout 通话记录。
+// Invite 主叫侧发起 1v1 邀请：记录拨打开始时间，启动超时定时器。
+//
+// 请求关键字段：
+//   - invitation（必填）：inviteeUserIDList≥1，mediaType/sessionType 必填；roomID 可空（服务端生成）；
+//     customData 可选，E2EE 时写 e2ee 描述符 JSON；timeout=0 时默认 30s。
+//   - e2eeCapability（条件必填）：强制 E2EE 房间必须带 schemes+frameCryptor=true+可解析 clientVersion。
+//   - userID：本方法覆盖为 loginUserID。
+//
+// 响应关键字段：token/roomID/liveURL/conversationID 必有；busyLine/铃声/notAllow 可选。
+// roomID 以响应为准回写 invitation，再落表与启动定时器（勿用客户端自造 roomID）。
 func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInviteReq) (*rtc.SignalInviteResp, error) {
 	s.fillInviteDefaults(signalInviteReq.Invitation)
 	signalInviteReq.UserID = s.loginUserID
@@ -76,8 +81,9 @@ func (s *Signaling) Invite(ctx context.Context, signalInviteReq *rtc.SignalInvit
 	return &rtc.SignalInviteResp{}, nil
 }
 
-// InviteInGroup 主叫侧发起群组邀请：同样记录拨出时间并启动超时定时器。
-// 与 Invite 相同，必须等服务端响应后用服务端 roomID 更新 invitation，再落表和启动定时器。
+// InviteInGroup 主叫侧发起群组邀请。
+// 请求同 Invite，另要求 invitation.groupID 必填；响应 conversationID 通常等于 groupID。
+// 必须用响应 roomID 回写 invitation 后再落表与启动定时器。
 func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *rtc.SignalInviteInGroupReq) (*rtc.SignalInviteInGroupResp, error) {
 	s.fillInviteDefaults(signalInviteInGroupReq.Invitation)
 	signalInviteInGroupReq.UserID = s.loginUserID
@@ -119,6 +125,10 @@ func (s *Signaling) InviteInGroup(ctx context.Context, signalInviteInGroupReq *r
 }
 
 // Accept 被叫侧接听：取消超时定时器，记录接通时间。
+//
+// 请求：invitation.roomID 必填；userID/opUserPlatformID 由本方法覆盖；
+// e2eeCapability 在强制 E2EE 房间必填。
+// 响应：token/roomID/liveURL/conversationID；e2ee 为邀请时描述符原样字符串（非 E2EE 可空）。
 func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAcceptReq) (*rtc.SignalAcceptResp, error) {
 	signalAcceptReq.UserID = s.loginUserID
 	signalAcceptReq.OpUserPlatformID = s.platformID
@@ -179,6 +189,10 @@ func (s *Signaling) Accept(ctx context.Context, signalAcceptReq *rtc.SignalAccep
 }
 
 // Join 群成员主动加入进行中的群通话（无需事先被邀请）。
+//
+// 请求：invitation 至少含 roomID/groupID/mediaType/sessionType；userID/platform 本方法覆盖；
+// e2eeCapability 在强制 E2EE 时必填。
+// 响应：token/roomID/liveURL/inCall/conversationID；participant[] 与 e2ee 可选。
 func (s *Signaling) Join(ctx context.Context, signalJoinReq *rtc.SignalJoinReq) (*rtc.SignalJoinResp, error) {
 	signalJoinReq.UserID = s.loginUserID
 	signalJoinReq.OpUserPlatformID = s.platformID
@@ -378,6 +392,11 @@ func (s *Signaling) HungUp(ctx context.Context, signalHungUpReq *rtc.SignalHungU
 	return nil
 }
 
+// GetTokenByRoomID 按房间获取/续期 LiveKit Token。
+//
+// 请求：roomID 必填；userID 覆盖为 loginUserID（须与鉴权身份一致）；
+// e2eeCapability 在强制 E2EE 续期时必填。
+// 响应：token/liveURL/conversationID；e2ee 可选。E2EE Token TTL≤5min。
 func (s *Signaling) GetTokenByRoomID(ctx context.Context, signalGetTokenReq *rtc.SignalGetTokenByRoomIDReq) (*rtc.SignalGetTokenByRoomIDResp, error) {
 	signalGetTokenReq.UserID = s.loginUserID
 
@@ -396,10 +415,14 @@ func (s *Signaling) GetTokenByRoomID(ctx context.Context, signalGetTokenReq *rtc
 	return &rtc.SignalGetTokenByRoomIDResp{}, nil
 }
 
+// GetRoomByGroupID 查询群进行中通话。
+// 响应：inCall 必有；有通话时含 invitation/roomID/conversationID/e2ee（可选）/participant[]。
 func (s *Signaling) GetRoomByGroupID(ctx context.Context, groupID string) (*rtc.SignalGetRoomByGroupIDResp, error) {
 	return api.SignalGetRoomByGroupID.Invoke(ctx, &rtc.SignalGetRoomByGroupIDReq{GroupID: groupID})
 }
 
+// GetSignalInvitationInfoStartApp 冷启动恢复待接听邀请。userID 覆盖为 loginUserID。
+// 响应：invitation/offlinePushInfo 可选；有邀请时含 conversationID。
 func (s *Signaling) GetSignalInvitationInfoStartApp(ctx context.Context, req *rtc.GetSignalInvitationInfoStartAppReq) (*rtc.GetSignalInvitationInfoStartAppResp, error) {
 	req.UserID = s.loginUserID
 	return api.GetSignalInvitationInfoStartApp.Invoke(ctx, req)
@@ -730,6 +753,11 @@ func (s *Signaling) ClearAllSignalCallRecords(ctx context.Context) error {
 	return s.ClearAllLocalSignalCallRecords(ctx)
 }
 
+// SendCustomSignal 发送自定义信令（E2EE 换钥控制面等）。
+//
+// 请求：roomID、customInfo 必填；customInfo≤16KB，建议含 messageID 供去重。
+// 服务端不解密 customInfo；对端经 OnReceiveCustomSignal 收到
+// {roomID,senderUserID,senderPlatformID,serverSeq,messageID,customInfo}，其中 customInfo 恒为字符串。
 func (s *Signaling) SendCustomSignal(ctx context.Context, req *rtc.SignalSendCustomSignalReq) error {
 	return api.SignalSendCustomSignal.Execute(ctx, req)
 }

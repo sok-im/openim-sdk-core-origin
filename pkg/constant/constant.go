@@ -80,37 +80,37 @@ const (
 
 	GroupNotificationBegin = 1500
 
-	GroupCreatedNotification                 = 1501
-	GroupInfoSetNotification                 = 1502
-	JoinGroupApplicationNotification         = 1503
-	MemberQuitNotification                   = 1504
-	GroupApplicationAcceptedNotification     = 1505
-	GroupApplicationRejectedNotification     = 1506
-	GroupOwnerTransferredNotification        = 1507
-	MemberKickedNotification                 = 1508
-	MemberInvitedNotification                = 1509
-	MemberEnterNotification                  = 1510
-	GroupDismissedNotification               = 1511
-	GroupMemberMutedNotification             = 1512
-	GroupMemberCancelMutedNotification       = 1513
-	GroupMutedNotification                   = 1514
-	GroupCancelMutedNotification             = 1515
-	GroupMemberInfoSetNotification           = 1516
-	GroupMemberSetToAdminNotification        = 1517
-	GroupMemberSetToOrdinaryUserNotification = 1518
-	GroupInfoSetAnnouncementNotification     = 1519
-	GroupInfoSetNameNotification             = 1520
-	GroupMessagePinnedNotification           = 1521
-	GroupCallStartedNotification                    = 1522
-	GroupCallEndedNotification                      = 1523
-	GroupCallParticipantCountUpdatedNotification    = 1527
-	GroupCallParticipantDeclinedNotification        = 1528
-	GroupBurnDurationSetNotification                = 1524
-	GroupFaceURLSetNotification              = 1525
-	GroupNeedVerificationSetNotification     = 1526
-	GroupE2EENotification                    = 1529
-	GroupPermissionChangedNotification       = 1530
-	GroupNotificationEnd                     = 1599
+	GroupCreatedNotification                     = 1501
+	GroupInfoSetNotification                     = 1502
+	JoinGroupApplicationNotification             = 1503
+	MemberQuitNotification                       = 1504
+	GroupApplicationAcceptedNotification         = 1505
+	GroupApplicationRejectedNotification         = 1506
+	GroupOwnerTransferredNotification            = 1507
+	MemberKickedNotification                     = 1508
+	MemberInvitedNotification                    = 1509
+	MemberEnterNotification                      = 1510
+	GroupDismissedNotification                   = 1511
+	GroupMemberMutedNotification                 = 1512
+	GroupMemberCancelMutedNotification           = 1513
+	GroupMutedNotification                       = 1514
+	GroupCancelMutedNotification                 = 1515
+	GroupMemberInfoSetNotification               = 1516
+	GroupMemberSetToAdminNotification            = 1517
+	GroupMemberSetToOrdinaryUserNotification     = 1518
+	GroupInfoSetAnnouncementNotification         = 1519
+	GroupInfoSetNameNotification                 = 1520
+	GroupMessagePinnedNotification               = 1521
+	GroupCallStartedNotification                 = 1522
+	GroupCallEndedNotification                   = 1523
+	GroupCallParticipantCountUpdatedNotification = 1527
+	GroupCallParticipantDeclinedNotification     = 1528
+	GroupBurnDurationSetNotification             = 1524
+	GroupFaceURLSetNotification                  = 1525
+	GroupNeedVerificationSetNotification         = 1526
+	GroupE2EENotification                        = 1529
+	GroupPermissionChangedNotification           = 1530
+	GroupNotificationEnd                         = 1599
 
 	ConversationPrivateChatNotification = 1701
 	ClearConversationNotification       = 1703
@@ -290,7 +290,7 @@ const (
 const (
 	DeactivatedUserNickname   = "Deactivated user"
 	DeactivatedUserNicknameZh = "已注销的用户"
-	DeactivatedUserFaceURL    = "http://13.215.203.29:10002/object/6794065114/mmexport1782219627453.jpg"
+	DeactivatedUserFaceURL    = "http://127.0.0.1:10002/object/6794065114/mmexport1782219627453.jpg"
 )
 
 // DeactivatedUserNicknameForLanguage 按用户语言返回已注销账号展示昵称，默认英文。

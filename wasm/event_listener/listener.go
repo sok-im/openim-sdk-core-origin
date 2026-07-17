@@ -426,6 +426,9 @@ func (f *GroupCallback) OnGroupFaceURLSet(groupFaceURLSetTips string) {
 func (f *GroupCallback) OnGroupNeedVerificationSet(groupNeedVerificationSetTips string) {
 	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupNeedVerificationSetTips).SendMessage()
 }
+func (f *GroupCallback) OnGroupPermissionChanged(groupPermissionChangedTips string) {
+	f.CallbackWriter.SetEvent(utils.GetSelfFuncName()).SetData(groupPermissionChangedTips).SendMessage()
+}
 
 type UserCallback struct {
 	CallbackWriter

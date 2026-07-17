@@ -163,6 +163,10 @@ func (o *onGroupListener) OnGroupNeedVerificationSet(groupNeedVerificationSetTip
 	log.ZInfo(o.ctx, "OnGroupNeedVerificationSet", "groupNeedVerificationSetTips", groupNeedVerificationSetTips)
 }
 
+func (o *onGroupListener) OnGroupPermissionChanged(groupPermissionChangedTips string) {
+	log.ZInfo(o.ctx, "OnGroupPermissionChanged", "groupPermissionChangedTips", groupPermissionChangedTips)
+}
+
 type onAdvancedMsgListener struct {
 	ctx context.Context
 }

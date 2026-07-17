@@ -114,6 +114,10 @@ func (e *emptyGroupListener) OnGroupNeedVerificationSet(groupNeedVerificationSet
 	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupNeedVerificationSetTips", groupNeedVerificationSetTips)
 }
 
+func (e *emptyGroupListener) OnGroupPermissionChanged(groupPermissionChangedTips string) {
+	log.ZWarn(e.ctx, "GroupListener is not implemented", nil, "groupPermissionChangedTips", groupPermissionChangedTips)
+}
+
 type emptyFriendshipListener struct {
 	ctx context.Context
 }

@@ -262,6 +262,10 @@ func (testGroupListener) OnGroupNeedVerificationSet(callbackInfo string) {
 
 }
 
+func (testGroupListener) OnGroupPermissionChanged(callbackInfo string) {
+
+}
+
 type testConnListener struct {
 	UserID string
 }

@@ -324,6 +324,20 @@ func (g *Group) doNotification(ctx context.Context, msg *sdkws.MsgData) error {
 				return err
 			}
 			return nil
+		case constant.GroupPermissionChangedNotification: // 1530
+			var detail sdkws.GroupPermissionChangedTips
+			if err := utils.UnmarshalNotificationElem(msg.Content, &detail); err != nil {
+				return err
+			}
+			if detail.Group == nil {
+				return errs.New("group is nil in GroupPermissionChangedTips").Wrap()
+			}
+			if err := g.onlineSyncGroupAndMember(ctx, detail.Group.GroupID, nil, nil,
+				nil, detail.Group, groupSortIDUnchanged, detail.GroupMemberVersion, detail.GroupMemberVersionID); err != nil {
+				return err
+			}
+			g.listener().OnGroupPermissionChanged(utils.StructToJsonString(detail))
+			return nil
 		default:
 			return errs.New("unknown tips type", "contentType", msg.ContentType).Wrap()
 		}

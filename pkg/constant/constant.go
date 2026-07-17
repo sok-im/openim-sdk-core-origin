@@ -109,6 +109,7 @@ const (
 	GroupFaceURLSetNotification              = 1525
 	GroupNeedVerificationSetNotification     = 1526
 	GroupE2EENotification                    = 1529
+	GroupPermissionChangedNotification       = 1530
 	GroupNotificationEnd                     = 1599
 
 	ConversationPrivateChatNotification = 1701

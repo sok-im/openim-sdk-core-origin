@@ -3,14 +3,51 @@ package api
 import (
 	"github.com/openimsdk/openim-sdk-core/v3/sdk_struct"
 	"github.com/openimsdk/protocol/msg"
+	"github.com/openimsdk/protocol/sdkws"
 )
 
 // SendPaymentNotificationReq matches HTTP POST /msg/send_payment_notification.
 // sendUserID must be a registered notification account.
 type SendPaymentNotificationReq struct {
-	SendUserID string                              `json:"sendUserID"`
-	RecvUserID string                              `json:"recvUserID"`
+	SendUserID string                                `json:"sendUserID"`
+	RecvUserID string                                `json:"recvUserID"`
 	Content    sdk_struct.PaymentNotificationContent `json:"content"`
+}
+
+// GetPaymentNotificationsReq matches HTTP POST /msg/get_payment_notifications (admin).
+type GetPaymentNotificationsReq struct {
+	SendUserID string                   `json:"sendUserID"`
+	Pagination *sdkws.RequestPagination `json:"pagination"`
+}
+
+// PaymentNotificationItem is one persisted payment notification row.
+type PaymentNotificationItem struct {
+	ID                string                                `json:"id"`
+	SendUserID        string                                `json:"sendUserID"`
+	RecvUserID        string                                `json:"recvUserID"`
+	Title             string                                `json:"title"`
+	Amount            string                                `json:"amount"`
+	TransactionType   string                                `json:"transactionType"`
+	TransactionTime   string                                `json:"transactionTime"`
+	Currency          string                                `json:"currency"`
+	CurrencyIconURL   string                                `json:"currencyIconURL,omitempty"`
+	DetailURL         string                                `json:"detailURL,omitempty"`
+	DetailText        string                                `json:"detailText,omitempty"`
+	SecondaryAction   *sdk_struct.PaymentNotificationAction `json:"secondaryAction,omitempty"`
+	OrderNo           string                                `json:"orderNo,omitempty"`
+	BizID             string                                `json:"bizID,omitempty"`
+	ChainID           string                                `json:"chainId,omitempty"`
+	PacketID          string                                `json:"packetId,omitempty"`
+	ChainKey          string                                `json:"chainKey,omitempty"`
+	GroupID           string                                `json:"groupID,omitempty"`
+	ContentSendUserID string                                `json:"contentSendUserID,omitempty"`
+	ContentRecvUserID string                                `json:"contentRecvUserID,omitempty"`
+	CreateTime        int64                                 `json:"createTime"` // Unix ms
+}
+
+type GetPaymentNotificationsResp struct {
+	Total         int64                      `json:"total"`
+	Notifications []*PaymentNotificationItem `json:"notifications"`
 }
 
 type WalletDualPartyNotifyReq struct {
@@ -32,9 +69,10 @@ type WalletExpiredNotifyReq struct {
 type WalletNotifyResp struct{}
 
 var (
-	SendPaymentNotification    = newApi[SendPaymentNotificationReq, msg.SendMsgResp]("/msg/send_payment_notification")
-	NotifyRedPacketClaimed     = newApi[WalletDualPartyNotifyReq, WalletNotifyResp]("/msg/notify_red_packet_claimed")
-	NotifyTransferReceived     = newApi[WalletDualPartyNotifyReq, WalletNotifyResp]("/msg/notify_transfer_received")
-	NotifyRedPacketExpired     = newApi[WalletExpiredNotifyReq, WalletNotifyResp]("/msg/notify_red_packet_expired")
-	NotifyTransferExpired      = newApi[WalletExpiredNotifyReq, WalletNotifyResp]("/msg/notify_transfer_expired")
+	SendPaymentNotification = newApi[SendPaymentNotificationReq, msg.SendMsgResp]("/msg/send_payment_notification")
+	GetPaymentNotifications = newApi[GetPaymentNotificationsReq, GetPaymentNotificationsResp]("/msg/get_payment_notifications")
+	NotifyRedPacketClaimed  = newApi[WalletDualPartyNotifyReq, WalletNotifyResp]("/msg/notify_red_packet_claimed")
+	NotifyTransferReceived  = newApi[WalletDualPartyNotifyReq, WalletNotifyResp]("/msg/notify_transfer_received")
+	NotifyRedPacketExpired  = newApi[WalletExpiredNotifyReq, WalletNotifyResp]("/msg/notify_red_packet_expired")
+	NotifyTransferExpired   = newApi[WalletExpiredNotifyReq, WalletNotifyResp]("/msg/notify_transfer_expired")
 )

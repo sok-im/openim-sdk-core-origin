@@ -110,6 +110,7 @@ func registerFunc() {
 	js.Global().Set("getMessageReactions", js.FuncOf(wrapperConMsg.GetMessageReactions))
 	js.Global().Set("batchGetMessageReactions", js.FuncOf(wrapperConMsg.BatchGetMessageReactions))
 	js.Global().Set("sendPaymentNotification", js.FuncOf(wrapperConMsg.SendPaymentNotification))
+	js.Global().Set("getPaymentNotifications", js.FuncOf(wrapperConMsg.GetPaymentNotifications))
 	js.Global().Set("notifyRedPacketClaimed", js.FuncOf(wrapperConMsg.NotifyRedPacketClaimed))
 	js.Global().Set("notifyTransferReceived", js.FuncOf(wrapperConMsg.NotifyTransferReceived))
 	js.Global().Set("notifyRedPacketExpired", js.FuncOf(wrapperConMsg.NotifyRedPacketExpired))

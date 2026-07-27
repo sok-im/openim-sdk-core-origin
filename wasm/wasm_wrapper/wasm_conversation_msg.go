@@ -240,6 +240,11 @@ func (w *WrapperConMsg) SendPaymentNotification(_ js.Value, args []js.Value) int
 	return event_listener.NewCaller(open_im_sdk.SendPaymentNotification, callback, &args).AsyncCallWithCallback()
 }
 
+func (w *WrapperConMsg) GetPaymentNotifications(_ js.Value, args []js.Value) interface{} {
+	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
+	return event_listener.NewCaller(open_im_sdk.GetPaymentNotifications, callback, &args).AsyncCallWithCallback()
+}
+
 func (w *WrapperConMsg) NotifyRedPacketClaimed(_ js.Value, args []js.Value) interface{} {
 	callback := event_listener.NewBaseCallback(utils.FirstLower(utils.GetSelfFuncName()), w.commonFunc)
 	return event_listener.NewCaller(open_im_sdk.NotifyRedPacketClaimed, callback, &args).AsyncCallWithCallback()

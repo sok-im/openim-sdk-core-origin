@@ -190,6 +190,11 @@ func SendPaymentNotification(callback open_im_sdk_callback.Base, operationID str
 	call(callback, operationID, UserForSDK.Conversation().SendPaymentNotification, req)
 }
 
+// GetPaymentNotifications 按 sendUserID 分页查询支付通知历史；req 为 JSON，字段见 api.GetPaymentNotificationsReq（仅 admin）。
+func GetPaymentNotifications(callback open_im_sdk_callback.Base, operationID string, req string) {
+	call(callback, operationID, UserForSDK.Conversation().GetPaymentNotifications, req)
+}
+
 // NotifyRedPacketClaimed 通知红包已被领取；req 为 JSON，字段见 api.WalletDualPartyNotifyReq。
 func NotifyRedPacketClaimed(callback open_im_sdk_callback.Base, operationID string, req string) {
 	call(callback, operationID, UserForSDK.Conversation().NotifyRedPacketClaimed, req)

@@ -860,6 +860,20 @@ func (c *Conversation) SendPaymentNotification(ctx context.Context, req *api.Sen
 	return c.sendPaymentNotificationToServer(ctx, req)
 }
 
+// GetPaymentNotifications 按 sendUserID 分页查询已落库的支付通知（POST /msg/get_payment_notifications，仅 admin）。
+func (c *Conversation) GetPaymentNotifications(ctx context.Context, req *api.GetPaymentNotificationsReq) (*api.GetPaymentNotificationsResp, error) {
+	if req == nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg("req is nil")
+	}
+	if req.SendUserID == "" {
+		return nil, sdkerrs.ErrArgs.WrapMsg("sendUserID is required")
+	}
+	if req.Pagination == nil {
+		return nil, sdkerrs.ErrArgs.WrapMsg("pagination is required")
+	}
+	return c.getPaymentNotificationsFromServer(ctx, req)
+}
+
 func (c *Conversation) NotifyRedPacketClaimed(ctx context.Context, req *api.WalletDualPartyNotifyReq) (*api.WalletNotifyResp, error) {
 	if err := validateWalletDualPartyNotifyReq(req); err != nil {
 		return nil, err

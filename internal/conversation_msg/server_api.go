@@ -113,3 +113,7 @@ func (c *Conversation) setConversationBurn(ctx context.Context, req *pbConversat
 func (c *Conversation) sendPaymentNotificationToServer(ctx context.Context, req *api.SendPaymentNotificationReq) (*pbMsg.SendMsgResp, error) {
 	return api.SendPaymentNotification.Invoke(ctx, req)
 }
+
+func (c *Conversation) getPaymentNotificationsFromServer(ctx context.Context, req *api.GetPaymentNotificationsReq) (*api.GetPaymentNotificationsResp, error) {
+	return api.GetPaymentNotifications.Invoke(ctx, req)
+}
